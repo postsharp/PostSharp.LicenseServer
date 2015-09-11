@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="PostSharp.LicenseServer" Class="Database" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="WebSettings" ConnectionString="Data Source=mssql2.kpy.sharpcrafters.com;Initial Catalog=LicenseServer_Dev;Integrated Security=True" SettingsObjectName="System.Configuration.ConfigurationManager.ConnectionStrings" SettingsPropertyName="SharpCrafters_LicenseServerConnectionString" Provider="System.Data.SqlClient" />
+  <Table Name="dbo.Licenses" Member="Licenses">
+    <Type Name="License">
+      <Column Name="LicenseId" Type="System.Int32" DbType="Int NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="LicenseKey" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Column Name="ProductCode" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Priority" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CreatedOn" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="GraceStartTime" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="GraceLastWarningTime" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Association Name="License_Lease" Member="Leases" ThisKey="LicenseId" OtherKey="LicenseId" Type="Lease" />
+    </Type>
+  </Table>
+  <Table Name="dbo.Leases" Member="Leases">
+    <Type Name="Lease">
+      <Column Name="LeaseId" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="OverwrittenLeaseId" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="LicenseId" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="StartTime" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="EndTime" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="UserName" Type="System.String" DbType="NVarChar(200) NOT NULL" CanBeNull="false" />
+      <Column Name="Machine" Type="System.String" DbType="NVarChar(200) NOT NULL" CanBeNull="false" />
+      <Column Name="AuthenticatedUser" Type="System.String" DbType="NVarChar(200) NOT NULL" CanBeNull="false" />
+      <Column Name="HMAC" Type="System.String" DbType="VarChar(100)" CanBeNull="true" />
+      <Column Name="Grace" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Association Name="Lease_Lease" Member="OverwrittenByLease" ThisKey="LeaseId" OtherKey="OverwrittenLeaseId" Type="Lease" />
+      <Association Name="Lease_Lease" Member="OverwritesLease" ThisKey="OverwrittenLeaseId" OtherKey="LeaseId" Type="Lease" IsForeignKey="true" />
+      <Association Name="License_Lease" Member="License" ThisKey="LicenseId" OtherKey="LicenseId" Type="License" IsForeignKey="true" />
+    </Type>
+  </Table>
+</Database>

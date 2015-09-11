@@ -1,0 +1,36 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="PostSharp.LicenseServer.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="GracePeriodWarningDays" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">1</Value>
+    </Setting>
+    <Setting Name="MachinesPerUser" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">2</Value>
+    </Setting>
+    <Setting Name="MinLeaseDays" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">1</Value>
+    </Setting>
+    <Setting Name="NewLeaseDays" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">3</Value>
+    </Setting>
+    <Setting Name="GracePeriodWarningEmailTo" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">gael@sharpcrafters.com</Value>
+    </Setting>
+    <Setting Name="DeniedRequestEmailTo" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">gael@sharpcrafters.com</Value>
+    </Setting>
+    <Setting Name="MutexTimeout" Type="System.Single" Scope="Application">
+      <Value Profile="(Default)">30</Value>
+    </Setting>
+    <Setting Name="TimeAcceleration" Type="System.Decimal" Scope="Application">
+      <Value Profile="(Default)">1440</Value>
+    </Setting>
+    <Setting Name="BuildServers" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="GracePeriodWarningEmailCC" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">sales@postsharp.net</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

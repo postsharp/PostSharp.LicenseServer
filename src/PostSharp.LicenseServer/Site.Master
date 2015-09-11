@@ -1,0 +1,47 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="PostSharp.LicenseServer.Site" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title></title>
+    <asp:ContentPlaceHolder ID="Head" runat="server">
+    </asp:ContentPlaceHolder>
+    <style type="text/css">
+    body
+    {
+        font-family: Segoe UI, Arial, Sans-Serif;
+        padding: 20px;
+    }
+    
+    td
+    {
+        padding: 10px;
+        
+    }
+    
+    th
+    {
+        text-align: left;
+        padding: 10px;
+    }
+    
+    </style>
+</head>
+<body>
+<div onclick="document.location='<%=this.ResolveUrl( "~" ) %>'" style="cursor:pointer" >
+<img src="~/Img/PostSharpText_Light_240x33.png" runat="server" style="float:right" border="0" />
+<h1>PostSharp License Server</h1>
+</div>
+
+<hr style="margin-top: 50px;" />
+    <form id="form1" runat="server">
+    <div>
+        <asp:ContentPlaceHolder ID="Body" runat="server">
+        
+        </asp:ContentPlaceHolder>
+    </div>
+    </form>
+
+</body>
+</html>
