@@ -12,7 +12,6 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Web.UI;
-using PostSharp.Sdk.Extensibility.Licensing;
 using ParsedLicense = PostSharp.Sdk.Extensibility.Licensing.License;
 
 namespace PostSharp.LicenseServer
@@ -35,8 +34,8 @@ namespace PostSharp.LicenseServer
             LicenseId = int.Parse(this.Request.QueryString["id"]);
 
             Days = int.Parse( this.Request.QueryString["days"] ?? "30" );
-            ;
-            DateTime endDate = DateTime.Today;
+
+            DateTime endDate = VirtualDateTime.UtcNow.Date.AddDays(1);
             DateTime startDate = endDate.AddDays( -Days );
 
             // Retrieve license information.
