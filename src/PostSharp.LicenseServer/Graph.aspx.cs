@@ -50,15 +50,23 @@ namespace PostSharp.LicenseServer
                     this.AxisMaximum = GraceMaximum.GetValueOrDefault();
                 }
             }
-            
 
-            var q = from l in db.GetLeaseCountingPoints( LicenseId, startDate, endDate )
-                    group l by l.Time.Date
-                    into d select new { Date = d.Key, Count = d.Max(point => point.LeaseCount) };
+
+            var q = from l in db.GetLeaseCountingPoints(LicenseId, startDate, endDate)
+                group l by l.Time.Date
+                into d
+                select
+                    new
+                    {
+                        Date = d.Key,
+                        Count = d.Max(point => point.LeaseCount),
+                        LastCount = d.OrderByDescending(point => point.Time).First().LeaseCount
+                    };
 
             // Fill the array with data.
             this.Keys = new string[Days];
             this.Values = new string[Days];
+            var lastValues = new int?[Days];
             foreach ( var point in q )
             {
                 int day = (int) Math.Floor( point.Date.Subtract( startDate ).TotalDays );
@@ -71,14 +79,18 @@ namespace PostSharp.LicenseServer
                 if ( day < 0 )
                 {
                     this.Values[0] = point.Count.ToString();
+                    lastValues[0] = point.LastCount;
                 }
                 else if ( day < Days )
                 {
                     this.Values[day] = point.Count.ToString();
+                    lastValues[day] = point.LastCount;
                 }
             }
 
             // Do extrapolation of missing values.
+            string lastValue = "0";
+
             for ( int i = 0; i < Days; i++ )
             {
                 DateTime date = startDate.AddDays( i    );
@@ -90,12 +102,16 @@ namespace PostSharp.LicenseServer
                 {
                     if (i > 0)
                     {
-                        this.Values[i] = this.Values[i - 1] ?? "0";
+                        this.Values[i] = lastValue;
                     }
                     else
                     {
-                        this.Values[0] = "0";
+                        this.Values[0] = lastValue;
                     }
+                }
+                if ( lastValues[i] != null )
+                {
+                    lastValue = lastValues[i].ToString();
                 }
             }
 
