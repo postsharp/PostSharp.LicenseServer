@@ -25,6 +25,7 @@
     <IISExpressWindowsAuthentication />
     <IISExpressUseClassicPipelineMode />
     <TargetFrameworkProfile />
+    <MSBuildCommunityTasksPath>$(MSBuildThisFileDirectory)..\..\packages\MSBuildTasks.1.4.0.88\tools</MSBuildCommunityTasksPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -240,6 +241,7 @@
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v12.0\WebApplications\Microsoft.WebApplication.targets" />
+  <Import Project="$(MSBuildCommunityTasksPath)\MSBuild.Community.Tasks.Targets"/>
   <ProjectExtensions>
     <VisualStudio>
       <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
@@ -249,7 +251,7 @@
       </FlavorProperties>
     </VisualStudio>
   </ProjectExtensions>
-  <Target Name="CreateZip" DependsOnTargets="Package">
+  <Target Name="Zip" DependsOnTargets="Package">
     <XmlUpdate XmlFileName="obj\$(Configuration)\Package\PackageTmp\web.config" XPath="/configuration/applicationSettings/PostSharp.LicenseServer.Properties.Settings/setting[@name='GracePeriodWarningDays']/value" Value="1" />
     <XmlUpdate XmlFileName="obj\$(Configuration)\Package\PackageTmp\web.config" XPath="/configuration/applicationSettings/PostSharp.LicenseServer.Properties.Settings/setting[@name='MachinesPerUser']/value" Value="2" />
     <XmlUpdate XmlFileName="obj\$(Configuration)\Package\PackageTmp\web.config" XPath="/configuration/applicationSettings/PostSharp.LicenseServer.Properties.Settings/setting[@name='MinLeaseDays']/value" Value="1" />
@@ -259,7 +261,11 @@
     <XmlUpdate XmlFileName="obj\$(Configuration)\Package\PackageTmp\web.config" XPath="/configuration/applicationSettings/PostSharp.LicenseServer.Properties.Settings/setting[@name='GracePeriodWarningEmailCC']/value" Value="sales@postsharp.net" />
     <XmlUpdate XmlFileName="obj\$(Configuration)\Package\PackageTmp\web.config" XPath="/configuration/connectionStrings/add/@connectionString" Value="Data Source=localhost;Initial Catalog=SharpCraftersLicenseServer;Integrated Security=True" />
     <XmlUpdate XmlFileName="obj\$(Configuration)\Package\PackageTmp\web.config" XPath="/configuration/system.net/mailSettings/smtp/network/@host" Value="localhost" />
-    <Exec Command="$(ZipTool) a -tzip -mx=9 &quot;$(MSBuildProjectDirectory)\$(ReleaseDir)\PostSharp.LicenseServer.zip&quot; *.* -r" WorkingDirectory="obj\$(Configuration)\Package\PackageTmp" />
+    <ItemGroup>
+      <_ZipFiles Include="obj\$(Configuration)\Package\PackageTmp\**\*"/>
+    </ItemGroup>
+    <Zip ZipFileName="$(OutputPath)PostSharp.LicenseServer.zip" Files="@(_ZipFiles)" WorkingDirectory="obj\$(Configuration)\Package\PackageTmp" />
+    <Message Importance="High" Text="The license server release is ready in $(MSBuildThisFileDirectory)$(OutputPath)PostSharp.LicenseServer.zip is ready."/>
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
