@@ -13,6 +13,10 @@ We at PostSharp consider that it is the customer's sole responsibility to respec
 
 The license server itself is licensed under the *MIT License*. Note that PostSharp is a commercial product with a proprietary license.
 
+## Download
+
+You can download the latest release from https://github.com/postsharp/PostSharp.LicenseServer/releases/latest.
+
 ## Documentation
 
 * [Installing the license server](http://doc.postsharp.net/license-server-admin).
