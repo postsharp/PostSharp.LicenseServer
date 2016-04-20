@@ -21,7 +21,7 @@ namespace PostSharp.LicenseServer
         protected override void OnLoad( EventArgs e )
         {
             Database db = new Database();
-            License[] licenses = (from l in db.Licenses orderby l.ProductCode , l.Priority select l).ToArray();
+            License[] licenses = (from l in db.Licenses orderby l.Priority, l.LicenseId descending select l).ToArray();
             List<LicenseInfo> licenseInfos = new List<LicenseInfo>();
 
             for ( int i = 0; i < licenses.Length; i++ )
@@ -40,6 +40,8 @@ namespace PostSharp.LicenseServer
                     licenseInfo.CurrentUsers = db.GetActiveLeads( license.LicenseId, VirtualDateTime.UtcNow );
                     licenseInfo.ProductCode = parsedLicense.Product.ToString();
                     licenseInfo.GraceStartTime = license.GraceStartTime;
+                    licenseInfo.Status = license.Priority >= 0 ? "Active" : "Disabled";
+                    licenseInfo.MaintenanceEndDate = parsedLicense.SubscriptionEndDate;
                 }
 
                 licenseInfos.Add( licenseInfo );
@@ -58,6 +60,8 @@ namespace PostSharp.LicenseServer
             public int? MaxUsers { get; set; }
             public int CurrentUsers { get; set; }
             public DateTime? GraceStartTime { get; set; }
+            public string Status { get; set; }
+            public DateTime? MaintenanceEndDate { get; set; }
         }
     }
 }

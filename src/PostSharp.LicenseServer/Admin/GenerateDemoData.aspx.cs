@@ -193,9 +193,10 @@ David,Bradway";
                         // Which machine will he use this day?
                         int machineIndex = (int) Math.Floor( random.NextDouble()*user.Machines.Count );
                         string machine = user.Machines[machineIndex];
-                        List<string> errors = new List<string>();
+                        Dictionary<int, string> errors = new Dictionary<int, string>();
                         time = time.AddHours( random.NextDouble()*3.0/activeUsers.Count );
-                        Lease lease = leaseService.GetLease( db, product, machine, user.UserName, user.AuthenticatedName, time, errors );
+                        DateTime buildDate = time;
+                        Lease lease = leaseService.GetLease( db, product, buildDate, machine, user.UserName, user.AuthenticatedName, time, errors );
                         if ( lease != null )
                         {
                             db.SubmitChanges();

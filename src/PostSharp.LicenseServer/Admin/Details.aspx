@@ -34,6 +34,12 @@
 
     </p>
     
+    <p>
+        <asp:LinkButton ID="disableHyperlink" runat="server" Text="Disable license key" OnClick="disableHyperlink_OnClick" /> <br/>
+        <asp:LinkButton ID="enableHyperlink" runat="server" Text="Enable license key" OnClick="enableHyperlink_OnClick"/> <br/>
+        <asp:LinkButton ID="deleteHyperlink" runat="server" Text="Delete license key and its leases" OnClick="deleteHyperlink_OnClick" OnClientClick="return confirm('Are you certain you want to delete this license key and all associate leases?');"/>
+    </p>
+    
         <p>
         Page generated on <%=VirtualDateTime.UtcNow.ToLocalTime()%>.
     </p>
