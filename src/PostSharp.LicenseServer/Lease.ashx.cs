@@ -11,6 +11,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
 using System.Threading;
 using System.Web;
 using PostSharp.Sdk.Extensibility.Licensing;
@@ -24,13 +26,13 @@ namespace PostSharp.LicenseServer
     /// </summary>
     public sealed class LeaseHandler : IHttpHandler
     {
-        private readonly List<string> errors = new List<string>();
+        private readonly Dictionary<int, string> errors = new Dictionary<int, string>();
         private HttpContext context;
         static Mutex mutex = CreateMutex();
 
         static LeaseHandler()
         {
-            AppDomain.CurrentDomain.DomainUnload += ( sender, args ) => mutex.Close();
+            AppDomain.CurrentDomain.DomainUnload += (sender, args) => mutex.Close();
         }
 
         private static Mutex CreateMutex()
@@ -38,52 +40,75 @@ namespace PostSharp.LicenseServer
             return new Mutex(false, "PostSharp.LicenseServer.Lease");
         }
 
-        public void ProcessRequest( HttpContext context )
+        public void ProcessRequest(HttpContext context)
         {
             this.context = context;
-            using ( Database db = new Database() )
+            using (Database db = new Database())
             {
 
-            Settings settings = Settings.Default;
+                // Parse requested product code.
+                string productCode = context.Request.QueryString["product"];
+                if (string.IsNullOrEmpty(productCode))
+                {
+                    this.SetError(400, "Missing query string argument: product.");
+                    return;
+                }
 
-            string productCode = context.Request.QueryString["product"];
-            if ( string.IsNullOrEmpty( productCode ) )
-            {
-                this.SetError( 400, "Missing query string argument: product." );
-                return;
-            }
+                // Parse build date.
+                string buildDateString = context.Request.QueryString["buildDate"];
+                DateTime? buildDate = null;
+                if (!string.IsNullOrEmpty(buildDateString))
+                {
+                    DateTime buildDateNotNull;
+                    if (
+                        !DateTime.TryParse(buildDateString, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind,
+                            out buildDateNotNull))
+                    {
+                        this.SetError(400, "Cannot parse the argument: buildDate.");
+                        return;
+                    }
 
-            string machine = context.Request.QueryString["machine"];
+                    buildDate = buildDateNotNull;
+                }
 
-            if ( string.IsNullOrEmpty( machine ) )
-            {
-                this.SetError( 400, "Missing query string argument: machine." );
-                return;
-            }
 
-            string userName = context.Request.QueryString["user"];
 
-            if ( string.IsNullOrEmpty( userName ) )
-            {
-                this.SetError( 400, "Missing query string argument: user." );
-                return;
-            }
+                // Parse machine name.
+                string machine = context.Request.QueryString["machine"];
+                if (string.IsNullOrEmpty(machine))
+                {
+                    this.SetError(400, "Missing query string argument: machine.");
+                    return;
+                }
 
-            machine = machine.ToLowerInvariant();
-            userName = userName.ToLowerInvariant();
+                machine = machine.ToLowerInvariant();
+
+
+                // Parse user name.
+                string userName = context.Request.QueryString["user"];
+
+                if (string.IsNullOrEmpty(userName))
+                {
+                    this.SetError(400, "Missing query string argument: user.");
+                    return;
+                }
+
+                userName = userName.ToLowerInvariant();
+
+
 
                 bool releaseMutex = false;
-            try
-            {
+                try
+                {
 
-                    while ( true )
+                    while (true)
                     {
                         try
                         {
 
-                            if ( !mutex.WaitOne( TimeSpan.FromSeconds( Settings.Default.MutexTimeout ) ) )
+                            if (!mutex.WaitOne(TimeSpan.FromSeconds(Settings.Default.MutexTimeout)))
                             {
-                                this.SetError( 503, "Service overloaded." );
+                                this.SetError(503, "Service overloaded.");
                                 return;
                             }
                             else
@@ -93,7 +118,7 @@ namespace PostSharp.LicenseServer
                             }
 
                         }
-                        catch ( AbandonedMutexException )
+                        catch (AbandonedMutexException)
                         {
                             try
                             {
@@ -117,47 +142,46 @@ namespace PostSharp.LicenseServer
 
                     Stopwatch stopwatch = Stopwatch.StartNew();
 
-                    LicenseLease licenseLease = new LeaseService(true).GetLicenseLease(db, productCode, machine, userName, context.User.Identity.Name, VirtualDateTime.UtcNow,
-                                                                     errors );
+                    LicenseLease licenseLease = new LeaseService(true).GetLicenseLease(db, productCode, buildDate, machine, userName, context.User.Identity.Name, VirtualDateTime.UtcNow, errors);
 
-                    if ( licenseLease != null )
+                    if (licenseLease != null)
                     {
                         db.SubmitChanges();
 
                         string serializedLease = licenseLease.Serialize();
-                        context.Response.Write( serializedLease );
+                        context.Response.Write(serializedLease);
                     }
                     else
                     {
-                        this.SetError( 403, "No license with free capacity. " + string.Join( " ", this.errors.ToArray() ) );
+                        this.SetError(403, "No license with free capacity. " + string.Join(" ", this.errors.Values));
                     }
 
-                    if ( stopwatch.ElapsedMilliseconds > 1000 )
+                    if (stopwatch.ElapsedMilliseconds > 1000)
                     {
-                        context.Trace.Warn( string.Format( "Request served in {0}", stopwatch.Elapsed ) );
+                        context.Trace.Warn(string.Format("Request served in {0}", stopwatch.Elapsed));
                     }
                 }
-            finally
-            {
-                    if ( releaseMutex )
+                finally
+                {
+                    if (releaseMutex)
                     {
                         try
                         {
-                mutex.ReleaseMutex();
-            }
+                            mutex.ReleaseMutex();
+                        }
                         catch
                         {
 
-        }
+                        }
                     }
                 }
             }
         }
 
-        private void SetError( int statusCode, string description )
+        private void SetError(int statusCode, string description)
         {
             this.context.Response.StatusCode = statusCode;
-            this.context.Response.Write( description );
+            this.context.Response.Write(description);
             this.context.Response.End();
         }
 

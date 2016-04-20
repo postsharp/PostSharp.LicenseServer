@@ -17,6 +17,8 @@
             <asp:BoundField DataField="GraceStartTime" HeaderText="Grace Period Started On" />
             <asp:BoundField DataField="MaxUsers" HeaderText="Max Number of Users" />
             <asp:BoundField DataField="CurrentUsers" HeaderText="Current Number Of Users" />
+            <asp:BoundField DataField="MaintenanceEndDate" HeaderText="End of Maintenance"  DataFormatString="{0:d}"/>
+            <asp:BoundField DataField="Status" HeaderText="Status"/>
             <asp:HyperLinkField DataNavigateUrlFields="LicenseId" DataNavigateUrlFormatString="Admin/Details.aspx?id={0}"
                 Text="Detail" />
                    <asp:HyperLinkField DataNavigateUrlFields="LicenseId" DataNavigateUrlFormatString="Graph.aspx?id={0}"

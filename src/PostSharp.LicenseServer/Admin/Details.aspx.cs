@@ -11,6 +11,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web;
 using System.Web.UI;
 
 namespace PostSharp.LicenseServer.Admin
@@ -23,6 +24,7 @@ namespace PostSharp.LicenseServer.Admin
             this.licenseIdLabel.Text = licenseId.ToString();
 
             Database db = new Database();
+            License license = db.Licenses.Single(l => l.LicenseId == licenseId);
 
             DateTime now = VirtualDateTime.UtcNow;
             List<Lease> leases = (from l in db.Leases
@@ -42,6 +44,47 @@ namespace PostSharp.LicenseServer.Admin
 
             this.leaseCountLiteral.Text = leases.Count.ToString();
             this.concurrentUserCountLiteral.Text = db.GetActiveLeads( licenseId, now ).ToString();
+
+            bool disabled = license.Priority < 0;
+            this.enableHyperlink.Visible = disabled;
+            this.deleteHyperlink.Visible = disabled;
+            this.disableHyperlink.Visible = !disabled;
+
+        }
+
+        private void ChangePriority(int priority)
+        {
+            int licenseId = int.Parse(this.Request.QueryString["id"]);
+          
+            Database db = new Database();
+            License license = db.Licenses.Single(l => l.LicenseId == licenseId);
+            license.Priority = priority;
+            db.SubmitChanges();
+
+            this.Response.Redirect("..");
+        }
+
+        protected void disableHyperlink_OnClick(object sender, EventArgs e)
+        {
+           this.ChangePriority(-1);
+        }
+
+        protected void enableHyperlink_OnClick(object sender, EventArgs e)
+        {
+            this.ChangePriority(0);
+        }
+
+        protected void deleteHyperlink_OnClick(object sender, EventArgs e)
+        {
+            int licenseId = int.Parse(this.Request.QueryString["id"]);
+
+            Database db = new Database();
+            License license = db.Licenses.Single(l => l.LicenseId == licenseId);
+            db.Leases.DeleteAllOnSubmit(license.Leases);
+            db.Licenses.DeleteOnSubmit(license);
+            db.SubmitChanges();
+
+            this.Response.Redirect("..");
         }
     }
 }
