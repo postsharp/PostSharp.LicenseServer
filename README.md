@@ -26,13 +26,12 @@ You can download the latest release from https://github.com/postsharp/PostSharp.
 
 ### Requirements
 
-* Visual Studio 2013 with Web Tools.
-* To build from the command line, download `nuget.exe` from http://dist.nuget.org/win-x86-commandline/latest/nuget.exe.
+* Visual Studio 2015 with Web Tools.
 
 ### Instructions
 
 1. Open a Developer Command Prompt and go to repository directory.
-2. Restore NuGet packages with the command: `nuget restore`.
+2. Restore NuGet packages with the command: `.nuget\nuget.exe restore`.
 3. Go to directory `src\PostSharp.LicenseServer`.
 4. Execute `msbuild PostSharp.LicenseServer.csproj /t:Zip`.
 
