@@ -4,6 +4,7 @@ using System.Threading;
 using Microsoft.Win32;
 using PostSharp.Sdk;
 using PostSharp.Sdk.Extensibility.Licensing;
+using PostSharp.Sdk.Extensibility.Licensing.Helpers;
 
 namespace SharpCrafters.LicenseServer.Test
 {
@@ -78,7 +79,7 @@ namespace SharpCrafters.LicenseServer.Test
                                                      LicensedProduct.PostSharp30);
 
                                 Stopwatch stopwatch = Stopwatch.StartNew();
-                                lease = UserLicenseManager.GetLease(url, registryKey, VirtualDateTime.UtcNow.ToLocalTime(), messageSink);    
+                                lease = LicenseServerClient.TryGetLease( url, registryKey, VirtualDateTime.UtcNow.ToLocalTime(), messageSink );
 
                                 if ( lease == null )
                                 {
