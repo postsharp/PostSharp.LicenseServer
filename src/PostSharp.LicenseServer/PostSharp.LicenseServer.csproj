@@ -26,6 +26,7 @@
     <IISExpressUseClassicPipelineMode />
     <TargetFrameworkProfile />
     <MSBuildCommunityTasksPath>$(MSBuildThisFileDirectory)..\..\packages\MSBuildTasks.1.4.0.88\tools</MSBuildCommunityTasksPath>
+    <DontImportPostSharp>True</DontImportPostSharp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -68,17 +69,17 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="PostSharp, Version=4.2.9.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\PostSharp.4.2.9-preview\lib\net35-client\PostSharp.dll</HintPath>
+    <Reference Include="PostSharp, Version=4.3.25.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\PostSharp.4.3.25\lib\net35-client\PostSharp.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="PostSharp.Compiler.Common, Version=4.2.9.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\PostSharp.Compiler.Common.4.2.9-preview\lib\net40\PostSharp.Compiler.Common.dll</HintPath>
+    <Reference Include="PostSharp.Compiler.Common, Version=4.3.25.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\PostSharp.Compiler.Common.4.3.25\lib\net40\PostSharp.Compiler.Common.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="PostSharp.Compiler.Settings, Version=4.2.9.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\PostSharp.Compiler.Settings.4.2.9-preview\lib\net40\PostSharp.Compiler.Settings.dll</HintPath>
+    <Reference Include="PostSharp.Compiler.Settings, Version=4.3.25.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\PostSharp.Compiler.Settings.4.3.25\lib\net40\PostSharp.Compiler.Settings.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -241,7 +242,7 @@
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" />
-  <Import Project="$(MSBuildCommunityTasksPath)\MSBuild.Community.Tasks.Targets"/>
+  <Import Project="$(MSBuildCommunityTasksPath)\MSBuild.Community.Tasks.Targets" />
   <ProjectExtensions>
     <VisualStudio>
       <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
@@ -252,7 +253,7 @@
     </VisualStudio>
   </ProjectExtensions>
   <Target Name="VerifyDependencies">
-    <Error Text="Web Publishing extension is not present." Condition="'$(WebPublishTasksDir)'==''"/>
+    <Error Text="Web Publishing extension is not present." Condition="'$(WebPublishTasksDir)'==''" />
   </Target>
   <Target Name="Zip" DependsOnTargets="VerifyDependencies;Package">
     <XmlUpdate XmlFileName="obj\$(Configuration)\Package\PackageTmp\web.config" XPath="/configuration/applicationSettings/PostSharp.LicenseServer.Properties.Settings/setting[@name='GracePeriodWarningDays']/value" Value="1" />
@@ -265,10 +266,15 @@
     <XmlUpdate XmlFileName="obj\$(Configuration)\Package\PackageTmp\web.config" XPath="/configuration/connectionStrings/add/@connectionString" Value="Data Source=localhost;Initial Catalog=SharpCraftersLicenseServer;Integrated Security=True" />
     <XmlUpdate XmlFileName="obj\$(Configuration)\Package\PackageTmp\web.config" XPath="/configuration/system.net/mailSettings/smtp/network/@host" Value="localhost" />
     <ItemGroup>
-      <_ZipFiles Include="obj\$(Configuration)\Package\PackageTmp\**\*"/>
+      <_ZipFiles Include="obj\$(Configuration)\Package\PackageTmp\**\*" />
     </ItemGroup>
     <Zip ZipFileName="$(OutputPath)PostSharp.LicenseServer.zip" Files="@(_ZipFiles)" WorkingDirectory="obj\$(Configuration)\Package\PackageTmp" />
-    <Message Importance="High" Text="The license server release is ready in $(MSBuildThisFileDirectory)$(OutputPath)PostSharp.LicenseServer.zip."/>
+    <Message Importance="High" Text="The license server release is ready in $(MSBuildThisFileDirectory)$(OutputPath)PostSharp.LicenseServer.zip." />
+  </Target>
+  <Import Project="..\..\packages\PostSharp.4.3.25\tools\PostSharp.targets" Condition="Exists('..\..\packages\PostSharp.4.3.25\tools\PostSharp.targets')" />
+  <Target Name="EnsurePostSharpImported" BeforeTargets="BeforeBuild" Condition="'$(PostSharp30Imported)' == ''">
+    <Error Condition="!Exists('..\..\packages\PostSharp.4.3.25\tools\PostSharp.targets')" Text="This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://www.postsharp.net/links/nuget-restore." />
+    <Error Condition="Exists('..\..\packages\PostSharp.4.3.25\tools\PostSharp.targets')" Text="The build restored NuGet packages. Build the project again to include these packages in the build. For more information, see http://www.postsharp.net/links/nuget-restore." />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
