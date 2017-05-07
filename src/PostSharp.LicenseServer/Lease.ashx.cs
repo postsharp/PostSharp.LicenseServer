@@ -54,6 +54,23 @@ namespace PostSharp.LicenseServer
                     return;
                 }
 
+                // Parse version.
+                string versionString = context.Request.QueryString["version"];
+                Version version;
+                if ( string.IsNullOrEmpty( versionString ) )
+                {
+                    // Versions < 5.0 do not include version in the request.
+                    version = new Version( 2, 0, 0 );
+                }
+                else
+                {
+                    if ( !Version.TryParse( versionString, out version ) )
+                    {
+                        this.SetError( 400, "Cannot parse the argument: version." );
+                        return;
+                    }
+                }
+
                 // Parse build date.
                 string buildDateString = context.Request.QueryString["buildDate"];
                 DateTime? buildDate = null;
@@ -142,7 +159,7 @@ namespace PostSharp.LicenseServer
 
                     Stopwatch stopwatch = Stopwatch.StartNew();
 
-                    LicenseLease licenseLease = new LeaseService(true).GetLicenseLease(db, productCode, buildDate, machine, userName, context.User.Identity.Name, VirtualDateTime.UtcNow, errors);
+                    LicenseLease licenseLease = new LeaseService(true).GetLicenseLease(db, productCode, version, buildDate, machine, userName, context.User.Identity.Name, VirtualDateTime.UtcNow, errors);
 
                     if (licenseLease != null)
                     {

@@ -16,6 +16,7 @@ using System.Net.Mail;
 using System.Text.RegularExpressions;
 using PostSharp.Sdk.Extensibility.Licensing;
 using PostSharp.LicenseServer.Properties;
+using PostSharp.Sdk;
 using ParsedLicense = PostSharp.Sdk.Extensibility.Licensing.License;
 
 namespace PostSharp.LicenseServer
@@ -62,7 +63,7 @@ namespace PostSharp.LicenseServer
 #endif
         }
 
-        private static LicenseState GetLicenseState(Database db, License license, DateTime? buildDate, DateTime now, Dictionary<int, LicenseState> cache, Dictionary<int, string> errors)
+        private static LicenseState GetLicenseState(Database db, License license, Version version, DateTime? buildDate, DateTime now, Dictionary<int, LicenseState> cache, Dictionary<int, string> errors)
         {
             LicenseState licenseState;
 
@@ -76,7 +77,33 @@ namespace PostSharp.LicenseServer
                 return null;
             }
 
-            if (!parsedLicense.IsLicenseServerElligible())
+            if (parsedLicense.MinPostSharpVersion > ApplicationInfo.Version)
+            {
+                errors[license.LicenseId] = string.Format(
+                    "The license #{0} requires higher version of PostSharp on the License Server. Please upgrade PostSharp NuGet package of the License Server to >= {1}.{2}.{3}",
+                    license.LicenseId,
+                    parsedLicense.MinPostSharpVersion.Major,
+                    parsedLicense.MinPostSharpVersion.Minor,
+                    parsedLicense.MinPostSharpVersion.Build);
+                return null;
+            }
+
+            if (parsedLicense.MinPostSharpVersion > version)
+            {
+                errors[license.LicenseId] = string.Format(
+                    "The license #{0} of type {1} requires PostSharp version >= {2}.{3}.{4} but the requested version is {5}.{6}.{7}.",
+                    license.LicenseId,
+                    parsedLicense.LicenseType,
+                    parsedLicense.MinPostSharpVersion.Major,
+                    parsedLicense.MinPostSharpVersion.Minor,
+                    parsedLicense.MinPostSharpVersion.Build,
+                    version.Major,
+                    version.Minor,
+                    version.Build);
+                return null;
+            }
+
+            if (!parsedLicense.IsLicenseServerEligible())
             {
                 errors[license.LicenseId] = string.Format("The license #{0}, of type {1}, cannot be used in the license server.",
                     license.LicenseId, parsedLicense.LicenseType);
@@ -86,8 +113,27 @@ namespace PostSharp.LicenseServer
 
             if ( !(buildDate == null || parsedLicense.SubscriptionEndDate == null || buildDate <= parsedLicense.SubscriptionEndDate ) )
             {
-                errors[license.LicenseId] = string.Format("The maintenance subscription of license #{0} ends on {1:d} but the requested version has been built on {2:d}.",
-                    license.LicenseId, parsedLicense.SubscriptionEndDate, buildDate);
+                // PostSharp version number has been introduced in the license server protocol in PostSharp v5.
+                if (version.Major >= 5)
+                {
+                    errors[license.LicenseId] = string.Format(
+                        "The maintenance subscription of license #{0} ends on {1:d} but the requested version {2}.{3}.{4} has been built on {5:d}.",
+                        license.LicenseId,
+                        parsedLicense.SubscriptionEndDate,
+                        version.Major,
+                        version.Minor,
+                        version.Build,
+                        buildDate );
+                }
+                else
+                {
+                    errors[license.LicenseId] = string.Format(
+                        "The maintenance subscription of license #{0} ends on {1:d} but the requested version has been built on {2:d}.",
+                        license.LicenseId,
+                        parsedLicense.SubscriptionEndDate,
+                        buildDate );
+                }
+
                 return null;
             }
 
@@ -95,10 +141,9 @@ namespace PostSharp.LicenseServer
             licenseState = new LicenseState(now, db, license, parsedLicense);
             cache.Add(license.LicenseId, licenseState);
             return licenseState;
-           
         }
 
-        public LicenseLease GetLicenseLease(Database db, string productCode, DateTime? buildDate, string machine, string userName, string authenticatedUserName, DateTime now, Dictionary<int, string> errors)
+        public LicenseLease GetLicenseLease(Database db, string productCode, Version version, DateTime? buildDate, string machine, string userName, string authenticatedUserName, DateTime now, Dictionary<int, string> errors)
         {
             Settings settings = Settings.Default;
             
@@ -124,7 +169,7 @@ namespace PostSharp.LicenseServer
                 // try to acquire lease in normal way
             }
 
-            Lease lease = GetLease( db, productCode, buildDate, machine, userName, authenticatedUserName, now, errors, licenses );
+            Lease lease = GetLease(db, productCode, version, buildDate, machine, userName, authenticatedUserName, now, errors, licenses);
             if ( lease == null )
                 return null;
 
@@ -134,17 +179,17 @@ namespace PostSharp.LicenseServer
            return licenseLease;
         }
 
-        public Lease GetLease( Database db, string productCode, DateTime? buildDate, string machine, string userName, string authenticatedUserName, DateTime now, Dictionary<int,string> errors )
+        public Lease GetLease(Database db, string productCode, Version version, DateTime? buildDate, string machine, string userName, string authenticatedUserName, DateTime now, Dictionary<int, string> errors)
         {
             License[] licenses = (from license in db.Licenses
                                   where license.ProductCode == productCode
-                                  orderby license.Priority, license.LicenseId descending 
+                                  orderby license.Priority, license.LicenseId descending
                                   select license).ToArray();
 
-            return GetLease( db, productCode, buildDate, machine, userName, authenticatedUserName, now, errors, licenses );
+            return this.GetLease( db, productCode, version, buildDate, machine, userName, authenticatedUserName, now, errors, licenses );
         }
 
-        public Lease GetLease(Database db, string productCode, DateTime? buildDate, string machine, string userName, string authenticatedUserName, DateTime now, Dictionary<int, string> errors, License[] licenses)
+        public Lease GetLease( Database db, string productCode, Version version, DateTime? buildDate, string machine, string userName, string authenticatedUserName, DateTime now, Dictionary<int, string> errors, License[] licenses )
         {
             Dictionary<int, LicenseState> licenseStates = new Dictionary<int, LicenseState>();
         
@@ -153,7 +198,7 @@ namespace PostSharp.LicenseServer
             // Check if we have a lease that we can use.
             foreach (License license in licenses)
             {
-                LicenseState licenseState = GetLicenseState( db, license, buildDate, now, licenseStates, errors );
+                LicenseState licenseState = GetLicenseState(db, license, version, buildDate, now, licenseStates, errors);
                 if ( licenseState == null ) continue;
 
                
@@ -208,7 +253,7 @@ namespace PostSharp.LicenseServer
             // We don't have a current lease. Create a new one.
             foreach (License license in licenses)
             {
-                LicenseState licenseState = GetLicenseState( db, license, buildDate, now, licenseStates, errors );
+                LicenseState licenseState = GetLicenseState(db, license, version, buildDate, now, licenseStates, errors);
                 if (licenseState == null) continue;
 
 
@@ -227,7 +272,7 @@ namespace PostSharp.LicenseServer
             // We did not find a suitable license. See if we can use the grace period.
             foreach (License license in licenses)
             {
-                LicenseState licenseState = GetLicenseState(db, license, buildDate, now, licenseStates, errors);
+                LicenseState licenseState = GetLicenseState(db, license, version, buildDate, now, licenseStates, errors);
               
                 if ( licenseState == null ) continue;
 

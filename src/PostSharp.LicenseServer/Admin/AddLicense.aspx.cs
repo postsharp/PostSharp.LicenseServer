@@ -10,6 +10,7 @@
 
 using System;
 using System.Web.UI;
+using PostSharp.Sdk;
 using PostSharp.Sdk.Extensibility.Licensing;
 using ParsedLicense = PostSharp.Sdk.Extensibility.Licensing.License;
 
@@ -28,7 +29,18 @@ namespace PostSharp.LicenseServer.Admin
                 return;
             }
 
-            if ( !parsedLicense.IsLicenseServerElligible() )
+            if ( parsedLicense.MinPostSharpVersion > ApplicationInfo.Version )
+            {
+                this.errorLabel.Text = string.Format(
+                    "License key cannot be added because it requires higher version of PostSharp. Please upgrade PostSharp NuGet packages of the License Server to >= {0}.{1}.{2}.",
+                    parsedLicense.MinPostSharpVersion.Major,
+                    parsedLicense.MinPostSharpVersion.Minor,
+                    parsedLicense.MinPostSharpVersion.Build );
+                this.errorLabel.Visible = true;
+                return;
+            }
+
+            if ( !parsedLicense.IsLicenseServerEligible() )
             {
                     this.errorLabel.Text = string.Format( "Cannot add a {0} of {1} to the server.", 
                         parsedLicense.GetLicenseTypeName() ?? "(unknown license type)", 
