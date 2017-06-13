@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\packages\PostSharp.5.0.23-preview\build\PostSharp.props" Condition="Exists('..\..\packages\PostSharp.5.0.23-preview\build\PostSharp.props')" />
+  <Import Project="..\..\packages\PostSharp.5.0.26-rc\build\PostSharp.props" Condition="Exists('..\..\packages\PostSharp.5.0.26-rc\build\PostSharp.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
@@ -15,6 +15,8 @@
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -51,16 +53,16 @@
     <SkipPostSharp>True</SkipPostSharp>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="PostSharp, Version=5.0.23.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\PostSharp.Redist.5.0.23-preview\lib\net45\PostSharp.dll</HintPath>
+    <Reference Include="PostSharp, Version=5.0.26.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\PostSharp.Redist.5.0.26-rc\lib\net45\PostSharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="PostSharp.Compiler.Common, Version=5.0.23.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\PostSharp.Compiler.Common.5.0.23-preview\lib\net40\PostSharp.Compiler.Common.dll</HintPath>
+    <Reference Include="PostSharp.Compiler.Common, Version=5.0.26.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\PostSharp.Compiler.Common.5.0.26-rc\lib\net45\PostSharp.Compiler.Common.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="PostSharp.Compiler.Settings, Version=5.0.23.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\PostSharp.Compiler.Settings.5.0.23-preview\lib\net40\PostSharp.Compiler.Settings.dll</HintPath>
+    <Reference Include="PostSharp.Compiler.Settings, Version=5.0.26.0, Culture=neutral, PublicKeyToken=b13fd38b8f9c99d7, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\PostSharp.Compiler.Settings.5.0.26-rc\lib\net45\PostSharp.Compiler.Settings.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -92,12 +94,12 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\PostSharp.5.0.23-preview\build\PostSharp.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\PostSharp.5.0.23-preview\build\PostSharp.props'))" />
-    <Error Condition="!Exists('..\..\packages\PostSharp.5.0.23-preview\build\PostSharp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\PostSharp.5.0.23-preview\build\PostSharp.targets'))" />
+    <Error Condition="!Exists('..\..\packages\PostSharp.5.0.26-rc\build\PostSharp.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\PostSharp.5.0.26-rc\build\PostSharp.props'))" />
+    <Error Condition="!Exists('..\..\packages\PostSharp.5.0.26-rc\build\PostSharp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\PostSharp.5.0.26-rc\build\PostSharp.targets'))" />
   </Target>
-  <Import Project="..\..\packages\PostSharp.5.0.23-preview\build\PostSharp.targets" Condition="Exists('..\..\packages\PostSharp.5.0.23-preview\build\PostSharp.targets')" />
+  <Import Project="..\..\packages\PostSharp.5.0.26-rc\build\PostSharp.targets" Condition="Exists('..\..\packages\PostSharp.5.0.26-rc\build\PostSharp.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

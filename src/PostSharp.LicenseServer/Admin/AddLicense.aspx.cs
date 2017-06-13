@@ -9,6 +9,7 @@
 #endregion
 
 using System;
+using System.Linq;
 using System.Web.UI;
 using PostSharp.Sdk;
 using PostSharp.Sdk.Extensibility.Licensing;
@@ -29,17 +30,6 @@ namespace PostSharp.LicenseServer.Admin
                 return;
             }
 
-            if ( parsedLicense.MinPostSharpVersion > ApplicationInfo.Version )
-            {
-                this.errorLabel.Text = string.Format(
-                    "License key cannot be added because it requires higher version of PostSharp. Please upgrade PostSharp NuGet packages of the License Server to >= {0}.{1}.{2}.",
-                    parsedLicense.MinPostSharpVersion.Major,
-                    parsedLicense.MinPostSharpVersion.Minor,
-                    parsedLicense.MinPostSharpVersion.Build );
-                this.errorLabel.Visible = true;
-                return;
-            }
-
             if ( !parsedLicense.IsLicenseServerEligible() )
             {
                     this.errorLabel.Text = string.Format( "Cannot add a {0} of {1} to the server.", 
@@ -56,8 +46,16 @@ namespace PostSharp.LicenseServer.Admin
                                       CreatedOn = VirtualDateTime.UtcNow,
                                       ProductCode = parsedLicense.Product.ToString(),
                                   };
+
             Database db = new Database();
-            db.Licenses.InsertOnSubmit( license );
+            if (db.Licenses.Any(l => l.LicenseId == license.LicenseId))
+            {
+                this.errorLabel.Text = "The given license has been added already.";
+                this.errorLabel.Visible = true;
+                return;
+            }
+
+            db.Licenses.InsertOnSubmit(license);
             db.SubmitChanges();
 
             this.Response.Redirect( ".." );
