@@ -129,6 +129,7 @@ David,Bradway";
 
             LeaseService leaseService = new LeaseService( false );
             string product = this.ProductTextBox.Text;
+            Version version = Version.Parse( this.VersionTextBox.Text );
             int maxUsers = int.Parse( this.CountTextBox.Text );
 
             StringReader reader = new StringReader( unparsedNames );
@@ -196,7 +197,7 @@ David,Bradway";
                         Dictionary<int, string> errors = new Dictionary<int, string>();
                         time = time.AddHours( random.NextDouble()*3.0/activeUsers.Count );
                         DateTime buildDate = time;
-                        Lease lease = leaseService.GetLease( db, product, buildDate, machine, user.UserName, user.AuthenticatedName, time, errors );
+                        Lease lease = leaseService.GetLease( db, product, version, buildDate, machine, user.UserName, user.AuthenticatedName, time, errors );
                         if ( lease != null )
                         {
                             db.SubmitChanges();

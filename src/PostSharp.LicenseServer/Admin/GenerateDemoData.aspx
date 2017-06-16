@@ -5,6 +5,8 @@
     Product:
 <asp:TextBox ID="ProductTextBox" runat="server"></asp:TextBox>
 <br />
+<asp:TextBox ID="VersionTextBox" runat="server"></asp:TextBox>
+<br />
 Count:
 <asp:TextBox ID="CountTextBox" runat="server"></asp:TextBox>
 <br />
