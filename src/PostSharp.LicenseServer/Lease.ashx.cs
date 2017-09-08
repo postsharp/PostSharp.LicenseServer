@@ -60,7 +60,7 @@ namespace PostSharp.LicenseServer
                 if ( string.IsNullOrEmpty( versionString ) )
                 {
                     // Versions < 5.0 do not include version in the request.
-                    version = new Version( 2, 0, 0 );
+                    version = new Version( 4, 9, 9 );
                 }
                 else
                 {
