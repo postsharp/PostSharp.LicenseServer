@@ -48,11 +48,6 @@ namespace PostSharp.LicenseServer
 
                 // Parse requested product code.
                 string productCode = context.Request.QueryString["product"];
-                if (string.IsNullOrEmpty(productCode))
-                {
-                    this.SetError(400, "Missing query string argument: product.");
-                    return;
-                }
 
                 // Parse version.
                 string versionString = context.Request.QueryString["version"];

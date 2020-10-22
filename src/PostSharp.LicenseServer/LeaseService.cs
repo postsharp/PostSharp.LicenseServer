@@ -146,10 +146,10 @@ namespace PostSharp.LicenseServer
         public LicenseLease GetLicenseLease(Database db, string productCode, Version version, DateTime? buildDate, string machine, string userName, string authenticatedUserName, DateTime now, Dictionary<int, string> errors)
         {
             Settings settings = Settings.Default;
-            
+
             // Get suitable active licenses.
             License[] licenses = (from license in db.Licenses
-                                  where license.ProductCode == productCode && license.Priority >= 0
+                                  where (string.IsNullOrEmpty(productCode) || license.ProductCode == productCode) && license.Priority >= 0
                                   orderby license.Priority
                                   select license).ToArray();
 
