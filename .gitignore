@@ -3,4 +3,4 @@
 bin
 obj
 /.build
-/.vs
+**/.vs
