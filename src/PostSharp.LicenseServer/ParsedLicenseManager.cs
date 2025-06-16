@@ -9,6 +9,7 @@
 #endregion
 
 using System.Collections.Generic;
+using PostSharp.Platform.NetFramework;
 using PostSharp.Platform.Neutral;
 using PostSharp.Sdk.Extensibility.Licensing;
 using ParsedLicense = PostSharp.Sdk.Extensibility.Licensing.License;

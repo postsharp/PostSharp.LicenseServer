@@ -5,107 +5,10 @@ using PostSharp.Sdk.Extensibility.Licensing;
 using PostSharp.Sdk.Extensibility.Licensing.Helpers;
 using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace SharpCrafters.LicenseServer.Test
 {
-    class MemoryRegistryKey : IRegistryKey
-    {
-        public void Dispose()
-        {
-            throw new NotImplementedException();
-        }
-
-        public string[] GetSubKeyNames()
-        {
-            throw new NotImplementedException();
-        }
-
-        public IRegistryKey OpenSubKey(string subKey)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IRegistryKey OpenSubKey(string name, bool writable)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IRegistryKey CreateSubKey(string subKey)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void DeleteSubKey(string subKey)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void DeleteSubKey(string subKey, bool throwOnMissingSubKey)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void DeleteSubKeyTree(string subKey)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void DeleteSubKeyTree(string subKey, bool throwOnMissingSubKey)
-        {
-            throw new NotImplementedException();
-        }
-
-        public string[] GetValueNames()
-        {
-            throw new NotImplementedException();
-        }
-
-        public object GetValue(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public object GetValue(string name, object defaultValue)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetValue(string name, string value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetDWordValue(string name, int value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetQWordValue(string name, long value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void DeleteValue(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void DeleteValue(string name, bool throwOnMissingSubKey)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Close()
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool CanMonitorChanges => throw new NotImplementedException();
-
-        public SafeHandle Handle => throw new NotImplementedException();
-    }
     
     class ClientSimulator
     {
@@ -126,6 +29,9 @@ namespace SharpCrafters.LicenseServer.Test
             MessageSink messageSink = new MessageSink();
 
             IRegistryKey registryKey = new MemoryRegistryKey();
+
+            // Create a version-agnostic key, which is expected by LicenseServerClient.
+            _ = registryKey.SetValue("", "");
 
             using ( registryKey )
             {
@@ -178,10 +84,10 @@ namespace SharpCrafters.LicenseServer.Test
 
                                 Stopwatch stopwatch = Stopwatch.StartNew();
                                 lease = LicenseServerClient.TryGetLease( url, registryKey, VirtualDateTime.UtcNow.ToLocalTime(), messageSink );
-
+                                
                                 if ( lease == null )
                                 {
-                                    Console.WriteLine("Could not get a valid lease: lease is null");
+                                    Console.WriteLine("Could not get a valid lease: lease is null, downloading a new lease");
                                 }
                                 else if ( lease.EndTime < time )
                                 {
