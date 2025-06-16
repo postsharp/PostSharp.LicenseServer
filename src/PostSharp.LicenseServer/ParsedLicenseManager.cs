@@ -32,20 +32,24 @@ namespace PostSharp.LicenseServer
         public static ParsedLicense GetParsedLicense( string licenseKey )
         {
             ParsedLicense parsedLicense;
-            if ( !parsedLicenses.TryGetValue( licenseKey, out parsedLicense ) )
-            {
-                parsedLicense = ParsedLicense.Deserialize( licenseKey );
 
-                string errorDescription;
-                if ( parsedLicense == null || !parsedLicense.Validate( null, out errorDescription ) )
+            lock (parsedLicenses)
+            {
+                if (!parsedLicenses.TryGetValue(licenseKey, out parsedLicense))
                 {
-                    return null;
+                    parsedLicense = ParsedLicense.Deserialize(licenseKey);
+
+                    string errorDescription;
+                    if (parsedLicense == null || !parsedLicense.Validate(null, out errorDescription))
+                    {
+                        return null;
+                    }
+
+                    parsedLicenses.Add(licenseKey, parsedLicense);
                 }
 
-                parsedLicenses.Add( licenseKey, parsedLicense );
+                return parsedLicense;
             }
-
-            return parsedLicense;
         }
     }
     

@@ -30,9 +30,6 @@ namespace SharpCrafters.LicenseServer.Test
 
             IRegistryKey registryKey = new MemoryRegistryKey();
 
-            // Create a version-agnostic key, which is expected by LicenseServerClient.
-            _ = registryKey.SetValue("", "");
-
             using ( registryKey )
             {
                 LicenseLease lease = null;
@@ -78,7 +75,7 @@ namespace SharpCrafters.LicenseServer.Test
                                 Interlocked.Increment( ref waitingUsers );
                                 Console.WriteLine("{2} {0} on {3}: Acquiring lease; waiting users = {1}", user.AuthenticatedName, waitingUsers, VirtualDateTime.UtcNow.ToLocalTime(), machine);
 
-                                string url = Program.Url.TrimEnd('/') + string.Format("/Lease.ashx?user={0}&machine={1}&product={2}",
+                                string url = Program.Url.TrimEnd('/') + string.Format("/Lease.ashx?user={0}&machine={1}&product={2}&version=2025.1.0",
                                                      user.AuthenticatedName, machine,
                                                      LicensedProduct.Ultimate);
 
@@ -87,7 +84,19 @@ namespace SharpCrafters.LicenseServer.Test
                                 
                                 if ( lease == null )
                                 {
-                                    Console.WriteLine("Could not get a valid lease: lease is null, downloading a new lease");
+                                    Console.WriteLine("Could not get a valid lease: lease is null, downloading a new lease...");
+
+                                    lease = LicenseServerClient.TryDownloadLease(messageSink, url, registryKey);
+
+                                    if (lease == null) 
+                                    {
+                                        Console.WriteLine("Could not download a new lease.");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"Key {lease.LicenseString}:");
+                                        Console.WriteLine($"Leased until: {lease.EndTime}:");
+                                    }
                                 }
                                 else if ( lease.EndTime < time )
                                 {

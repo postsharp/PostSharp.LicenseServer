@@ -1,4 +1,8 @@
-﻿using System;
+﻿using PostSharp.Platform.Neutral;
+using PostSharp.Sdk.Extensibility;
+using PostSharp.Sdk.Extensibility.Licensing;
+using PostSharp.Sdk.User;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,9 +10,6 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Xml;
-using PostSharp.Sdk.Extensibility;
-using PostSharp.Sdk.Extensibility.Licensing;
-using PostSharp.Sdk.User;
 
 namespace SharpCrafters.LicenseServer.Test
 {
@@ -129,6 +130,7 @@ David,Bradway";
             if ( args.Length > 0 )
                 Url = args[0];
 
+            CommonDefaultSystemServices.Initialize();
             Messenger.Initialize();
             Messenger.Current.Message += ( sender, eventArgs ) => Console.WriteLine( VirtualDateTime.UtcNow.ToLocalTime().ToString() + ": " +
                 eventArgs.Message.MessageText );
