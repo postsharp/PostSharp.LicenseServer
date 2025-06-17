@@ -86,6 +86,7 @@ namespace SharpCrafters.LicenseServer.Test
                                 {
                                     Console.WriteLine("Could not get a valid lease: lease is null, downloading a new lease...");
 
+                                    // TODO: Uncomment this after change in PostSharp is released.
                                     lease = LicenseServerClient.TryDownloadLease(messageSink, url, registryKey);
 
                                     if (lease == null) 
