@@ -3,4 +3,6 @@
 bin
 obj
 /.build
-/.vs
+**/.vs
+*.slnLaunch.user
+*.csproj.user

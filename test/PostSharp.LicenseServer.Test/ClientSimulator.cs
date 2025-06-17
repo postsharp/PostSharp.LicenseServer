@@ -1,10 +1,11 @@
-﻿using System;
-using System.Diagnostics;
-using System.Threading;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
+using PostSharp.Platform;
 using PostSharp.Sdk;
 using PostSharp.Sdk.Extensibility.Licensing;
 using PostSharp.Sdk.Extensibility.Licensing.Helpers;
+using System;
+using System.Diagnostics;
+using System.Threading;
 
 namespace SharpCrafters.LicenseServer.Test
 {
@@ -27,7 +28,7 @@ namespace SharpCrafters.LicenseServer.Test
 
             MessageSink messageSink = new MessageSink();
 
-            RegistryKey registryKey = Registry.CurrentUser.CreateSubKey( string.Format( "SOFTWARE\\SharpCrafters\\PostSharp\\LicenseClient\\{0}", guid) );
+            IRegistryKey registryKey = new MemoryRegistryKey();
 
             using ( registryKey )
             {
@@ -74,16 +75,34 @@ namespace SharpCrafters.LicenseServer.Test
                                 Interlocked.Increment( ref waitingUsers );
                                 Console.WriteLine("{2} {0} on {3}: Acquiring lease; waiting users = {1}", user.AuthenticatedName, waitingUsers, VirtualDateTime.UtcNow.ToLocalTime(), machine);
 
-                                string url = Program.Url.TrimEnd('/') + string.Format("/Lease.ashx?user={0}&machine={1}&product={2}",
+                                string url = Program.Url.TrimEnd('/') + string.Format("/Lease.ashx?user={0}&machine={1}&product={2}&version=2025.1.0",
                                                      user.AuthenticatedName, machine,
-                                                     LicensedProduct.PostSharp30);
+                                                     LicensedProduct.Ultimate);
 
                                 Stopwatch stopwatch = Stopwatch.StartNew();
                                 lease = LicenseServerClient.TryGetLease( url, registryKey, VirtualDateTime.UtcNow.ToLocalTime(), messageSink );
-
+                                
                                 if ( lease == null )
                                 {
-                                    Console.WriteLine("Could not get a valid lease: lease is null");
+                                    Console.WriteLine("Could not get a valid lease: lease is null, downloading a new lease...");
+
+                                    // TODO: Uncomment after the following method is public in PostSharp (likely 2025.1.6 or later)
+                                    //       Upgrade dependencies.
+                                    //       Remove the throw.
+
+                                    //lease = LicenseServerClient.TryDownloadLease(messageSink, url, registryKey);
+
+                                    throw new Exception("Upgrade PostSharp to make these tests work (see above comment).");
+
+                                    if (lease == null) 
+                                    {
+                                        Console.WriteLine("Could not download a new lease.");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"Key {lease.LicenseString}:");
+                                        Console.WriteLine($"Leased until: {lease.EndTime}:");
+                                    }
                                 }
                                 else if ( lease.EndTime < time )
                                 {

@@ -9,6 +9,8 @@
 #endregion
 
 using System.Collections.Generic;
+using PostSharp.Platform.NetFramework;
+using PostSharp.Platform.Neutral;
 using PostSharp.Sdk.Extensibility.Licensing;
 using ParsedLicense = PostSharp.Sdk.Extensibility.Licensing.License;
 
@@ -18,24 +20,36 @@ namespace PostSharp.LicenseServer
     {
         private static readonly Dictionary<string, ParsedLicense> parsedLicenses = new Dictionary<string, ParsedLicense>();
 
+        static ParsedLicenseManager()
+        {
+            CommonDefaultSystemServices.Initialize();
+            NetFrameworkDefaultSystemServices.Initialize();
+        }
+            
+
 
         public static ParsedLicense GetParsedLicense( string licenseKey )
         {
             ParsedLicense parsedLicense;
-            if ( !parsedLicenses.TryGetValue( licenseKey, out parsedLicense ) )
-            {
-                parsedLicense = ParsedLicense.Deserialize( licenseKey );
 
-                string errorDescription;
-                if ( parsedLicense == null || !parsedLicense.Validate( null, out errorDescription ) )
+            lock (parsedLicenses)
+            {
+                if (!parsedLicenses.TryGetValue(licenseKey, out parsedLicense))
                 {
-                    return null;
+                    parsedLicense = ParsedLicense.Deserialize(licenseKey);
+
+                    string errorDescription;
+                    if (parsedLicense == null || !parsedLicense.Validate(null, out errorDescription))
+                    {
+                        return null;
+                    }
+
+                    parsedLicenses.Add(licenseKey, parsedLicense);
                 }
 
-                parsedLicenses.Add( licenseKey, parsedLicense );
+                return parsedLicense;
             }
-
-            return parsedLicense;
         }
     }
+    
 }
