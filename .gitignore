@@ -4,4 +4,5 @@ bin
 obj
 /.build
 **/.vs
-/PostSharp.LicenseServer.slnLaunch.user
+*.slnLaunch.user
+*.csproj.user

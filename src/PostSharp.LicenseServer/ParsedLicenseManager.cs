@@ -23,7 +23,6 @@ namespace PostSharp.LicenseServer
         static ParsedLicenseManager()
         {
             CommonDefaultSystemServices.Initialize();
-            // TODO: Add a missing NuGet package.
             NetFrameworkDefaultSystemServices.Initialize();
         }
             
