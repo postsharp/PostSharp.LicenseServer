@@ -1,4 +1,5 @@
 /packages
+/artifacts
 /*.suo
 bin
 obj
@@ -8,4 +9,7 @@ obj
 *.slnLaunch.user
 *.csproj.user
 *.DotSettings.user
-/artifacts
+*.db
+*.db-shm
+*.db-wal
+/App_Data

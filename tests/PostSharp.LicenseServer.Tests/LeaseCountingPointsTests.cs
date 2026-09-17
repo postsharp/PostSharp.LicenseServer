@@ -160,6 +160,30 @@ public sealed class LeaseCountingPointsTests
         Assert.All( points, p => Assert.Equal( "inside", p.Lease.UserName ) );
     }
 
+    /// <summary>
+    /// The timeline assumes a user never holds two open leases on the same machine at once, which
+    /// is an invariant the lease service maintains by reusing or prolonging a lease instead of
+    /// granting a second one. Data that breaks it is reported rather than silently miscounted,
+    /// because an under-count in a licensing audit is worse than a failure.
+    /// </summary>
+    [Fact]
+    public async Task GetLeaseCountingPoints_OverlappingLeasesOnOneMachine_AreReported()
+    {
+        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        License license = LicenseBuilder.Default().AddTo( context );
+
+        LeaseBuilder.For( license ).User( "alice" ).Machine( "desktop-1" )
+            .From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
+
+        LeaseBuilder.For( license ).User( "alice" ).Machine( "desktop-1" )
+            .From( TestClock.Days( 1 ) ).Lasting( 3 ).AddTo( context );
+
+        InvalidOperationException exception =
+            Assert.Throws<InvalidOperationException>( () => Timeline( context, license ) );
+
+        Assert.Contains( "which is not open", exception.Message, StringComparison.Ordinal );
+    }
+
     [Fact]
     public async Task GetLeaseCountingPoints_ReturnsToZeroAfterEveryLeaseEnds()
     {

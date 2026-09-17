@@ -1,7 +1,41 @@
+/* The license server is an internal administration tool. It follows the reader's colour scheme
+   rather than forcing one, so it stays legible in a browser set to dark. */
+:root {
+    color-scheme: light dark;
+
+    --background: #ffffff;
+    --foreground: #222222;
+    --muted: #666666;
+    --rule: #e0e0e0;
+    --rule-strong: #999999;
+    --accent: #58006e;
+    --danger: #b00020;
+    --panel: #f6f6f6;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #1b1b1f;
+        --foreground: #e8e8ea;
+        --muted: #a0a0a8;
+        --rule: #35353c;
+        --rule-strong: #5a5a66;
+        --accent: #c58fd8;
+        --danger: #ff8a95;
+        --panel: #26262c;
+    }
+}
+
 body {
     font-family: "Segoe UI", Arial, sans-serif;
     padding: 20px;
-    color: #222;
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+}
+
+a {
+    color: var(--accent);
 }
 
 h1 {
@@ -18,6 +52,8 @@ header img {
 
 hr {
     margin-top: 50px;
+    border: 0;
+    border-top: 1px solid var(--rule);
 }
 
 table {
@@ -27,21 +63,21 @@ table {
 td, th {
     padding: 10px;
     text-align: left;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--rule);
 }
 
 th {
-    border-bottom: 2px solid #999;
+    border-bottom: 2px solid var(--rule-strong);
 }
 
 .no-licenses {
     padding: 20px;
-    background: #f6f6f6;
-    border-left: 4px solid #58006e;
+    background: var(--panel);
+    border-left: 4px solid var(--accent);
 }
 
 .validation-error, .field-validation-error, .validation-summary-errors {
-    color: #b00020;
+    color: var(--danger);
 }
 
 .actions form {
@@ -52,7 +88,8 @@ th {
     float: right;
 }
 
-#usage-chart {
+#usage-chart-container {
+    position: relative;
     width: 100%;
     height: 400px;
 }
@@ -60,4 +97,8 @@ th {
 button, input[type="submit"] {
     padding: 6px 14px;
     cursor: pointer;
+}
+
+label {
+    color: var(--muted);
 }

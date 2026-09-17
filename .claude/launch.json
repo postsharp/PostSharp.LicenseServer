@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "PostSharp.LicenseServer",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/PostSharp.LicenseServer.Web"],
+      "port": 44670,
+      "url": "http://localhost:44670"
+    }
+  ]
+}

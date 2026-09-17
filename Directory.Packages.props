@@ -10,6 +10,7 @@
     <PackageVersion Include="PostSharp.Compiler.Common" Version="2025.1.5" />
     <PackageVersion Include="PostSharp.Compiler.Settings" Version="2025.1.5" />
     <PackageVersion Include="PostSharp.Compiler.Platforms" Version="2025.1.5" />
+    <PackageVersion Include="PostSharp.Compiler.Engine" Version="2025.1.5" />
   </ItemGroup>
 
   <ItemGroup Label="Runtime">

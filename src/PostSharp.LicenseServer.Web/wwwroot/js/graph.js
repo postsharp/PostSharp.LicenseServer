@@ -12,6 +12,11 @@
 
     var chart = JSON.parse(dataElement.textContent);
 
+    // Follow the page's colour scheme, so axis labels and gridlines stay legible in a dark browser.
+    var styles = getComputedStyle(document.documentElement);
+    Chart.defaults.color = styles.getPropertyValue("--foreground").trim() || "#222";
+    Chart.defaults.borderColor = styles.getPropertyValue("--rule").trim() || "#e0e0e0";
+
     var datasets = [{
         label: "Used",
         data: chart.used,

@@ -86,15 +86,19 @@ namespace SharpCrafters.LicenseServer.Test
                                 {
                                     Console.WriteLine("Could not get a valid lease: lease is null, downloading a new lease...");
 
-                                    // TODO: Uncomment after the following method is public in PostSharp (likely 2025.1.6 or later)
-                                    //       Upgrade dependencies.
-                                    //       Remove the throw.
+                                    // TODO: This simulator cannot run until a client can download a
+                                    //       lease. LicenseServerClient.TryDownloadLease is not public,
+                                    //       and the replacement client is being written in
+                                    //       SharpCrafters.Backstage, which this license server is to
+                                    //       be migrated to. Restore the call below, remove the throw,
+                                    //       and delete the pragma once one of the two is available.
 
                                     //lease = LicenseServerClient.TryDownloadLease(messageSink, url, registryKey);
 
                                     throw new Exception("Upgrade PostSharp to make these tests work (see above comment).");
 
-                                    if (lease == null) 
+#pragma warning disable CS0162 // Unreachable until the download call above is restored.
+                                    if (lease == null)
                                     {
                                         Console.WriteLine("Could not download a new lease.");
                                     }
@@ -103,6 +107,7 @@ namespace SharpCrafters.LicenseServer.Test
                                         Console.WriteLine($"Key {lease.LicenseString}:");
                                         Console.WriteLine($"Leased until: {lease.EndTime}:");
                                     }
+#pragma warning restore CS0162
                                 }
                                 else if ( lease.EndTime < time )
                                 {

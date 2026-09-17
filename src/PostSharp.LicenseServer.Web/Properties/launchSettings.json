@@ -2,7 +2,7 @@
   "profiles": {
     "PostSharp.LicenseServer": {
       "commandName": "Project",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "applicationUrl": "http://localhost:44670",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

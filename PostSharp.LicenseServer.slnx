@@ -4,6 +4,7 @@
     <Project Path="src/PostSharp.LicenseServer.Web/PostSharp.LicenseServer.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/PostSharp.LicenseServer.Simulator/PostSharp.LicenseServer.Simulator.csproj" />
     <Project Path="tests/PostSharp.LicenseServer.Tests/PostSharp.LicenseServer.Tests.csproj" />
   </Folder>
 </Solution>

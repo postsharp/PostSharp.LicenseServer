@@ -32,7 +32,7 @@ builder.Services
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
-builder.Services.AddLicenseServerDatabase( builder.Configuration );
+builder.Services.AddLicenseServerDatabase( builder.Configuration, builder.Environment );
 
 builder.Services.AddScoped<ILeaseRepository, LeaseRepository>();
 builder.Services.AddScoped<LeaseService>();
@@ -169,6 +169,18 @@ app.UseAuthorization();
 app.MapRazorPages();
 app.MapLicenseServerEndpoints();
 app.MapLegacyUrlRedirects();
+
+// On SQL Server the schema is created by Database/CreateTables.sql, which is the source of truth and
+// which an administrator runs deliberately. A SQLite database is created on demand, because it is
+// meant for evaluation and has no administrator to run a script.
+if ( string.Equals(
+        app.Configuration["LicenseServer:DatabaseProvider"],
+        "Sqlite",
+        StringComparison.OrdinalIgnoreCase ) )
+{
+    using IServiceScope scope = app.Services.CreateScope();
+    scope.ServiceProvider.GetRequiredService<LicenseServerDbContext>().Database.EnsureCreated();
+}
 
 // The administrative pages are the only way to add or revoke a license, so an open default deserves
 // more than a comment in a configuration file.
