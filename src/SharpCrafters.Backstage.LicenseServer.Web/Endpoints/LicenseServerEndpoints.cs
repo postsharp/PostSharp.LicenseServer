@@ -229,8 +229,11 @@ public static class LicenseServerEndpoints
 
                 await foreach ( Lease lease in leases.WithCancellation( cancellationToken ) )
                 {
-                    lease.Write( writer, true );
-                    await writer.WriteLineAsync();
+                    // The line is built in memory and written asynchronously. Writing the fields
+                    // straight to the writer makes it flush synchronously when its buffer fills, and
+                    // Kestrel refuses a synchronous write to a response body. One line is a hundred
+                    // bytes; it is the whole log that must not be assembled in memory.
+                    await writer.WriteLineAsync( lease.ToAuditLine( true ) );
                 }
             },
             "text/plain" );

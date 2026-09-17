@@ -56,6 +56,12 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
     /// </summary>
     public ILeaseLock LeaseLock { get; set; } = new InProcessLeaseLock();
 
+    /// <summary>
+    /// Gets the guard that makes the response body refuse a synchronous write, which a test writing
+    /// to the response body enables.
+    /// </summary>
+    public AsyncOnlyResponseBody ResponseBody { get; } = new();
+
     protected override void ConfigureWebHost( IWebHostBuilder builder )
     {
         builder.UseEnvironment( "Testing" );
@@ -109,6 +115,8 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
                         options.DefaultAuthenticateScheme = TestAuthenticationHandler.SchemeName;
                         options.DefaultChallengeScheme = TestAuthenticationHandler.SchemeName;
                     } );
+
+                services.AddSingleton<IStartupFilter>( this.ResponseBody );
 
                 services.AddLogging( logging => logging.SetMinimumLevel( LogLevel.Warning ) );
             } );

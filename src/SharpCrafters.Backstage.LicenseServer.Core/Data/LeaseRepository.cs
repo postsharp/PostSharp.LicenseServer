@@ -222,6 +222,12 @@ public sealed class LeaseRepository(
             .AsNoTracking()
             .ToList();
 
+        // A lease cancelled in the instant it was granted spans no time and belongs on no timeline.
+        // It has to go before the points are built rather than be tolerated afterwards: Close sorts
+        // before Open at the same instant, so its closing point would be processed first and its
+        // opening point would then raise the count for the rest of the window.
+        leases.RemoveAll( l => l.EndTime <= l.StartTime );
+
         // Ordering in memory gives a stable sort, so the timeline is reproducible. Close sorts
         // before Open at the same instant; see LeaseCountingPointKind.
         List<LeaseCountingPoint> allRecords = leases
@@ -234,42 +240,48 @@ public sealed class LeaseRepository(
             .ThenBy( p => p.Lease.LeaseId )
             .ToList();
 
-        Dictionary<string, List<string>> currentUsers = new( StringComparer.OrdinalIgnoreCase );
+        // How many open leases each user holds on each machine. The number of distinct machines is
+        // what a seat is counted from, so a user holding two leases on one machine occupies the same
+        // seat as a user holding one. Counting the leases rather than listing the machines is what
+        // makes the closing points balance the opening ones whatever the data: the list form removed
+        // the machine on the first close and then found nothing to remove on the second.
+        Dictionary<string, Dictionary<string, int>> currentUsers = new( StringComparer.OrdinalIgnoreCase );
 
         int leaseCount = 0;
 
         foreach ( LeaseCountingPoint record in allRecords )
         {
-            if ( !currentUsers.TryGetValue( record.Lease.UserName, out List<string>? machines ) )
+            if ( !currentUsers.TryGetValue( record.Lease.UserName, out Dictionary<string, int>? machines ) )
             {
-                machines = [];
+                machines = new Dictionary<string, int>( StringComparer.OrdinalIgnoreCase );
                 currentUsers.Add( record.Lease.UserName, machines );
             }
 
             int seatsBefore = SeatCounter.CountSeats( [machines.Count], this.settings.MachinesPerUser );
+            string machine = record.Lease.Machine;
 
             if ( record.Kind == LeaseCountingPointKind.Open )
             {
-                if ( !machines.Contains( record.Lease.Machine, StringComparer.OrdinalIgnoreCase ) )
-                {
-                    machines.Add( record.Lease.Machine );
-                }
+                machines[machine] = machines.GetValueOrDefault( machine ) + 1;
             }
-            else
+            else if ( machines.TryGetValue( machine, out int openLeases ) )
             {
-                string machine = record.Lease.Machine;
-                int index = machines.FindIndex( s => string.Equals( s, machine, StringComparison.OrdinalIgnoreCase ) );
-
-                if ( index >= 0 )
+                // The machine leaves the list when its last lease closes.
+                if ( openLeases > 1 )
                 {
-                    machines.RemoveAt( index );
+                    machines[machine] = openLeases - 1;
                 }
                 else
                 {
-                    throw new InvalidOperationException(
-                        $"Closing lease #{record.Lease.LeaseId} for machine {machine}, which is not open." );
+                    machines.Remove( machine );
                 }
             }
+
+            // A closing point with nothing to close is left alone. Both points are produced for every
+            // lease that remains, and an opening point now always sorts before its own closing point,
+            // so nothing reaches it; it is written this way rather than as a throw because the page
+            // that draws the timeline is a report, and an administrator looking at usage should not
+            // be answered with an error.
 
             int seatsAfter = SeatCounter.CountSeats( [machines.Count], this.settings.MachinesPerUser );
 

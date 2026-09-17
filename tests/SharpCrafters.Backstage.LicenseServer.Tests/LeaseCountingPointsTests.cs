@@ -161,13 +161,19 @@ public sealed class LeaseCountingPointsTests
     }
 
     /// <summary>
-    /// The timeline assumes a user never holds two open leases on the same machine at once, which
-    /// is an invariant the lease service maintains by reusing or prolonging a lease instead of
-    /// granting a second one. Data that breaks it is reported rather than silently miscounted,
-    /// because an under-count in a licensing audit is worse than a failure.
+    /// Two open leases held by one user on one machine occupy one seat, and the timeline still
+    /// returns to zero once both have ended.
     /// </summary>
+    /// <remarks>
+    /// The lease service normally prevents this by reusing or prolonging a lease instead of granting
+    /// a second one, and an earlier version of this test recorded the situation as data the timeline
+    /// was entitled to refuse. It is not: a server whose clock moves backwards -- a restart with
+    /// <c>TimeAcceleration</c> set, a correction from a time server, a restored snapshot -- grants a
+    /// second lease while the first is still open, and a load simulation produced exactly that within
+    /// minutes. The usage page answered with HTTP 500 for as long as the older lease ran.
+    /// </remarks>
     [Fact]
-    public async Task GetLeaseCountingPoints_OverlappingLeasesOnOneMachine_AreReported()
+    public async Task GetLeaseCountingPoints_TwoOpenLeasesOnOneMachine_CountAsOneSeat()
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
         License license = LicenseBuilder.Default().AddTo( context );
@@ -178,10 +184,54 @@ public sealed class LeaseCountingPointsTests
         LeaseBuilder.For( license ).User( "alice" ).Machine( "desktop-1" )
             .From( TestClock.Days( 1 ) ).Lasting( 3 ).AddTo( context );
 
-        InvalidOperationException exception =
-            Assert.Throws<InvalidOperationException>( () => Timeline( context, license ) );
+        List<LeaseCountingPoint> points = Timeline( context, license );
 
-        Assert.Contains( "which is not open", exception.Message, StringComparison.Ordinal );
+        Assert.Equal( 4, points.Count );
+        Assert.Equal( 1, points.Max( p => p.LeaseCount ) );
+        Assert.Equal( 0, points[^1].LeaseCount );
+    }
+
+    /// <summary>
+    /// The same user on two machines still occupies one seat at two machines per user, which is what
+    /// shows that the counting of duplicates did not turn into a count of leases.
+    /// </summary>
+    [Fact]
+    public async Task GetLeaseCountingPoints_TwoOpenLeasesOnTwoMachines_CountAsOneSeat()
+    {
+        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        License license = LicenseBuilder.Default().AddTo( context );
+
+        LeaseBuilder.For( license ).User( "alice" ).Machine( "desktop-1" )
+            .From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
+
+        LeaseBuilder.For( license ).User( "alice" ).Machine( "notebook-1" )
+            .From( TestClock.Days( 1 ) ).Lasting( 3 ).AddTo( context );
+
+        List<LeaseCountingPoint> points = Timeline( context, license );
+
+        Assert.Equal( 1, points.Max( p => p.LeaseCount ) );
+        Assert.Equal( 0, points[^1].LeaseCount );
+    }
+
+    /// <summary>
+    /// A third machine takes a second seat, at two machines per user.
+    /// </summary>
+    [Fact]
+    public async Task GetLeaseCountingPoints_ThreeOpenLeasesOnThreeMachines_CountAsTwoSeats()
+    {
+        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        License license = LicenseBuilder.Default().AddTo( context );
+
+        foreach ( string machine in new[] { "desktop-1", "notebook-1", "desktop-2" } )
+        {
+            LeaseBuilder.For( license ).User( "alice" ).Machine( machine )
+                .From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
+        }
+
+        List<LeaseCountingPoint> points = Timeline( context, license );
+
+        Assert.Equal( 2, points.Max( p => p.LeaseCount ) );
+        Assert.Equal( 0, points[^1].LeaseCount );
     }
 
     [Fact]
