@@ -8,30 +8,24 @@
     <script src="~/lib/chartjs/chart.umd.min.js" asp-append-version="true"></script>
 }
 
-<p class="toolbar">
-    <a asp-page="/Index">Back</a>
-</p>
+<div class="page-header">
+    <h2>License @Model.Id: @Model.Days-day usage history</h2>
 
-<h2>License @Model.Id: @Model.Days-day usage history</h2>
-
-<p>
-    @foreach ( int window in GraphModel.AllowedWindows )
-    {
-        if ( window != GraphModel.AllowedWindows[0] )
+    <p class="chart-windows">
+        @foreach ( int window in GraphModel.AllowedWindows )
         {
-            <text>| </text>
+            if ( window == Model.Days )
+            {
+                <span class="current">@window days</span>
+            }
+            else
+            {
+                <a asp-page="/Graph" asp-route-id="@Model.Id" asp-route-days="@window">@window days</a>
+            }
         }
-
-        if ( window == Model.Days )
-        {
-            <strong>@window days</strong>
-        }
-        else
-        {
-            <a asp-page="/Graph" asp-route-id="@Model.Id" asp-route-days="@window">@window days</a>
-        }
-    }
-</p>
+        &middot; <a asp-page="/Index">Back</a>
+    </p>
+</div>
 
 <div id="usage-chart-container">
     <canvas id="usage-chart"></canvas>

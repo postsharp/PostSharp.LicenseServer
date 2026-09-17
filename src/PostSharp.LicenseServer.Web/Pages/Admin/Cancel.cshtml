@@ -4,11 +4,10 @@
     ViewData["Title"] = "Cancel a lease";
 }
 
-<p class="toolbar">
-    <a asp-page="/Admin/Details" asp-route-id="@Model.Lease!.LicenseId">Back</a>
-</p>
-
-<h2>Cancel a lease</h2>
+<div class="page-header">
+    <h2>Cancel a lease</h2>
+    <p><a asp-page="/Admin/Details" asp-route-id="@Model.Lease!.LicenseId">Back</a></p>
+</div>
 
 <p>
     Cancel the lease of <strong>@Model.Lease!.UserName</strong> on

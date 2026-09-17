@@ -4,16 +4,13 @@
     ViewData["Title"] = "Licenses";
 }
 
-<p class="toolbar">
-    <a asp-page="/Admin/AddLicense">Add a license</a> |
-    <a asp-page="/Admin/Export">Export the audit log</a>
-</p>
-
-<h2>Licenses</h2>
+<div class="page-header">
+    <h2>Licenses</h2>
+</div>
 
 @if ( Model.Licenses.Count == 0 )
 {
-    <div class="no-licenses">
+    <div class="callout">
         <p>
             No license has been registered yet. <a asp-page="/Admin/AddLicense">Add a license key</a> to
             let this server serve leases.
@@ -22,7 +19,8 @@
 }
 else
 {
-    <table>
+    <div class="table-scroll">
+        <table>
         <thead>
         <tr>
             <th>License</th>
@@ -47,13 +45,17 @@ else
                 <td>@license.CurrentUsers</td>
                 <td>@license.GraceStartTime?.ToString( "d" )</td>
                 <td>@license.MaintenanceEndDate?.ToString( "d" )</td>
-                <td>@license.Status</td>
+                <td>
+                    <span class="status status--@(license.StatusModifier)">@license.Status</span>
+                </td>
                 <td>
                     <a asp-page="/Admin/Details" asp-route-id="@license.LicenseId">Details</a>
+                    &middot;
                     <a asp-page="/Graph" asp-route-id="@license.LicenseId">Usage</a>
                 </td>
             </tr>
         }
         </tbody>
-    </table>
+        </table>
+    </div>
 }

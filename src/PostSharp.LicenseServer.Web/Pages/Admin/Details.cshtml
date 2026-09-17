@@ -4,11 +4,10 @@
     ViewData["Title"] = $"License {Model.Id}";
 }
 
-<p class="toolbar">
-    <a asp-page="/Index">Back</a>
-</p>
-
-<h2>License @Model.Id</h2>
+<div class="page-header">
+    <h2>License @Model.Id</h2>
+    <p><a asp-page="/Index">Back</a></p>
+</div>
 
 <p>
     <strong>@Model.Leases.Count</strong> current lease(s), consuming
@@ -22,7 +21,8 @@
 }
 else
 {
-    <table>
+    <div class="table-scroll">
+        <table>
         <thead>
         <tr>
             <th>Lease</th>
@@ -48,12 +48,13 @@ else
             </tr>
         }
         </tbody>
-    </table>
+        </table>
+    </div>
 }
 
 <h3>Manage this license</h3>
 
-<p class="actions">
+<p class="actions panel">
     @if ( Model.IsDisabled )
     {
         <form method="post" asp-page-handler="Enable">

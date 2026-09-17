@@ -12,16 +12,18 @@
 
     var chart = JSON.parse(dataElement.textContent);
 
-    // Follow the page's colour scheme, so axis labels and gridlines stay legible in a dark browser.
+    // Take the axis and gridline colours from the design tokens, so the chart stays part of the
+    // page rather than a white box dropped onto it.
     var styles = getComputedStyle(document.documentElement);
-    Chart.defaults.color = styles.getPropertyValue("--foreground").trim() || "#222";
-    Chart.defaults.borderColor = styles.getPropertyValue("--rule").trim() || "#e0e0e0";
+    Chart.defaults.color = styles.getPropertyValue("--text-muted").trim() || "#a0a0a0";
+    Chart.defaults.borderColor = styles.getPropertyValue("--doc-table-line").trim() || "#2c1a4f";
+    Chart.defaults.font.family = styles.getPropertyValue("--font-body").trim() || "sans-serif";
 
     var datasets = [{
         label: "Used",
         data: chart.used,
-        borderColor: "#58006e",
-        backgroundColor: "rgba(88, 0, 110, 0.1)",
+        borderColor: "#973bfc",
+        backgroundColor: "rgba(151, 59, 252, 0.16)",
         fill: true,
         tension: 0.1,
         pointRadius: 0,
@@ -33,7 +35,7 @@
         datasets.push({
             label: "Authorized",
             data: chart.labels.map(function () { return chart.maximum; }),
-            borderColor: "#ffa500",
+            borderColor: "#38d5e4",
             borderDash: [6, 4],
             fill: false,
             pointRadius: 0
@@ -42,7 +44,7 @@
         datasets.push({
             label: "Grace",
             data: chart.labels.map(function () { return chart.grace; }),
-            borderColor: "#ff0000",
+            borderColor: "#ff5e45",
             borderDash: [2, 3],
             fill: false,
             pointRadius: 0

@@ -32,7 +32,12 @@ public sealed class IndexModel(
 
             summaries.Add(
                 parsedLicense == null
-                    ? new LicenseSummary { LicenseId = license.LicenseId, LicenseType = "INVALID" }
+                    ? new LicenseSummary
+                    {
+                        LicenseId = license.LicenseId,
+                        LicenseType = "INVALID",
+                        Status = "Invalid"
+                    }
                     : new LicenseSummary
                     {
                         LicenseId = license.LicenseId,
@@ -66,5 +71,15 @@ public sealed class IndexModel(
         public string? Status { get; init; }
 
         public DateTime? MaintenanceEndDate { get; init; }
+
+        /// <summary>
+        /// Gets the modifier that colours the status: green for an active license, orange for a key
+        /// that cannot be parsed, amber while the grace period runs.
+        /// </summary>
+        public string StatusModifier
+            => this.LicenseType == "INVALID" ? "invalid"
+                : this.GraceStartTime != null ? "grace"
+                : this.Status == "Active" ? "active"
+                : "disabled";
     }
 }
