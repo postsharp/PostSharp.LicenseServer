@@ -44,12 +44,36 @@ public sealed class BackstageLicenseParserTests
     }
 
     /// <summary>
-    /// The signature is what stops a customer from minting their own licenses, so a key signed by
-    /// anyone else must not be served.
+    /// A license key that SharpCrafters.Backstage issues for its own tests parses here too. This is
+    /// what shows that the server and the package agree on the whole of the format, and not only on
+    /// the parts a key built in this file happens to use.
     /// </summary>
     [Fact]
-    public void KeySignedByAnotherAuthority_IsRejected()
-        => Assert.Null( parser.TryParse( TestLicenseKeys.Builder().SignWithAnotherAuthority() ) );
+    public void KeyIssuedByTheBackstageTestProvider_IsParsed()
+    {
+        LicenseInfo? license = parser.TryParse( TestLicenseKeys.Keys.PostSharpUltimate );
+
+        Assert.NotNull( license );
+        Assert.Equal( "PostSharpUltimate", license.Product );
+        Assert.True( license.IsLicenseServerEligible );
+    }
+
+    /// <summary>
+    /// The signature is what stops a customer from minting their own licenses, so a key signed with a
+    /// key the authority does not hold must not be served.
+    /// </summary>
+    [Fact]
+    public void KeySignedWithAForgedKey_IsRejected()
+        => Assert.Null( parser.TryParse( TestLicenseKeys.Builder().SignWithAForgedKey() ) );
+
+    /// <summary>
+    /// A key whose signature names an authority nobody issued is an invalid key, not a crash. The
+    /// provider throws when it is asked for a key it does not hold, and an administrator pastes
+    /// license keys into a web form.
+    /// </summary>
+    [Fact]
+    public void KeySignedByAnUnknownAuthority_IsRejectedWithoutThrowing()
+        => Assert.Null( parser.TryParse( TestLicenseKeys.Builder().SignWithAnUnknownAuthority() ) );
 
     [Fact]
     public void UnsignedKeyOfATypeThatRequiresASignature_IsRejected()

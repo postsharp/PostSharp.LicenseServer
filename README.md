@@ -139,6 +139,13 @@ before opening the solution in an IDE or running `dotnet` directly.
 contents unpacked in `artifacts\app`, which is what the container image is made from. A public build
 also copies the archive to `artifacts\publish\public`, which is what the deployment uploads.
 
+To build against a local checkout of the licensing component instead of the published packages,
+point the dependency at it and build that repository first:
+
+```
+./Build.ps1 dependencies set local Backstage --path <path to the SharpCrafters.Backstage repository>
+```
+
 ### Running locally
 
 ```

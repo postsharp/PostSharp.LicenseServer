@@ -39,7 +39,22 @@ public sealed class BackstageLicenseParser( ILicensingAuthorityProvider? authori
         // The fields are checked before the signature, as the consumption path of a client does: a
         // key that carries a must-understand field this version does not know cannot be served,
         // whether or not the signature is valid.
-        if ( !data.ValidateFields( out _ ) || !data.TryVerifySignature( this.authorities, out _ ) )
+        if ( !data.ValidateFields( out _ ) )
+        {
+            return null;
+        }
+
+        // Verification asks the authority provider for the key the signature was created with, and a
+        // provider throws when it holds no key of that identifier. A license key is pasted into a web
+        // form by an administrator, so one naming an identifier nobody ever issued has to be reported
+        // as an invalid key rather than escape as an unhandled exception.
+        if ( data.RequiresSignature()
+             && (data.SignatureKeyId == null || !this.authorities.KeyIds.Contains( data.SignatureKeyId.Value )) )
+        {
+            return null;
+        }
+
+        if ( !data.TryVerifySignature( this.authorities, out _ ) )
         {
             return null;
         }

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using SharpCrafters.Backstage.Licensing;
 using SharpCrafters.Backstage.Licensing.Licenses;
+using SharpCrafters.Backstage.Testing;
 
 namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
@@ -10,40 +11,49 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 /// </summary>
 /// <remarks>
 /// <para>
-/// No license key signed by the production authority is present in this repository, and none can be:
-/// it is public and MIT-licensed. The keys are therefore signed with a key pair generated here, and
-/// the parser under test is given the public half of that pair. What this cannot cover is the
-/// production authority itself, whose public keys are constants of SharpCrafters.Backstage and are
-/// covered by the tests of that package.
+/// The keys are signed by the test licensing authority of SharpCrafters.Backstage, reached through
+/// <see cref="TestLicenseKeyProvider"/>. That authority generates its key pair in the current
+/// process, so a license key signed here is valid in this process and nowhere else -- which is what
+/// lets a public, MIT-licensed repository test the real signature path. What this cannot cover is
+/// the production authority itself, whose public keys are constants of SharpCrafters.Backstage and
+/// are covered by the tests of that package.
 /// </para>
 /// <para>
-/// The key pair is Elliptic Curve DSA on <c>nistP256</c>, which is the algorithm of every license key
-/// issued since 2026 and the only one available on every platform.
+/// <see cref="Authority"/> holds the same authority object that signs, so the tests verify against
+/// exactly what signed them rather than against a reconstruction of it.
 /// </para>
 /// </remarks>
 public static class TestLicenseKeys
 {
+    private static readonly TestLicenseKeyProvider provider = new();
+
     /// <summary>
-    /// An identifier outside the range of the production keys and of the test keys of Backstage, so
-    /// that a key signed here can never be mistaken for one of theirs.
+    /// The identifier of the key of the test authority. It is a constant of SharpCrafters.Backstage
+    /// but an internal one, so it is read back from a license key that the authority has signed.
     /// </summary>
-    private const byte authorityKeyId = 200;
-
-    private static readonly ILicensingAuthorityProvider signingAuthority;
+    private static readonly byte authorityKeyId;
 
     /// <summary>
-    /// Gets the authority that verifies the keys this class signs, holding the public key only. A
-    /// parser under test is constructed with it.
+    /// Gets the authority that verifies the keys this class signs, which is what a parser under test
+    /// is constructed with.
     /// </summary>
     public static ILicensingAuthorityProvider Authority { get; }
 
+    /// <summary>
+    /// Gets the ready-made license keys that SharpCrafters.Backstage issues for its own tests, one
+    /// per product and license type it sells.
+    /// </summary>
+    public static TestLicenseKeyProvider Keys => provider;
+
     static TestLicenseKeys()
     {
-        using ECDsa key = ECDsa.Create( ECCurve.NamedCurves.nistP256 );
-        ECParameters parameters = key.ExportParameters( true );
+        string probe = new LicenseKeyDataBuilder { LicenseId = 1, LicenseType = LicenseType.Business }
+            .SignAndSerialize( provider.Authority );
 
-        signingAuthority = new ExplicitLicensingAuthorityProvider( (authorityKeyId, ToXml( parameters, true )) );
-        Authority = new ExplicitLicensingAuthorityProvider( (authorityKeyId, ToXml( parameters, false )) );
+        LicenseKeyData.TryDeserialize( probe, out LicenseKeyData? data, out _ );
+        authorityKeyId = data!.SignatureKeyId!.Value;
+
+        Authority = new TestAuthorityProvider( provider.Authority, authorityKeyId );
     }
 
     /// <summary>
@@ -67,7 +77,7 @@ public static class TestLicenseKeys
     /// Signs and serializes a license key with the test authority.
     /// </summary>
     public static string Sign( this LicenseKeyDataBuilder builder )
-        => builder.SignAndSerialize( signingAuthority.GetAuthority( authorityKeyId ) );
+        => builder.SignAndSerialize( provider.Authority );
 
     /// <summary>
     /// Serializes a license key without signing it. Only the types that require no signature parse
@@ -76,23 +86,52 @@ public static class TestLicenseKeys
     public static string Unsigned( this LicenseKeyDataBuilder builder ) => builder.Serialize();
 
     /// <summary>
-    /// Signs a license key with a second key pair, which no parser under test is given the authority
-    /// of.
+    /// Signs a license key with a key of the test authority's identifier that the test authority does
+    /// not hold, which is a forgery: the parser looks the identifier up, finds the real key and the
+    /// signature does not verify against it.
     /// </summary>
-    public static string SignWithAnotherAuthority( this LicenseKeyDataBuilder builder )
+    public static string SignWithAForgedKey( this LicenseKeyDataBuilder builder )
+        => builder.SignAndSerialize( CreateStandaloneAuthority( authorityKeyId ) );
+
+    /// <summary>
+    /// Signs a license key with an authority the parser has never heard of, so that the identifier of
+    /// the signature matches no key it holds.
+    /// </summary>
+    /// <remarks>
+    /// The identifier is outside the range of the production keys and of the test keys of Backstage.
+    /// </remarks>
+    public static string SignWithAnUnknownAuthority( this LicenseKeyDataBuilder builder )
+        => builder.SignAndSerialize( CreateStandaloneAuthority( 200 ) );
+
+    private static LicensingAuthority CreateStandaloneAuthority( byte keyId )
     {
-        using ECDsa other = ECDsa.Create( ECCurve.NamedCurves.nistP256 );
+        using ECDsa key = ECDsa.Create( ECCurve.NamedCurves.nistP256 );
+        ECParameters parameters = key.ExportParameters( true );
 
-        var provider = new ExplicitLicensingAuthorityProvider(
-            (authorityKeyId, ToXml( other.ExportParameters( true ), true )) );
+        string xml = "<ECDSAKeyValue><Curve>nistP256</Curve>"
+                     + $"<X>{Convert.ToBase64String( parameters.Q.X! )}</X>"
+                     + $"<Y>{Convert.ToBase64String( parameters.Q.Y! )}</Y>"
+                     + $"<D>{Convert.ToBase64String( parameters.D! )}</D>"
+                     + "</ECDSAKeyValue>";
 
-        return builder.SignAndSerialize( provider.GetAuthority( authorityKeyId ) );
+        return new ExplicitLicensingAuthorityProvider( (keyId, xml) ).GetAuthority( keyId );
     }
 
-    private static string ToXml( ECParameters parameters, bool includePrivateValue )
-        => "<ECDSAKeyValue><Curve>nistP256</Curve>"
-           + $"<X>{Convert.ToBase64String( parameters.Q.X! )}</X>"
-           + $"<Y>{Convert.ToBase64String( parameters.Q.Y! )}</Y>"
-           + (includePrivateValue ? $"<D>{Convert.ToBase64String( parameters.D! )}</D>" : string.Empty)
-           + "</ECDSAKeyValue>";
+    /// <summary>
+    /// Answers with the single authority that signed, for the identifier that authority's key carries.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ExplicitLicensingAuthorityProvider"/> cannot be used for this, because it builds an
+    /// authority from the XML representation of a key and the key of the test authority is generated
+    /// in the process rather than written down.
+    /// </remarks>
+    private sealed class TestAuthorityProvider( LicensingAuthority authority, byte keyId ) : ILicensingAuthorityProvider
+    {
+        public IEnumerable<byte> KeyIds => [keyId];
+
+        public LicensingAuthority GetAuthority( byte id )
+            => id == keyId
+                ? authority
+                : throw new KeyNotFoundException( $"There is no test licensing authority key of identifier {id}." );
+    }
 }

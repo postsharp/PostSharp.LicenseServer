@@ -8,6 +8,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+
+    <!-- Signs the license keys the licensing tests parse, with the same test authority that
+         SharpCrafters.Backstage verifies them against. -->
+    <PackageReference Include="SharpCrafters.Backstage.Testing" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
