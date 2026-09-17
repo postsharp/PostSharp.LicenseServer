@@ -98,5 +98,13 @@ public sealed class LicenseServerOptions
     /// </summary>
     public LeaseLockMode LeaseLockMode { get; set; } = LeaseLockMode.InProcess;
 
+    /// <summary>
+    /// Gets or sets the licensing authorities whose license keys this server accepts besides the
+    /// production one. It exists so that a load simulation can be run against license keys that
+    /// nobody sells, and the server refuses to start with a value here outside the Development
+    /// environment.
+    /// </summary>
+    public TestLicensingAuthority[] TestLicensingAuthorities { get; set; } = [];
+
     public TimeSpan MutexTimeoutSpan => TimeSpan.FromSeconds( this.MutexTimeout );
 }

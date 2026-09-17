@@ -32,8 +32,8 @@ builder.Services.AddLicenseServerDatabase( builder.Configuration, builder.Enviro
 builder.Services.AddScoped<ILeaseRepository, LeaseRepository>();
 builder.Services.AddScoped<LeaseService>();
 
-builder.Services.AddSingleton<ILicenseParser>(
-    _ => new CachingLicenseParser( new BackstageLicenseParser() ) );
+IReadOnlyList<byte> testLicensingAuthorities =
+    builder.Services.AddLicenseServerLicensing( builder.Configuration, builder.Environment );
 
 builder.Services.AddSingleton<ILicenseServerVersion, BackstageServerVersion>();
 builder.Services.AddSingleton<ILeaseSerializer, LeaseSerializer>();
@@ -189,6 +189,14 @@ if ( authenticationScheme == AuthenticationRegistration.None )
         "Authentication is disabled, so leases will not record who requested them. Set {Setting} to "
         + "\"Negotiate\" on a host that is joined to your domain.",
         "Authentication:Scheme" );
+}
+
+if ( testLicensingAuthorities.Count > 0 )
+{
+    app.Logger.LogWarning(
+        "This server accepts license keys signed by the test licensing authorities {KeyIds} besides the "
+        + "production one. This is a test configuration and must not be used in production.",
+        string.Join( ", ", testLicensingAuthorities ) );
 }
 
 app.Run();

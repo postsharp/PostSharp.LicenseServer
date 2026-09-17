@@ -124,6 +124,30 @@ rows already written, but it does start a new chain.
 | Setting | Default | Meaning |
 |---|---|---|
 | `LicenseServer:TimeAcceleration` | 1 | How much faster than real time the server's clock runs. |
+| `LicenseServer:TestLicensingAuthorities` | empty | Licensing authorities whose license keys a development server accepts besides the production one. |
 
-Leave this at 1. Any other value exists so that a multi-day licensing scenario can be replayed in
-minutes against a test server, and the server warns at startup when it is set.
+Leave `TimeAcceleration` at 1. Any other value exists so that a multi-day licensing scenario can be
+replayed in minutes against a test server, and the server warns at startup when it is set.
+
+`TestLicensingAuthorities` exists so that a load simulation can be run against license keys that
+nobody sells. Each entry carries the identifier that the signature of a license key names and the
+public half of the key pair, in the XML representation that SharpCrafters.Backstage reads:
+
+```json
+{
+  "LicenseServer": {
+    "TestLicensingAuthorities": [
+      {
+        "KeyId": 200,
+        "PublicKey": "<ECDSAKeyValue><Curve>nistP256</Curve><X>…</X><Y>…</Y></ECDSAKeyValue>"
+      }
+    ]
+  }
+}
+```
+
+The identifier must differ from the identifiers of the production keys, which are 0, 1 and 2, and
+the server refuses to start on a duplicate. It also refuses to start with this setting outside the
+Development environment: whoever holds the private half of the pair can mint license keys that a
+server configured this way honours. Keep the private half out of source control, and configure the
+public half through user secrets rather than through `appsettings.json`.
