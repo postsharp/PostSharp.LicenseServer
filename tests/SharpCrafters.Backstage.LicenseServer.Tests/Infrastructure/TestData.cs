@@ -58,6 +58,11 @@ public sealed class LicenseBuilder
         return this;
     }
 
+    /// <summary>
+    /// Gets the priority of the license, which is negative when the license is disabled.
+    /// </summary>
+    public int Priority => this.priority;
+
     public LicenseBuilder WithPriority( int value )
     {
         this.priority = value;

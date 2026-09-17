@@ -6,8 +6,56 @@
 
 <div class="page-header">
     <h2>License @Model.Id</h2>
-    <p><a asp-page="/Index">Back</a></p>
+
+    <div class="page-header__actions">
+        @* A <details> element and not a scripted menu: it opens, closes and takes the keyboard on its
+           own, so the actions stay reachable when the script does not load. *@
+        <details class="menu" data-menu>
+            <summary class="btn btn--small">Manage</summary>
+
+            <div class="menu__items">
+                @if ( Model.IsDisabled )
+                {
+                    <form method="post" asp-page-handler="Enable" asp-route-id="@Model.Id"
+                          data-confirm="Enable license @Model.Id?"
+                          data-confirm-detail="The license serves new leases again."
+                          data-confirm-action="Enable">
+                        <button type="submit">Enable</button>
+                    </form>
+
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Id"
+                          data-confirm="Delete license @Model.Id?"
+                          data-confirm-detail="The license and the leases it has granted are removed from the database, including from the audit log. This cannot be undone."
+                          data-confirm-action="Delete"
+                          data-confirm-destructive="true">
+                        <button type="submit" class="is-destructive">Delete</button>
+                    </form>
+                }
+                else
+                {
+                    <form method="post" asp-page-handler="Disable" asp-route-id="@Model.Id"
+                          data-confirm="Disable license @Model.Id?"
+                          data-confirm-detail="The license serves no new lease. The leases it has already granted run until they expire. A disabled license can then be deleted."
+                          data-confirm-action="Disable">
+                        <button type="submit">Disable</button>
+                    </form>
+                }
+            </div>
+        </details>
+
+        <a asp-page="/Index">Back</a>
+    </div>
 </div>
+
+@if ( Model.IsDisabled )
+{
+    <div class="callout callout--warning">
+        <p>
+            This license is disabled: it serves no new lease. The leases it has already granted run
+            until they expire.
+        </p>
+    </div>
+}
 
 <p>
     <strong>@Model.Leases.Count</strong> current lease(s), consuming
@@ -58,28 +106,20 @@ else
     </div>
 }
 
-<h3>Manage this license</h3>
+@* Filled in from the action the administrator chose. Without a script this dialog is never shown and
+   the action runs on the first click, which is how the page behaved before it existed. *@
+<dialog id="confirm-dialog" class="dialog" aria-labelledby="confirm-title">
+    <form method="dialog">
+        <h3 id="confirm-title"></h3>
+        <p id="confirm-detail"></p>
 
-@* A div and not a paragraph: a paragraph cannot contain a form, so the browser closed it at the
-   first form and left an empty panel behind, with the buttons outside it. *@
-<div class="actions panel">
-    @if ( Model.IsDisabled )
-    {
-        <form method="post" asp-page-handler="Enable">
-            <button type="submit">Enable</button>
-        </form>
+        <div class="actions actions--end">
+            <button type="submit" value="cancel" class="btn--transparent">Keep it</button>
+            <button type="submit" value="confirm" data-confirm-ok></button>
+        </div>
+    </form>
+</dialog>
 
-        <form method="post" asp-page-handler="Delete"
-              onsubmit="return confirm('Delete this license and all of its leases? This cannot be undone.');">
-            <button type="submit">Delete</button>
-        </form>
-    }
-    else
-    {
-        <form method="post" asp-page-handler="Disable">
-            <button type="submit">Disable</button>
-        </form>
-
-        <p class="note">A disabled license serves no new lease, and can then be deleted.</p>
-    }
-</div>
+@section Scripts {
+    <script src="~/js/admin-actions.js" asp-append-version="true"></script>
+}

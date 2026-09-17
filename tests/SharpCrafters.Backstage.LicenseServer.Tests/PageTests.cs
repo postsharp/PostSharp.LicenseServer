@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using SharpCrafters.Backstage.LicenseServer.Data;
 using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
@@ -18,6 +19,16 @@ public sealed partial class PageTests : IDisposable
     /// </summary>
     [GeneratedRegex( @"\s+" )]
     private static partial Regex Whitespace();
+
+    /// <summary>
+    /// Captures the action of a form and its contents, so that a test can submit it the way a browser
+    /// would.
+    /// </summary>
+    [GeneratedRegex( "<form[^>]*action=\"([^\"]+)\"[^>]*>(.*?)</form>", RegexOptions.Singleline )]
+    private static partial Regex Form();
+
+    [GeneratedRegex( "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"" )]
+    private static partial Regex AntiforgeryToken();
 
     public void Dispose() => this.application.Dispose();
 
@@ -90,6 +101,77 @@ public sealed partial class PageTests : IDisposable
             body,
             StringComparison.Ordinal );
     }
+    /// <summary>
+    /// The actions that change a license sit in one menu at the top of the page, and each of them
+    /// carries the text of the confirmation it asks for before it runs.
+    /// </summary>
+    [Fact]
+    public async Task Details_OffersItsActionsInAMenu()
+    {
+        this.application.AddLicense( LicenseBuilder.Default().WithLicenseId( 3 ) );
+        HttpClient client = this.application.CreateClient();
+
+        string body = await client.GetStringAsync( "/Admin/Details?id=3" );
+
+        Assert.Contains( ">Manage</summary>", body, StringComparison.Ordinal );
+        Assert.Contains( "handler=Disable", body, StringComparison.Ordinal );
+        Assert.Contains( "data-confirm=\"Disable license 3?\"", body, StringComparison.Ordinal );
+
+        // An enabled license is not offered for deletion: it is disabled first.
+        Assert.DoesNotContain( "handler=Delete", body, StringComparison.Ordinal );
+    }
+
+    /// <summary>
+    /// A disabled license says so on the page itself, because the menu that holds the state is closed
+    /// until the administrator opens it.
+    /// </summary>
+    [Fact]
+    public async Task Details_DisabledLicense_SaysSoAndOffersToEnableOrDeleteIt()
+    {
+        this.application.AddLicense( LicenseBuilder.Default().WithLicenseId( 3 ).WithPriority( -1 ) );
+        HttpClient client = this.application.CreateClient();
+
+        string body = Whitespace().Replace( await client.GetStringAsync( "/Admin/Details?id=3" ), " " );
+
+        Assert.Contains( "This license is disabled: it serves no new lease.", body, StringComparison.Ordinal );
+        Assert.Contains( "handler=Enable", body, StringComparison.Ordinal );
+        Assert.Contains( "handler=Delete", body, StringComparison.Ordinal );
+    }
+    /// <summary>
+    /// The action posts against the license the page is about. The license is named in the query
+    /// string, which a form does not inherit from the page that contains it, so an action that does
+    /// not name it again reaches no license at all.
+    /// </summary>
+    [Fact]
+    public async Task Details_Disable_DisablesThatLicense()
+    {
+        this.application.AddLicense( LicenseBuilder.Default().WithLicenseId( 3 ) );
+
+        HttpResponseMessage response = await this.SubmitDetailsActionAsync( 3, "handler=Disable" );
+
+        Assert.Equal( HttpStatusCode.Found, response.StatusCode );
+
+        using LicenseServerDbContext db = this.application.CreateDbContext();
+
+        Assert.True( db.Licenses.Single( l => l.LicenseId == 3 ).Priority < 0 );
+    }
+
+    [Fact]
+    public async Task Details_Delete_RemovesThatLicense()
+    {
+        this.application.AddLicense( LicenseBuilder.Default().WithLicenseId( 3 ).WithPriority( -1 ) );
+        this.application.AddLicense( LicenseBuilder.Default().WithLicenseId( 4 ) );
+
+        HttpResponseMessage response = await this.SubmitDetailsActionAsync( 3, "handler=Delete" );
+
+        Assert.Equal( HttpStatusCode.Found, response.StatusCode );
+
+        using LicenseServerDbContext db = this.application.CreateDbContext();
+
+        Assert.Equal( [4], db.Licenses.Select( l => l.LicenseId ).ToArray() );
+    }
+
+
 
     [Fact]
     public async Task Details_UnknownLicense_Returns404()
@@ -206,6 +288,29 @@ public sealed partial class PageTests : IDisposable
         HttpClient client = this.application.CreateClient();
 
         Assert.Equal( HttpStatusCode.NotFound, ( await client.GetAsync( "/Admin/GenerateDemoData" ) ).StatusCode );
+    }
+
+    /// <summary>
+    /// Submits one of the management forms of the details page as a browser would, with the action and
+    /// the antiforgery token the page itself supplies.
+    /// </summary>
+    private async Task<HttpResponseMessage> SubmitDetailsActionAsync( int licenseId, string handler )
+    {
+        HttpClient client = this.application.CreateClient(
+            new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { AllowAutoRedirect = false } );
+
+        string page = await client.GetStringAsync( $"/Admin/Details?id={licenseId}" );
+
+        Match form = Form().Matches( page ).SingleOrDefault( m => m.Groups[1].Value.Contains( handler, StringComparison.Ordinal ) )
+                     ?? throw new InvalidOperationException( $"The page has no form posting to {handler}." );
+
+        Match token = AntiforgeryToken().Match( form.Groups[2].Value );
+        Assert.True( token.Success, "The form carries no antiforgery token." );
+
+        return await client.PostAsync(
+            WebUtility.HtmlDecode( form.Groups[1].Value ),
+            new FormUrlEncodedContent(
+                new Dictionary<string, string> { ["__RequestVerificationToken"] = token.Groups[1].Value } ) );
     }
 
     private static string ExtractChartData( string html )

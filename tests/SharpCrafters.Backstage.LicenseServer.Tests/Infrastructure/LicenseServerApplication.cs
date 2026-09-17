@@ -145,6 +145,7 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
             LicenseId = info.LicenseId,
             LicenseKey = key,
             ProductCode = info.Product,
+            Priority = builder.Priority,
             CreatedOn = TestClock.Origin
         };
 

@@ -194,6 +194,13 @@ main {
     flex-wrap: wrap;
 }
 
+/* The link and the menu that act on the page, kept together at its top right. */
+.page-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
 .site-footer {
     max-width: var(--container);
     margin: 0 auto;
@@ -295,6 +302,103 @@ input[type="submit"]:hover {
     line-height: 1;
 }
 
+/* --- Menus -------------------------------------------------------------- */
+
+/* A button that opens a short list of actions. The button is the <summary> of a <details> element,
+   which opens and closes without a script. */
+.menu {
+    position: relative;
+}
+
+.menu > summary {
+    list-style: none;
+    user-select: none;
+}
+
+.menu > summary::-webkit-details-marker {
+    display: none;
+}
+
+.menu > summary::after {
+    content: " \25BE";
+}
+
+/* The list floats over the page rather than moving what is under it. */
+.menu__items {
+    position: absolute;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    min-width: 220px;
+    margin-top: 4px;
+    padding: 6px;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.menu__items form {
+    margin: 0;
+}
+
+/* An item reads as a line of the list, not as a button of its own, until it is pointed at. */
+.menu__items button {
+    width: 100%;
+    padding: 8px 12px;
+    line-height: var(--lh-normal);
+    font-weight: var(--fw-normal);
+    text-align: left;
+    text-transform: none;
+    letter-spacing: normal;
+    background-color: transparent;
+    border-color: transparent;
+    transition: background-color var(--transition-fast) ease;
+}
+
+.menu__items button:hover {
+    background-color: var(--purple-medium-1);
+    border-color: transparent;
+}
+
+/* An action that destroys data, wherever it is offered. */
+.is-destructive {
+    color: var(--orange);
+}
+
+/* --- Dialogs ------------------------------------------------------------- */
+
+.dialog {
+    max-width: 480px;
+    padding: 24px;
+    background: var(--doc-content-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    color: var(--text-body);
+}
+
+.dialog::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.dialog h3 {
+    margin-top: 0;
+}
+
+.dialog form {
+    margin: 0;
+}
+
+/* The button that carries out a destructive action, where orange text on the purple of a button
+   would not be legible. */
+.dialog .is-destructive,
+.dialog .is-destructive:hover {
+    color: var(--ink);
+    background-color: var(--orange);
+    border-color: var(--orange);
+}
+
 /* --- Forms -------------------------------------------------------------- */
 
 label {
@@ -352,6 +456,12 @@ input:focus, select:focus, textarea:focus {
 
 .actions .note {
     margin: 0;
+}
+
+/* The buttons of a dialog, which sit at its end rather than at its start. */
+.actions--end {
+    justify-content: flex-end;
+    margin-top: 16px;
 }
 
 /* An explanation of a term used just above it: present, but quieter than what it explains. */
@@ -428,6 +538,13 @@ input:focus, select:focus, textarea:focus {
     h2 { font-size: 24px; }
 
     .page-header { gap: 8px; }
+
+    /* The header wraps here, which puts the menu button at the left of the page: the list opens
+       under its left edge rather than off the screen. */
+    .menu__items {
+        right: auto;
+        left: 0;
+    }
 
     /* A wide table scrolls inside its own box instead of widening the page. */
     .table-scroll { overflow-x: auto; }
