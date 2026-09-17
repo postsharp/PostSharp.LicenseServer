@@ -31,13 +31,18 @@ such a URL.
 
 ### Authentication
 
-The server answers an anonymous request by default, which is how it has always shipped. A client
-sends the credentials of the current user unless it is told otherwise, because an on-premises server
-published by IIS with Windows authentication answers 401 to an anonymous request. An installation
-that enables Windows authentication therefore records who borrowed each lease.
+A lease request is anonymous by design. The server answers one that carries no credentials, and that
+is how the protocol is meant to be used. A client sends the credentials of the current user all the
+same, unless it is told otherwise, because a server published by IIS with Windows authentication
+answers 401 to an anonymous request. When credentials do arrive, the server records who borrowed each
+lease.
+
+Authentication is there to gate the administrative interface. The pages under `/Admin` and the audit
+log export are the part that needs closing, and securing them is the administrator's responsibility;
+see [configuration.md](configuration.md).
 
 Setting `LicenseServer:RequireAuthenticatedLeaseRequests` makes the server refuse an anonymous lease
-request. See [configuration.md](configuration.md).
+request as well. It is off by default.
 
 The protocol carries the name of the user and the name of the machine in the query string, so a
 server reached over plain HTTP transmits both in cleartext. A client warns about that and serves the
@@ -71,10 +76,14 @@ identifier. The hash distinguishes two machines that carry the same name, which 
 virtual machines and with build agents created from an image.
 
 The suffix is load-bearing on the server side as well. Before the server compares a machine name to
-its list of build servers it strips a trailing `-` followed by hexadecimal digits, so
-`buildagent-1f2e` matches the configured name `buildagent`. A machine name that legitimately ends in
-a hyphen and hexadecimal digits is therefore shortened as well, which is a limitation of the format
-rather than of this implementation.
+its list of build servers it strips one trailing `-` followed by hexadecimal digits, so
+`buildagent-1f2e` matches the configured name `buildagent`. Exactly one group is removed and every
+client appends the hash, so a machine whose own name ends in hexadecimal keeps it: `build-01` arrives
+as `build-01-1f2e` and is compared as `build-01`.
+
+The server has to find the hash by its shape, because the name and the hash travel in one argument.
+Sending them separately would remove the guess, and could only be added beside this argument rather
+than in place of it, since deployed clients send what they send.
 
 #### The version argument
 

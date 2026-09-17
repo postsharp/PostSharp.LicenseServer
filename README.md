@@ -61,9 +61,12 @@ anything other than a trial.
 3. Unpack `SharpCrafters.Backstage.LicenseServer.<version>.zip` into the directory of an IIS application.
 4. Edit `appsettings.json`: set the connection string, the notification e-mail addresses and the
    SMTP server. The settings are described in [docs/configuration.md](docs/configuration.md).
-5. In IIS Manager, enable **Windows Authentication** on the application and disable
-   **Anonymous Authentication** if you want every lease request to be attributed to a user.
-6. Browse to the application and add your license key.
+5. In IIS Manager, enable Windows Authentication on the application if you want every lease request
+   to be attributed to a user. Lease requests are served anonymously either way.
+6. Restrict the administrative pages. They are open by default, and closing them is your
+   responsibility; see
+   [Securing the administrative pages](docs/configuration.md#securing-the-administrative-pages).
+7. Browse to the application and add your license key.
 
 ## Installing elsewhere
 

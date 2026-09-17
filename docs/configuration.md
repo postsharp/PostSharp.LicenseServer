@@ -93,10 +93,40 @@ Windows, and `None` elsewhere, and logs which one it chose. Set the value explic
 care about: guessing wrong is quiet rather than loud, because a server that authenticates nobody
 still serves leases perfectly well — it just cannot say who took them.
 
-**Both default to open**, which is how the license server has always shipped, so that an upgrade
-cannot lock an administrator out of their own server. The administrative pages are the only way to
-add or revoke a license, so setting `AdminRoles` is worth doing; until it is set, the server says so
-in its log every time it starts.
+### Securing the administrative pages
+
+Securing the administrative pages is the administrator's responsibility. The server does not do it on
+its own: `AdminRoles` and `RequireAuthenticatedLeaseRequests` both default to open, which is how the
+license server has always shipped, so that an upgrade cannot lock an administrator out of their own
+server. The server writes a warning to its log at every start until `AdminRoles` is set.
+
+Closing them is worth doing. The administrative pages are the only way to add or revoke a license,
+and the export at `/Admin/Export.ashx` hands over the whole audit log. There are two ways to close
+them, and they can be combined.
+
+The first is `LicenseServer:AdminRoles`. The check covers every page under `/Admin` and the export
+endpoint. It needs an authentication scheme that supplies the Windows groups, so it works with
+`IISIntegrated` and with `Negotiate`, and not with `None`.
+
+The second is to restrict the path at the web server, which works whatever the scheme. Under IIS,
+enable Windows authentication on the site and add a URL authorization rule for the `Admin` path to
+the `web.config` of the application, which is in the published output:
+
+```xml
+<location path="Admin">
+  <system.webServer>
+    <security>
+      <authorization>
+        <remove users="*" roles="" verbs="" />
+        <add accessType="Allow" roles="DOMAIN\PostSharp Administrators" />
+      </authorization>
+    </security>
+  </system.webServer>
+</location>
+```
+
+This needs the URL Authorization role service of IIS, which is not installed by default. Behind any
+other web server, and in a container, restrict the path in whatever sits in front of the application.
 
 ## Concurrency
 
