@@ -5,7 +5,8 @@ This repository contains the source code and releases of PostSharp License Serve
 The use of the license server is optional. Since all commercial licenses are floating ones,
 the license server can help teams knowing how many licenses they actually use.
 
-The license server is an ASP.NET Core application with an MS SQL back-end.
+The license server is an ASP.NET Core application with an MS SQL back-end. It runs on Windows behind
+IIS, and on Linux or macOS under its own process or in a container.
 
 We at PostSharp consider that it is the customer's sole responsibility to respect the license agreement, and this is why we are providing the source code of the license server. Note that the use of licenses keys [is audited anyway](http://doc.postsharp.net/license-audit); if this is not an option for your organization, you can ask the PostSharp sales team for a license key with audit waiver.
 
@@ -22,7 +23,20 @@ You can download the latest release from https://github.com/postsharp/PostSharp.
 * [Installing the license server](http://doc.postsharp.net/license-server-admin).
 * [Using the license server](http://doc.postsharp.net/license-server).
 
-## Installing
+## Trying it out
+
+The quickest way to see the license server working, on any machine with Docker, is the container
+deployment. It starts the server, a SQL Server database and a job that creates the schema:
+
+```
+docker compose up --build
+```
+
+Then open http://localhost:8080 and add your license key. See
+[docs/docker.md](docs/docker.md) for what it contains and what to change before using it for
+anything other than a trial.
+
+## Installing on IIS
 
 ### Requirements
 
@@ -40,6 +54,26 @@ You can download the latest release from https://github.com/postsharp/PostSharp.
 5. In IIS Manager, enable **Windows Authentication** on the application and disable
    **Anonymous Authentication** if you want every lease request to be attributed to a user.
 6. Browse to the application and add your license key.
+
+## Installing elsewhere
+
+The release package is portable: the same zip runs wherever the .NET 10 runtime does.
+
+1. Install the [.NET 10 runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
+   (`aspnetcore-runtime-10.0`).
+2. Create the database and run `Database/CreateTables.sql` against it.
+3. Unpack the zip, edit `appsettings.json`, and run it:
+
+   ```
+   dotnet PostSharp.LicenseServer.dll
+   ```
+
+Two settings usually need changing away from Windows. The connection string cannot use
+`Integrated Security=True` unless the host is joined to the domain, so use a SQL Server login or a
+managed identity instead. And Windows authentication needs Kerberos, so either join the host to the
+domain and set `Authentication:Scheme` to `Negotiate`, or set it to `None` and accept that leases
+will not record who requested them. Both are covered in
+[docs/configuration.md](docs/configuration.md).
 
 ## Upgrading from version 2025.1 or earlier
 

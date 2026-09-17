@@ -1,4 +1,3 @@
-﻿using Microsoft.Win32;
 using PostSharp.Platform;
 using PostSharp.Sdk;
 using PostSharp.Sdk.Extensibility.Licensing;

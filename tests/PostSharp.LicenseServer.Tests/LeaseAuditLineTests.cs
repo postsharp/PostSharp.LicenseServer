@@ -1,4 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using PostSharp.LicenseServer.Data;
+using PostSharp.LicenseServer.Tests.Infrastructure;
 
 namespace PostSharp.LicenseServer.Tests;
 
@@ -64,29 +67,40 @@ public sealed class LeaseAuditLineTests
     }
 
     /// <summary>
-    /// Timestamps must be absolute. The legacy implementation serialized values whose
-    /// <see cref="DateTimeKind"/> was <see cref="DateTimeKind.Unspecified"/> -- which is what SQL
-    /// Server returns -- in a mode that treated them as local time and shifted them, so the exported
-    /// file depended on the time zone of the machine that produced it.
+    /// Timestamps must be absolute, whatever time zone the server keeps.
+    /// </summary>
+    /// <remarks>
+    /// The legacy implementation serialized values whose <see cref="DateTimeKind"/> was
+    /// <see cref="DateTimeKind.Unspecified"/> -- which is what SQL Server returns -- in a mode that
+    /// treated them as local time and shifted them, so the exported file depended on the machine
+    /// that produced it.
+    /// </remarks>
+    [Fact]
+    public void Write_EmitsAbsoluteTimestamps()
+    {
+        string[] fields = CreateLease().ToAuditLine( false ).Split( ';' );
+
+        Assert.EndsWith( "Z", fields[3], StringComparison.Ordinal );
+        Assert.EndsWith( "Z", fields[4], StringComparison.Ordinal );
+    }
+
+    /// <summary>
+    /// A lease that has been through the database must still serialize as UTC. This is the half of
+    /// the guarantee that lives in the model rather than in <c>Lease.Write</c>.
     /// </summary>
     [Fact]
-    public void Write_IsIndependentOfTheServerTimeZone()
+    public async Task Write_AfterReload_StillEmitsUtc()
     {
-        string expected = CreateLease().ToAuditLine( false );
+        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        License license = LicenseBuilder.Default().AddTo( context );
+        Lease saved = LeaseBuilder.For( license ).From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
 
-        foreach ( string timeZoneId in new[] { "UTC", "Pacific Standard Time", "Tokyo Standard Time" } )
-        {
-            if ( !TryFindTimeZone( timeZoneId, out _ ) )
-            {
-                continue;
-            }
+        await using LicenseServerDbContext reader = context.CreateFreshContext();
+        Lease reloaded = await reader.Leases.SingleAsync( l => l.LeaseId == saved.LeaseId );
 
-            // The value carries its own UTC offset, so no ambient time zone can change it.
-            Assert.Equal( expected, CreateLease().ToAuditLine( false ) );
-        }
-
-        Assert.EndsWith( "Z", expected.Split( ';' )[3], StringComparison.Ordinal );
-        Assert.EndsWith( "Z", expected.Split( ';' )[4], StringComparison.Ordinal );
+        Assert.Equal( DateTimeKind.Utc, reloaded.StartTime.Kind );
+        Assert.Equal( DateTimeKind.Utc, reloaded.EndTime.Kind );
+        Assert.Equal( saved.ToAuditLine( false ), reloaded.ToAuditLine( false ) );
     }
 
     [Fact]
@@ -108,19 +122,4 @@ public sealed class LeaseAuditLineTests
         }
     }
 
-    private static bool TryFindTimeZone( string id, out TimeZoneInfo? timeZone )
-    {
-        try
-        {
-            timeZone = TimeZoneInfo.FindSystemTimeZoneById( id );
-
-            return true;
-        }
-        catch ( TimeZoneNotFoundException )
-        {
-            timeZone = null;
-
-            return false;
-        }
-    }
 }

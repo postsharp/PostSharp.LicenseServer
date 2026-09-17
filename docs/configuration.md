@@ -23,7 +23,20 @@ start. A relative path is resolved against the application directory, not agains
 working directory happens to be.
 
 Note that the modern SQL client encrypts connections by default. Against a server whose certificate
-the web server does not trust, add `Encrypt=False` to the connection string.
+the web server does not trust, add `Encrypt=False` to the connection string, or
+`TrustServerCertificate=True` to keep the encryption and skip only the certificate check.
+
+The default connection string uses `Integrated Security=True`, which authenticates as the Windows
+account the application runs under. That does not work on a host which is not joined to the domain,
+so off Windows use a SQL Server login:
+
+```
+Server=db.example.com,1433;Database=PostSharpLicenseServer;User Id=licenseserver;Password=...;TrustServerCertificate=True
+```
+
+Supply that as the environment variable
+`ConnectionStrings__SharpCrafters_LicenseServerConnectionString` rather than writing the password
+into `appsettings.json`.
 
 ## Licensing rules
 
@@ -54,9 +67,23 @@ logged and never denies a developer their license.
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `Authentication:Scheme` | `IISIntegrated` | `IISIntegrated` behind IIS, `Negotiate` for self-hosting. |
+| `Authentication:Scheme` | detected | `IISIntegrated`, `Negotiate` or `None`. See below. |
 | `LicenseServer:AdminRoles` | empty | The Windows groups allowed to reach the administrative pages, for example `["DOMAIN\\PostSharp Administrators"]`. |
 | `LicenseServer:RequireAuthenticatedLeaseRequests` | `false` | Whether a lease request must be authenticated. |
+
+The authentication scheme decides how the server learns who is borrowing a license, which is what it
+records in the `AuthenticatedUser` column of the audit log.
+
+| Scheme | Use it when |
+|---|---|
+| `IISIntegrated` | The application is hosted by IIS. Windows authentication must also be enabled on the site in IIS Manager. |
+| `Negotiate` | The application runs under its own process on a host joined to your domain. On anything other than Windows this needs Kerberos and a keytab. |
+| `None` | There is no domain to authenticate against, as in a container. Requests are served anonymously and leases record an empty user. The server warns at startup that it is doing this. |
+
+Left unset, the server picks `IISIntegrated` when it finds itself hosted by IIS, `Negotiate` on
+Windows, and `None` elsewhere, and logs which one it chose. Set the value explicitly on anything you
+care about: guessing wrong is quiet rather than loud, because a server that authenticates nobody
+still serves leases perfectly well — it just cannot say who took them.
 
 **Both default to open**, which is how the license server has always shipped, so that an upgrade
 cannot lock an administrator out of their own server. The administrative pages are the only way to

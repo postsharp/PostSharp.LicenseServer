@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Authentication.Negotiate;
-using Microsoft.AspNetCore.Server.IISIntegration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PostSharp.LicenseServer;
@@ -96,18 +94,7 @@ builder.Services.AddSingleton<ILeaseLock>(
         };
     } );
 
-// Windows authentication. IIS handles it in-process; Negotiate covers Kestrel and out-of-process
-// hosting, which is what `dotnet run` uses during development.
-string authenticationScheme = builder.Configuration["Authentication:Scheme"] ?? "Negotiate";
-
-if ( string.Equals( authenticationScheme, "IISIntegrated", StringComparison.OrdinalIgnoreCase ) )
-{
-    builder.Services.AddAuthentication( IISDefaults.AuthenticationScheme );
-}
-else
-{
-    builder.Services.AddAuthentication( NegotiateDefaults.AuthenticationScheme ).AddNegotiate();
-}
+string authenticationScheme = builder.Services.AddLicenseServerAuthentication( builder.Configuration );
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(
@@ -194,6 +181,17 @@ if ( string.Equals(
             + "licenses, for example \"DOMAIN\\\\PostSharp Administrators\".",
             $"{LicenseServerOptions.SectionName}:AdminRoles" );
     }
+}
+
+// Which scheme was chosen is worth stating, because leases recorded under "None" carry no user.
+app.Logger.LogInformation( "Authenticating with the {Scheme} scheme.", authenticationScheme );
+
+if ( authenticationScheme == AuthenticationRegistration.None )
+{
+    app.Logger.LogWarning(
+        "Authentication is disabled, so leases will not record who requested them. Set {Setting} to "
+        + "\"Negotiate\" on a host that is joined to your domain.",
+        "Authentication:Scheme" );
 }
 
 app.Run();

@@ -1,0 +1,13 @@
+**/bin
+**/obj
+**/.vs
+.git
+.idea
+artifacts
+packages
+tests
+docs
+*.db
+*.db-shm
+*.db-wal
+App_Data

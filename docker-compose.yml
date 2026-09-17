@@ -1,0 +1,83 @@
+# A complete PostSharp License Server for testing: the server, a SQL Server database, and a one-shot
+# job that creates the schema from Database/CreateTables.sql.
+#
+#   docker compose up --build
+#   open http://localhost:8080
+#
+# This is a TEST deployment. The password below is in plain text, the database is thrown away with
+# its volume, and nobody is authenticated, so every lease is recorded without a user name. See
+# docs/configuration.md before running it for real.
+
+name: postsharp-license-server
+
+services:
+
+  database:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "LicenseServer!2026"
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - database-data:/var/opt/mssql
+    healthcheck:
+      # The server answers long before it is ready to take a query, so the check is a real query.
+      test:
+        - CMD-SHELL
+        - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" -b
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  database-schema:
+    # The server image already carries sqlcmd, so the schema job needs no second image to pull.
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - ./src/PostSharp.LicenseServer.Web/Database:/schema:ro
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+        SQLCMD=/opt/mssql-tools18/bin/sqlcmd
+        $$SQLCMD -S database -U sa -P "LicenseServer!2026" -C -b \
+          -Q "IF DB_ID('PostSharpLicenseServer') IS NULL CREATE DATABASE PostSharpLicenseServer"
+        # Re-running compose must not fail on an existing schema.
+        TABLES=$$($$SQLCMD -S database -U sa -P "LicenseServer!2026" -C -h -1 -W -d PostSharpLicenseServer \
+          -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM sys.tables WHERE name = 'Licenses'")
+        if [ "$$TABLES" = "0" ]; then
+          $$SQLCMD -S database -U sa -P "LicenseServer!2026" -C -b -d PostSharpLicenseServer -i /schema/CreateTables.sql
+          echo "Schema created."
+        else
+          echo "Schema already present."
+        fi
+
+  licenseserver:
+    build:
+      context: .
+    depends_on:
+      database-schema:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+    environment:
+      LicenseServer__DatabaseProvider: SqlServer
+      ConnectionStrings__SharpCrafters_LicenseServerConnectionString: >-
+        Server=database,1433;Database=PostSharpLicenseServer;User Id=sa;Password=LicenseServer!2026;TrustServerCertificate=True
+      # No domain controller in a container, so nobody is authenticated.
+      Authentication__Scheme: None
+      # Keeps the audit signature chain stable across restarts.
+      LicenseServer__AuditHmacKey: "dGVzdC1vbmx5LWF1ZGl0LWtleS1kby1ub3QtdXNlLWxpdmU="
+      Smtp__Enabled: "false"
+    volumes:
+      - licenseserver-data:/app/App_Data
+
+volumes:
+  database-data:
+  licenseserver-data:
