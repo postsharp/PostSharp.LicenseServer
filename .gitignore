@@ -4,5 +4,8 @@ bin
 obj
 /.build
 **/.vs
+.idea/
 *.slnLaunch.user
 *.csproj.user
+*.DotSettings.user
+/artifacts

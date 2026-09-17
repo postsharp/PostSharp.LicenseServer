@@ -1,0 +1,32 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup Label="PostSharp licensing SDK">
+    <!-- The license server uses PostSharp purely as a library, to parse and validate license keys.
+         No aspects are woven, so the PostSharp weaver packages are deliberately not referenced. -->
+    <PackageVersion Include="PostSharp.Compiler.Common" Version="2025.1.5" />
+    <PackageVersion Include="PostSharp.Compiler.Settings" Version="2025.1.5" />
+    <PackageVersion Include="PostSharp.Compiler.Platforms" Version="2025.1.5" />
+  </ItemGroup>
+
+  <ItemGroup Label="Runtime">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="10.0.0" />
+    <PackageVersion Include="MailKit" Version="4.8.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.0.0" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+</Project>
