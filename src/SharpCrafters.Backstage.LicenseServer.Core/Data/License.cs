@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer;
+namespace SharpCrafters.Backstage.LicenseServer;
 
 /// <summary>
 /// A license key registered on the license server. Maps to the <c>dbo.Licenses</c> table.

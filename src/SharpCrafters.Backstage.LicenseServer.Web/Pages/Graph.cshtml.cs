@@ -2,10 +2,10 @@ using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using PostSharp.LicenseServer.Data;
-using PostSharp.LicenseServer.Licensing;
+using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Licensing;
 
-namespace PostSharp.LicenseServer.Pages;
+namespace SharpCrafters.Backstage.LicenseServer.Pages;
 
 /// <summary>
 /// The usage history of one license: how many seats were in use on each of the last N days, against

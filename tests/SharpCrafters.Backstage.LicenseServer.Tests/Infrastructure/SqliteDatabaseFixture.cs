@@ -1,8 +1,8 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using PostSharp.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Data;
 
-namespace PostSharp.LicenseServer.Tests.Infrastructure;
+namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
 /// <summary>
 /// An in-memory SQLite database, created from the EF Core model, that behaves like a real relational

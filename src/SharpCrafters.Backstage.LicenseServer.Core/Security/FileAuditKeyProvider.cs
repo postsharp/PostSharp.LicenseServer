@@ -1,9 +1,9 @@
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PostSharp.LicenseServer.Options;
+using SharpCrafters.Backstage.LicenseServer.Options;
 
-namespace PostSharp.LicenseServer.Security;
+namespace SharpCrafters.Backstage.LicenseServer.Security;
 
 /// <summary>
 /// Supplies the audit signing key, taking it from configuration when set, and otherwise generating

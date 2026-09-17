@@ -1,6 +1,6 @@
 using PostSharp.Sdk;
 
-namespace PostSharp.LicenseServer.Licensing;
+namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
 /// Reports the version of the PostSharp SDK embedded in this license server.

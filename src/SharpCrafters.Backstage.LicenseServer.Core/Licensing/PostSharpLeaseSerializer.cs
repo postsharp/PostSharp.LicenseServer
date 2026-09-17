@@ -1,6 +1,6 @@
 using PostSharp.Sdk.Extensibility.Licensing;
 
-namespace PostSharp.LicenseServer.Licensing;
+namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
 /// Serializes a lease in the format expected by the PostSharp client.

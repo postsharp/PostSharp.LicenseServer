@@ -1,4 +1,4 @@
-# PostSharp.LicenseServer
+# SharpCrafters.Backstage.LicenseServer
 
 This repository contains the source code and releases of PostSharp License Server.
 
@@ -16,7 +16,7 @@ The license server itself is licensed under the *MIT License*. Note that PostSha
 
 ## Download
 
-You can download the latest release from https://github.com/postsharp/PostSharp.LicenseServer/releases/latest.
+You can download the latest release from https://github.com/postsharp/SharpCrafters.Backstage.LicenseServer/releases/latest.
 
 ## Documentation
 
@@ -48,7 +48,7 @@ anything other than a trial.
 
 1. Install the ASP.NET Core Hosting Bundle on the web server, then restart IIS with `iisreset`.
 2. Create the database and run `Database\CreateTables.sql` against it.
-3. Unpack `PostSharp.LicenseServer.zip` into the directory of an IIS application.
+3. Unpack `SharpCrafters.Backstage.LicenseServer.zip` into the directory of an IIS application.
 4. Edit `appsettings.json`: set the connection string, the notification e-mail addresses and the
    SMTP server. The settings are described in [docs/configuration.md](docs/configuration.md).
 5. In IIS Manager, enable **Windows Authentication** on the application and disable
@@ -65,7 +65,7 @@ The release package is portable: the same zip runs wherever the .NET 10 runtime 
 3. Unpack the zip, edit `appsettings.json`, and run it:
 
    ```
-   dotnet PostSharp.LicenseServer.dll
+   dotnet SharpCrafters.Backstage.LicenseServer.dll
    ```
 
 Two settings usually need changing away from Windows. The connection string cannot use
@@ -108,12 +108,12 @@ dotnet test
 .\eng\Package.ps1
 ```
 
-The package is written to `artifacts\PostSharp.LicenseServer.zip`.
+The package is written to `artifacts\SharpCrafters.Backstage.LicenseServer.zip`.
 
 ### Running locally
 
 ```
-dotnet run --project src\PostSharp.LicenseServer.Web
+dotnet run --project src\SharpCrafters.Backstage.LicenseServer.Web
 ```
 
 The development configuration uses a SQLite database created on first start, so no SQL Server is
@@ -124,10 +124,10 @@ page exists only in a development environment.
 
 | Project | Contents |
 |---|---|
-| `src\PostSharp.LicenseServer.Core` | The licensing rules, the database model and the services they depend on. |
-| `src\PostSharp.LicenseServer.Web` | The web application: the pages, the endpoints and the composition root. |
-| `tests\PostSharp.LicenseServer.Tests` | The test suite. Runs against an in-memory database, so it needs no SQL Server. |
-| `tests\PostSharp.LicenseServer.Simulator` | A manual load-testing tool. See the note below. |
+| `src\SharpCrafters.Backstage.LicenseServer.Core` | The licensing rules, the database model and the services they depend on. |
+| `src\SharpCrafters.Backstage.LicenseServer.Web` | The web application: the pages, the endpoints and the composition root. |
+| `tests\SharpCrafters.Backstage.LicenseServer.Tests` | The test suite. Runs against an in-memory database, so it needs no SQL Server. |
+| `tests\SharpCrafters.Backstage.LicenseServer.Simulator` | A manual load-testing tool. See the note below. |
 
 The simulator does not currently run: it needs a client that can download a lease, which is being
 written in SharpCrafters.Backstage. It is kept building so that it is ready when that client is.

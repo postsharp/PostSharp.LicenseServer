@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer;
+namespace SharpCrafters.Backstage.LicenseServer;
 
 /// <summary>
 /// The kind of event a <see cref="LeaseCountingPoint"/> represents.

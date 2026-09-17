@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 
-namespace PostSharp.LicenseServer.Options;
+namespace SharpCrafters.Backstage.LicenseServer.Options;
 
 /// <summary>
 /// Validates the relationships between settings that data annotations cannot express. The legacy

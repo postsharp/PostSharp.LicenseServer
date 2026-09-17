@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Time;
+namespace SharpCrafters.Backstage.LicenseServer.Time;
 
 /// <summary>
 /// A <see cref="TimeProvider"/> that makes time pass faster than it really does, so that a

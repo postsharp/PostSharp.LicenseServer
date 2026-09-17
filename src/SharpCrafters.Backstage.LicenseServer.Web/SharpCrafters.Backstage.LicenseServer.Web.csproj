@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <!-- Keep the historical root namespace and assembly name so that deployments, log filters and
-         documentation that refer to PostSharp.LicenseServer remain valid. -->
-    <RootNamespace>PostSharp.LicenseServer</RootNamespace>
-    <AssemblyName>PostSharp.LicenseServer</AssemblyName>
-    <UserSecretsId>postsharp-license-server</UserSecretsId>
+    <!-- The assembly name is the product name, so the published entry point is
+         SharpCrafters.Backstage.LicenseServer.dll. -->
+    <RootNamespace>SharpCrafters.Backstage.LicenseServer</RootNamespace>
+    <AssemblyName>SharpCrafters.Backstage.LicenseServer</AssemblyName>
+    <UserSecretsId>sharpcrafters-backstage-license-server</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PostSharp.LicenseServer.Core\PostSharp.LicenseServer.Core.csproj" />
+    <ProjectReference Include="..\SharpCrafters.Backstage.LicenseServer.Core\SharpCrafters.Backstage.LicenseServer.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

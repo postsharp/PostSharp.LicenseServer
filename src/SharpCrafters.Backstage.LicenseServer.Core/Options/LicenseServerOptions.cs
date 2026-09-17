@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PostSharp.LicenseServer.Options;
+namespace SharpCrafters.Backstage.LicenseServer.Options;
 
 /// <summary>
 /// Settings of the license server. Replaces the <c>applicationSettings</c> section of the legacy

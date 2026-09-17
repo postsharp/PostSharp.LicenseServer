@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace PostSharp.LicenseServer.Data;
+namespace SharpCrafters.Backstage.LicenseServer.Data;
 
 /// <summary>
 /// The license server database. The provider is chosen by the hosting application: SQL Server in

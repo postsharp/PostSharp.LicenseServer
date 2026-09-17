@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace PostSharp.LicenseServer.Security;
+namespace SharpCrafters.Backstage.LicenseServer.Security;
 
 /// <summary>
 /// Signs the audit log with HMAC-SHA256.

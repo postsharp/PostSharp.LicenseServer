@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace PostSharp.LicenseServer.Licensing;
+namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
 /// Caches parse results, because a license key is parsed on every lease request and on every render

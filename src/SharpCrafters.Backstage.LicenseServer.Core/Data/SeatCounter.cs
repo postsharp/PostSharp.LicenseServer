@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Data;
+namespace SharpCrafters.Backstage.LicenseServer.Data;
 
 /// <summary>
 /// Converts machine counts into seat counts.

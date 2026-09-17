@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace PostSharp.LicenseServer.Pages.Admin;
+namespace SharpCrafters.Backstage.LicenseServer.Pages.Admin;
 
 /// <summary>
 /// Chooses the range of months to export from the lease audit log.

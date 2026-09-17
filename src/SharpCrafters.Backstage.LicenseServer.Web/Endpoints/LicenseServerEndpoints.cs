@@ -3,13 +3,13 @@ using System.Globalization;
 using System.Xml;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using PostSharp.LicenseServer.Data;
-using PostSharp.LicenseServer.Licensing;
-using PostSharp.LicenseServer.Locking;
-using PostSharp.LicenseServer.Options;
-using PostSharp.LicenseServer.Services;
+using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Licensing;
+using SharpCrafters.Backstage.LicenseServer.Locking;
+using SharpCrafters.Backstage.LicenseServer.Options;
+using SharpCrafters.Backstage.LicenseServer.Services;
 
-namespace PostSharp.LicenseServer.Endpoints;
+namespace SharpCrafters.Backstage.LicenseServer.Endpoints;
 
 /// <summary>
 /// The endpoints the PostSharp client talks to.

@@ -1,15 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using PostSharp.LicenseServer;
-using PostSharp.LicenseServer.Data;
-using PostSharp.LicenseServer.Email;
-using PostSharp.LicenseServer.Endpoints;
-using PostSharp.LicenseServer.Licensing;
-using PostSharp.LicenseServer.Locking;
-using PostSharp.LicenseServer.Options;
-using PostSharp.LicenseServer.Security;
-using PostSharp.LicenseServer.Services;
-using PostSharp.LicenseServer.Time;
+using SharpCrafters.Backstage.LicenseServer;
+using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Email;
+using SharpCrafters.Backstage.LicenseServer.Endpoints;
+using SharpCrafters.Backstage.LicenseServer.Licensing;
+using SharpCrafters.Backstage.LicenseServer.Locking;
+using SharpCrafters.Backstage.LicenseServer.Options;
+using SharpCrafters.Backstage.LicenseServer.Security;
+using SharpCrafters.Backstage.LicenseServer.Services;
+using SharpCrafters.Backstage.LicenseServer.Time;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder( args );
 
@@ -89,7 +89,7 @@ builder.Services.AddSingleton<ILeaseLock>(
             LeaseLockMode.None => new NullLeaseLock(),
             LeaseLockMode.SqlApplicationLock => throw new NotSupportedException(
                 "LeaseLockMode.SqlApplicationLock is not implemented yet. Run a single worker process, or open an "
-                + "issue at https://github.com/postsharp/PostSharp.LicenseServer." ),
+                + "issue at https://github.com/postsharp/SharpCrafters.Backstage.LicenseServer." ),
             _ => throw new InvalidOperationException( $"Unknown lease lock mode '{options.LeaseLockMode}'." )
         };
     } );

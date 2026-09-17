@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
-using PostSharp.LicenseServer.Data;
-using PostSharp.LicenseServer.Tests.Infrastructure;
+using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
-namespace PostSharp.LicenseServer.Tests;
+namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
 /// The audit-log line is a serialization contract: exported files are archived by customers and

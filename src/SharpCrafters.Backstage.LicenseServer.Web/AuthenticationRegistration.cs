@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Server.IISIntegration;
 using Microsoft.Extensions.Options;
 
-namespace PostSharp.LicenseServer;
+namespace SharpCrafters.Backstage.LicenseServer;
 
 /// <summary>
 /// Chooses how the license server identifies the person borrowing a license.

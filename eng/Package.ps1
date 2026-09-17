@@ -3,12 +3,12 @@
     Builds the release package of the PostSharp License Server.
 
 .DESCRIPTION
-    Publishes the web application and zips it into artifacts/PostSharp.LicenseServer.zip, which is
+    Publishes the web application and zips it into artifacts/SharpCrafters.Backstage.LicenseServer.zip, which is
     the artifact attached to a GitHub release.
 
     The package is portable: it carries no platform-specific build and runs wherever the .NET 10
     runtime does. On Windows that means unpacking it into an IIS application, with the ASP.NET Core
-    Hosting Bundle installed. Elsewhere it is run with `dotnet PostSharp.LicenseServer.dll`.
+    Hosting Bundle installed. Elsewhere it is run with `dotnet SharpCrafters.Backstage.LicenseServer.dll`.
 
     Runs on Windows PowerShell and on PowerShell 7 for Linux and macOS.
 
@@ -34,9 +34,9 @@ $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 
 if ( -not $OutputPath ) { $OutputPath = Join-Path $repositoryRoot 'artifacts' }
 
-$project = Join-Path $repositoryRoot 'src' 'PostSharp.LicenseServer.Web' 'PostSharp.LicenseServer.Web.csproj'
+$project = Join-Path $repositoryRoot 'src' 'SharpCrafters.Backstage.LicenseServer.Web' 'SharpCrafters.Backstage.LicenseServer.Web.csproj'
 $publishPath = Join-Path $repositoryRoot 'artifacts' 'publish'
-$zipPath = Join-Path $OutputPath 'PostSharp.LicenseServer.zip'
+$zipPath = Join-Path $OutputPath 'SharpCrafters.Backstage.LicenseServer.zip'
 
 if ( Test-Path $publishPath ) { Remove-Item $publishPath -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $OutputPath | Out-Null

@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer;
+namespace SharpCrafters.Backstage.LicenseServer;
 
 /// <summary>
 /// A seat of a license, held by one user on one machine for a period of time. Maps to the

@@ -2,10 +2,10 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using PostSharp.LicenseServer.Data;
-using PostSharp.LicenseServer.Licensing;
+using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Licensing;
 
-namespace PostSharp.LicenseServer.Pages.Admin;
+namespace SharpCrafters.Backstage.LicenseServer.Pages.Admin;
 
 /// <summary>
 /// Registers a license key so that the server can serve leases against it.

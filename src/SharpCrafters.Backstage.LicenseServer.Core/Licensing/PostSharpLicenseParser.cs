@@ -1,7 +1,7 @@
 using PostSharp.Sdk.Extensibility.Licensing;
 using ParsedLicense = PostSharp.Sdk.Extensibility.Licensing.License;
 
-namespace PostSharp.LicenseServer.Licensing;
+namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
 /// Parses license keys with the PostSharp SDK. This is the only class that touches the SDK's

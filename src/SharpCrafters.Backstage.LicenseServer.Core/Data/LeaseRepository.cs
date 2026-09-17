@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
-using PostSharp.LicenseServer.Licensing;
-using PostSharp.LicenseServer.Options;
-using PostSharp.LicenseServer.Security;
+using SharpCrafters.Backstage.LicenseServer.Licensing;
+using SharpCrafters.Backstage.LicenseServer.Options;
+using SharpCrafters.Backstage.LicenseServer.Security;
 
-namespace PostSharp.LicenseServer.Data;
+namespace SharpCrafters.Backstage.LicenseServer.Data;
 
 /// <inheritdoc cref="ILeaseRepository"/>
 public sealed class LeaseRepository(

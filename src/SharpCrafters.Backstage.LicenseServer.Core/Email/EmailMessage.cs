@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Email;
+namespace SharpCrafters.Backstage.LicenseServer.Email;
 
 /// <summary>
 /// A notification email to the license administrator.

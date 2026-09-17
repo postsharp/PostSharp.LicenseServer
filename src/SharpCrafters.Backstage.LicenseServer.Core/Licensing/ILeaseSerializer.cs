@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Licensing;
+namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
 /// Produces the response body of the lease endpoint. This is the wire contract with the PostSharp

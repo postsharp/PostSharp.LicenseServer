@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer;
+namespace SharpCrafters.Backstage.LicenseServer;
 
 /// <summary>
 /// A point on the usage timeline of a license: the moment a lease starts or ends, together with the

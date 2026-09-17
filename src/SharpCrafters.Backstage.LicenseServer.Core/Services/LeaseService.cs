@@ -3,12 +3,12 @@ using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PostSharp.LicenseServer.Data;
-using PostSharp.LicenseServer.Email;
-using PostSharp.LicenseServer.Licensing;
-using PostSharp.LicenseServer.Options;
+using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Email;
+using SharpCrafters.Backstage.LicenseServer.Licensing;
+using SharpCrafters.Backstage.LicenseServer.Options;
 
-namespace PostSharp.LicenseServer.Services;
+namespace SharpCrafters.Backstage.LicenseServer.Services;
 
 /// <summary>
 /// Decides which license, if any, satisfies a lease request.

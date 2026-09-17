@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Data;
+namespace SharpCrafters.Backstage.LicenseServer.Data;
 
 /// <summary>
 /// Reads and writes leases. Replaces the methods that used to hang off the LINQ to SQL

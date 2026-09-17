@@ -1,6 +1,6 @@
-using PostSharp.LicenseServer.Licensing;
+using SharpCrafters.Backstage.LicenseServer.Licensing;
 
-namespace PostSharp.LicenseServer.Tests.Fakes;
+namespace SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
 /// <summary>
 /// Reports a fixed PostSharp SDK version, so that the "the license server itself is too old" branch

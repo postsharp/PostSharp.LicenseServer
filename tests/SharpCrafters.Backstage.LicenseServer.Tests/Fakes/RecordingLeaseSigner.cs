@@ -1,8 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
-using PostSharp.LicenseServer.Security;
+using SharpCrafters.Backstage.LicenseServer.Security;
 
-namespace PostSharp.LicenseServer.Tests.Fakes;
+namespace SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
 /// <summary>
 /// Signs deterministically and keeps every payload it was asked to sign, so that tests can assert on

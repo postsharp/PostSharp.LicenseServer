@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Http;
 using System.Net;
 using Microsoft.AspNetCore.Mvc.Testing;
-using PostSharp.LicenseServer.Endpoints;
-using PostSharp.LicenseServer.Tests.Infrastructure;
+using SharpCrafters.Backstage.LicenseServer.Endpoints;
+using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
-namespace PostSharp.LicenseServer.Tests;
+namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
 /// Defects found while reviewing the migration. Each of these passed unnoticed because the legacy

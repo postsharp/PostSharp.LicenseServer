@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Locking;
+namespace SharpCrafters.Backstage.LicenseServer.Locking;
 
 /// <summary>
 /// Does not serialize anything. Intended for tests that do not exercise concurrency.

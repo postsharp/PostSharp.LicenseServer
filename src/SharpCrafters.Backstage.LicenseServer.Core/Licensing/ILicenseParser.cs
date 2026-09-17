@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Licensing;
+namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
 /// Parses and validates PostSharp license keys. Replaces the static <c>ParsedLicenseManager</c>.

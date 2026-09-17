@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
-using PostSharp.LicenseServer.Email;
+using SharpCrafters.Backstage.LicenseServer.Email;
 
-namespace PostSharp.LicenseServer.Tests.Fakes;
+namespace SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
 /// <summary>
 /// An <see cref="IEmailSender"/> that keeps the messages in memory instead of sending them, so that

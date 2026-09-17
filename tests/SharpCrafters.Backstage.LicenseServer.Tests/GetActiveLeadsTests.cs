@@ -1,6 +1,6 @@
-using PostSharp.LicenseServer.Tests.Infrastructure;
+using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
-namespace PostSharp.LicenseServer.Tests;
+namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
 /// How many seats of a license are in use at a given moment.

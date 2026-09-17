@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using PostSharp.LicenseServer.Data;
-using PostSharp.LicenseServer.Options;
-using PostSharp.LicenseServer.Services;
-using PostSharp.LicenseServer.Tests.Fakes;
+using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Options;
+using SharpCrafters.Backstage.LicenseServer.Services;
+using SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
-namespace PostSharp.LicenseServer.Tests;
+namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
 /// Build agents are recognised by name so that their leases are not persisted and therefore do not

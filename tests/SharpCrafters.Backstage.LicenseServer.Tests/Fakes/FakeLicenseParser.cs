@@ -1,6 +1,6 @@
-using PostSharp.LicenseServer.Licensing;
+using SharpCrafters.Backstage.LicenseServer.Licensing;
 
-namespace PostSharp.LicenseServer.Tests.Fakes;
+namespace SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
 /// <summary>
 /// Resolves synthetic license keys to the facts a test wants them to carry.

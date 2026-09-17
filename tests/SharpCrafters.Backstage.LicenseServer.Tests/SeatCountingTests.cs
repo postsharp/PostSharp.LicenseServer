@@ -1,6 +1,6 @@
-using PostSharp.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Data;
 
-namespace PostSharp.LicenseServer.Tests;
+namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
 /// The rounding rule that decides how many seats a set of users consumes. This arithmetic used to

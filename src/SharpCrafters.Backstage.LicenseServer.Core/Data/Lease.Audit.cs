@@ -1,7 +1,7 @@
 using System.Xml;
 using PostSharp.Sdk.Extensibility.Licensing;
 
-namespace PostSharp.LicenseServer;
+namespace SharpCrafters.Backstage.LicenseServer;
 
 public partial class Lease
 {

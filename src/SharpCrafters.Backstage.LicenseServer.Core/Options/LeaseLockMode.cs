@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Options;
+namespace SharpCrafters.Backstage.LicenseServer.Options;
 
 /// <summary>
 /// Determines how the license server serializes concurrent lease requests.

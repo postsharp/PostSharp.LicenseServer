@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using PostSharp.LicenseServer.Tests.Infrastructure;
+using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
-namespace PostSharp.LicenseServer.Tests;
+namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
 /// An administrator can end a lease early, which inserts a replacement ending now rather than

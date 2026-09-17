@@ -39,7 +39,7 @@ services:
       database:
         condition: service_healthy
     volumes:
-      - ./src/PostSharp.LicenseServer.Web/Database:/schema:ro
+      - ./src/SharpCrafters.Backstage.LicenseServer.Web/Database:/schema:ro
     entrypoint:
       - /bin/bash
       - -c

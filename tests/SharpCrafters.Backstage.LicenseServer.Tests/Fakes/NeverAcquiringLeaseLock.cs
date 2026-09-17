@@ -1,6 +1,6 @@
-using PostSharp.LicenseServer.Locking;
+using SharpCrafters.Backstage.LicenseServer.Locking;
 
-namespace PostSharp.LicenseServer.Tests.Fakes;
+namespace SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
 /// <summary>
 /// Never grants the lock, so that the "service overloaded" path can be exercised.

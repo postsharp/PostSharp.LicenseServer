@@ -2,7 +2,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace PostSharp.LicenseServer.Pages;
+namespace SharpCrafters.Backstage.LicenseServer.Pages;
 
 [ResponseCache( Duration = 0, Location = ResponseCacheLocation.None, NoStore = true )]
 public sealed class ErrorModel : PageModel

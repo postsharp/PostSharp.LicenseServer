@@ -1,12 +1,12 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using PostSharp.LicenseServer.Data;
-using PostSharp.LicenseServer.Licensing;
-using PostSharp.LicenseServer.Options;
-using PostSharp.LicenseServer.Services;
-using PostSharp.LicenseServer.Tests.Fakes;
+using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Licensing;
+using SharpCrafters.Backstage.LicenseServer.Options;
+using SharpCrafters.Backstage.LicenseServer.Services;
+using SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
-namespace PostSharp.LicenseServer.Tests.Infrastructure;
+namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
 /// <summary>
 /// A license server wired up for a test: a real <see cref="LeaseRepository"/> and

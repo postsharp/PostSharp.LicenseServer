@@ -1,7 +1,7 @@
-using PostSharp.LicenseServer.Email;
-using PostSharp.LicenseServer.Tests.Fakes;
+using SharpCrafters.Backstage.LicenseServer.Email;
+using SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
-namespace PostSharp.LicenseServer.Tests;
+namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
 /// The in-memory <see cref="IEmailSender"/> used throughout the test suite, and the guarantee that

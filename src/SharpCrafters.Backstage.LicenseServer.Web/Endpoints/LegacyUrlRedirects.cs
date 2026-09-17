@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Endpoints;
+namespace SharpCrafters.Backstage.LicenseServer.Endpoints;
 
 /// <summary>
 /// Redirects the WebForms URLs of previous versions to the pages that replaced them, so that

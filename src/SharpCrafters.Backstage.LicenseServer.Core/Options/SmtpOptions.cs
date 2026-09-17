@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Options;
+namespace SharpCrafters.Backstage.LicenseServer.Options;
 
 /// <summary>
 /// Settings of the SMTP server used to send notification emails. Replaces the

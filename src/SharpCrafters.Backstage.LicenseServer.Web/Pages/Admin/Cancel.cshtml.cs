@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using PostSharp.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Data;
 
-namespace PostSharp.LicenseServer.Pages.Admin;
+namespace SharpCrafters.Backstage.LicenseServer.Pages.Admin;
 
 /// <summary>
 /// Ends a lease early, freeing the seat for somebody else.

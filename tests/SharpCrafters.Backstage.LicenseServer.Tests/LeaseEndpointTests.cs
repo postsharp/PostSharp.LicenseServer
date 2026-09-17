@@ -1,10 +1,10 @@
 using System.Net;
 using Microsoft.EntityFrameworkCore;
-using PostSharp.LicenseServer.Data;
-using PostSharp.LicenseServer.Tests.Fakes;
-using PostSharp.LicenseServer.Tests.Infrastructure;
+using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
+using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
-namespace PostSharp.LicenseServer.Tests;
+namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
 /// The contract with the PostSharp client: the URL, the query string, the status codes and the

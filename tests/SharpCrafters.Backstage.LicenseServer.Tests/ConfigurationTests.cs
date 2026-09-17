@@ -1,13 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
-using PostSharp.LicenseServer.Licensing;
-using PostSharp.LicenseServer.Options;
-using PostSharp.LicenseServer.Time;
-using PostSharp.LicenseServer.Tests.Fakes;
-using PostSharp.LicenseServer.Tests.Infrastructure;
+using SharpCrafters.Backstage.LicenseServer.Licensing;
+using SharpCrafters.Backstage.LicenseServer.Options;
+using SharpCrafters.Backstage.LicenseServer.Time;
+using SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
+using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
-namespace PostSharp.LicenseServer.Tests;
+namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
 /// Settings validation, the accelerated clock and the license parse cache.

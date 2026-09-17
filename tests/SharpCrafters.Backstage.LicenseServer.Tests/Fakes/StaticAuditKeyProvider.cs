@@ -1,7 +1,7 @@
 using System.Text;
-using PostSharp.LicenseServer.Security;
+using SharpCrafters.Backstage.LicenseServer.Security;
 
-namespace PostSharp.LicenseServer.Tests.Fakes;
+namespace SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
 /// <summary>
 /// Supplies a constant audit signing key.

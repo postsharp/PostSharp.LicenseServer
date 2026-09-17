@@ -9,12 +9,12 @@ WORKDIR /src
 # Restore against the manifests alone, so that a change to the sources does not invalidate the
 # restore layer.
 COPY Directory.Build.props Directory.Packages.props nuget.config global.json ./
-COPY src/PostSharp.LicenseServer.Core/PostSharp.LicenseServer.Core.csproj src/PostSharp.LicenseServer.Core/
-COPY src/PostSharp.LicenseServer.Web/PostSharp.LicenseServer.Web.csproj src/PostSharp.LicenseServer.Web/
-RUN dotnet restore src/PostSharp.LicenseServer.Web/PostSharp.LicenseServer.Web.csproj
+COPY src/SharpCrafters.Backstage.LicenseServer.Core/SharpCrafters.Backstage.LicenseServer.Core.csproj src/SharpCrafters.Backstage.LicenseServer.Core/
+COPY src/SharpCrafters.Backstage.LicenseServer.Web/SharpCrafters.Backstage.LicenseServer.Web.csproj src/SharpCrafters.Backstage.LicenseServer.Web/
+RUN dotnet restore src/SharpCrafters.Backstage.LicenseServer.Web/SharpCrafters.Backstage.LicenseServer.Web.csproj
 
 COPY src/ src/
-RUN dotnet publish src/PostSharp.LicenseServer.Web/PostSharp.LicenseServer.Web.csproj \
+RUN dotnet publish src/SharpCrafters.Backstage.LicenseServer.Web/SharpCrafters.Backstage.LicenseServer.Web.csproj \
         --configuration Release \
         --no-restore \
         --output /app
@@ -33,4 +33,4 @@ COPY --from=build --chown=licenseserver /app ./
 ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "PostSharp.LicenseServer.dll"]
+ENTRYPOINT ["dotnet", "SharpCrafters.Backstage.LicenseServer.dll"]

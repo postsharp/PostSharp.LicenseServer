@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using PostSharp.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Data;
 
-namespace PostSharp.LicenseServer.Tests;
+namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
 /// The schema an existing installation already has, which this version must keep using unchanged.

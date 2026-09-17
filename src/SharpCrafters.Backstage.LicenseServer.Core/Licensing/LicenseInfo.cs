@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Licensing;
+namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
 /// The facts the license server needs about a license key, projected out of the PostSharp SDK so

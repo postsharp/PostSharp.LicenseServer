@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Locking;
+namespace SharpCrafters.Backstage.LicenseServer.Locking;
 
 /// <summary>
 /// Serializes lease requests within the current process. This is the default, and is correct for

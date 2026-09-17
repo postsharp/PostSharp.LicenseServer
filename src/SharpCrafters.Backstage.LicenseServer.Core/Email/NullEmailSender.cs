@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Email;
+namespace SharpCrafters.Backstage.LicenseServer.Email;
 
 /// <summary>
 /// Discards notification emails. Used when SMTP is disabled and when generating demo data.

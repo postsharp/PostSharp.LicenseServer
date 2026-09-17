@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "PostSharp.LicenseServer": {
+    "SharpCrafters.Backstage.LicenseServer": {
       "commandName": "Project",
       "launchBrowser": false,
       "applicationUrl": "http://localhost:44670",

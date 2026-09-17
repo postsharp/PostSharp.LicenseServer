@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "PostSharp.LicenseServer",
+      "name": "SharpCrafters.Backstage.LicenseServer",
       "runtimeExecutable": "dotnet",
-      "runtimeArgs": ["run", "--project", "src/PostSharp.LicenseServer.Web"],
+      "runtimeArgs": ["run", "--project", "src/SharpCrafters.Backstage.LicenseServer.Web"],
       "port": 44670,
       "url": "http://localhost:44670"
     }

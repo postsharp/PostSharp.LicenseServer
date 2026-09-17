@@ -1,6 +1,6 @@
-using PostSharp.LicenseServer.Licensing;
+using SharpCrafters.Backstage.LicenseServer.Licensing;
 
-namespace PostSharp.LicenseServer.Tests.Infrastructure;
+namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
 /// <summary>
 /// Fixed points in time used by the tests.

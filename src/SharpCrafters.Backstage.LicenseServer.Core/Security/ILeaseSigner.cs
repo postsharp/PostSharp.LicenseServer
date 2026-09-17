@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Security;
+namespace SharpCrafters.Backstage.LicenseServer.Security;
 
 /// <summary>
 /// Signs the lease audit log. Each lease is signed together with the signature of the previous

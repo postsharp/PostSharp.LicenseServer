@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace PostSharp.LicenseServer.Data;
+namespace SharpCrafters.Backstage.LicenseServer.Data;
 
 /// <summary>
 /// Maps <see cref="Lease"/> onto the <c>dbo.Leases</c> table created by <c>CreateTables.sql</c>.

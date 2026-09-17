@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using PostSharp.LicenseServer.Data;
-using PostSharp.LicenseServer.Services;
+using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Services;
 
-namespace PostSharp.LicenseServer.Pages.Admin;
+namespace SharpCrafters.Backstage.LicenseServer.Pages.Admin;
 
 /// <summary>
 /// Fills the database with a plausible history of lease activity, so that the dashboard and the

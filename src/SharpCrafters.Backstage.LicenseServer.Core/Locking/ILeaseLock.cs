@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Locking;
+namespace SharpCrafters.Backstage.LicenseServer.Locking;
 
 /// <summary>
 /// Serializes lease requests, so that two concurrent requests cannot both decide that the last

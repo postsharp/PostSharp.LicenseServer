@@ -1,10 +1,9 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/PostSharp.LicenseServer.Core/PostSharp.LicenseServer.Core.csproj" />
-    <Project Path="src/PostSharp.LicenseServer.Web/PostSharp.LicenseServer.Web.csproj" />
+    <Project Path="src/SharpCrafters.Backstage.LicenseServer.Core/SharpCrafters.Backstage.LicenseServer.Core.csproj" />
+    <Project Path="src/SharpCrafters.Backstage.LicenseServer.Web/SharpCrafters.Backstage.LicenseServer.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/PostSharp.LicenseServer.Simulator/PostSharp.LicenseServer.Simulator.csproj" />
-    <Project Path="tests/PostSharp.LicenseServer.Tests/PostSharp.LicenseServer.Tests.csproj" />
+    <Project Path="tests/SharpCrafters.Backstage.LicenseServer.Tests/SharpCrafters.Backstage.LicenseServer.Tests.csproj" />
   </Folder>
 </Solution>

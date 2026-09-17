@@ -11,15 +11,15 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PostSharp.LicenseServer.Data;
-using PostSharp.LicenseServer.Email;
-using PostSharp.LicenseServer.Licensing;
-using PostSharp.LicenseServer.Locking;
-using PostSharp.LicenseServer.Options;
-using PostSharp.LicenseServer.Security;
-using PostSharp.LicenseServer.Tests.Fakes;
+using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Email;
+using SharpCrafters.Backstage.LicenseServer.Licensing;
+using SharpCrafters.Backstage.LicenseServer.Locking;
+using SharpCrafters.Backstage.LicenseServer.Options;
+using SharpCrafters.Backstage.LicenseServer.Security;
+using SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
-namespace PostSharp.LicenseServer.Tests.Infrastructure;
+namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
 /// <summary>
 /// Hosts the real application in memory, with the SQL Server database swapped for SQLite and the

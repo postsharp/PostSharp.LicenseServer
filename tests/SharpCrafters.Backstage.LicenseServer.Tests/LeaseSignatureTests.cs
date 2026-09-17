@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using PostSharp.LicenseServer.Tests.Infrastructure;
+using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
-namespace PostSharp.LicenseServer.Tests;
+namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
 /// The audit log is a chain: each lease is signed together with the signature of the lease before

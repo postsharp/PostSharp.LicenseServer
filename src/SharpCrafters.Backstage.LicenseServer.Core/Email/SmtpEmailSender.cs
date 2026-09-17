@@ -3,9 +3,9 @@ using MailKit.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
-using PostSharp.LicenseServer.Options;
+using SharpCrafters.Backstage.LicenseServer.Options;
 
-namespace PostSharp.LicenseServer.Email;
+namespace SharpCrafters.Backstage.LicenseServer.Email;
 
 /// <summary>
 /// Sends notification emails over SMTP.

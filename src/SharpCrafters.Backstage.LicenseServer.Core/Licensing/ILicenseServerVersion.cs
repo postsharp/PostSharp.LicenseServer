@@ -1,4 +1,4 @@
-namespace PostSharp.LicenseServer.Licensing;
+namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
 /// The version of the PostSharp SDK embedded in this license server. A license requiring a higher

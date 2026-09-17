@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using PostSharp.LicenseServer.Tests.Infrastructure;
+using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
-namespace PostSharp.LicenseServer.Tests;
+namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
 /// The rules that decide whether a developer gets a license: reuse what they hold, grant spare

@@ -1,7 +1,7 @@
 using PostSharp.Platform.NetStandard20;
 using PostSharp.Platform.Neutral;
 
-namespace PostSharp.LicenseServer.Licensing;
+namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
 /// Initializes the PostSharp SDK platform services. Must run once before any license key is parsed.

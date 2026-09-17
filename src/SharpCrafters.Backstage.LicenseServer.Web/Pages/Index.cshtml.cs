@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using PostSharp.LicenseServer.Data;
-using PostSharp.LicenseServer.Licensing;
+using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Licensing;
 
-namespace PostSharp.LicenseServer.Pages;
+namespace SharpCrafters.Backstage.LicenseServer.Pages;
 
 /// <summary>
 /// The dashboard: every registered license, with how much of it is in use right now.
