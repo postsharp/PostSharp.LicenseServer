@@ -199,14 +199,19 @@ public sealed class LeaseRepository(
         return true;
     }
 
-    public int GetActiveLeads( int licenseId, DateTime dateTime )
+    public int GetActiveSeats( int licenseId, DateTime dateTime )
     {
-        // The seat arithmetic runs here rather than in SQL, so that the query translates on every
-        // provider. The result is one row per distinct user holding a lease on this license.
+        // The machines are counted in SQL and the seat arithmetic runs here, so that the query
+        // translates on every provider. The result is one row per user holding a lease on this
+        // license.
+        //
+        // The machines are counted as distinct, and not as leases. A user can hold two leases on one
+        // machine -- which is what a server whose clock has moved backwards produces -- and counting
+        // the leases would charge them for a machine they are not working on.
         List<int> machinesPerUser = db.OpenLeases
             .Where( l => l.LicenseId == licenseId && l.StartTime <= dateTime && l.EndTime > dateTime )
             .GroupBy( l => l.UserName )
-            .Select( g => g.Count() )
+            .Select( g => g.Select( l => l.Machine ).Distinct().Count() )
             .ToList();
 
         return SeatCounter.CountSeats( machinesPerUser, this.settings.MachinesPerUser );
@@ -247,8 +252,7 @@ public sealed class LeaseRepository(
         // the machine on the first close and then found nothing to remove on the second.
         Dictionary<string, Dictionary<string, int>> currentUsers = new( StringComparer.OrdinalIgnoreCase );
 
-        int leaseCount = 0;
-        int userCount = 0;
+        int seatCount = 0;
 
         foreach ( LeaseCountingPoint record in allRecords )
         {
@@ -258,8 +262,7 @@ public sealed class LeaseRepository(
                 currentUsers.Add( record.Lease.UserName, machines );
             }
 
-            int machinesBefore = machines.Count;
-            int seatsBefore = SeatCounter.CountSeats( [machinesBefore], this.settings.MachinesPerUser );
+            int seatsBefore = SeatCounter.CountSeats( [machines.Count], this.settings.MachinesPerUser );
             string machine = record.Lease.Machine;
 
             if ( record.Kind == LeaseCountingPointKind.Open )
@@ -287,22 +290,8 @@ public sealed class LeaseRepository(
 
             int seatsAfter = SeatCounter.CountSeats( [machines.Count], this.settings.MachinesPerUser );
 
-            leaseCount += seatsAfter - seatsBefore;
-
-            // A user joins the count when their first machine takes a lease and leaves it when their
-            // last one gives it up. The entry in currentUsers stays behind, so the users are counted
-            // from the machines they hold rather than from the number of entries.
-            if ( machinesBefore == 0 && machines.Count > 0 )
-            {
-                userCount++;
-            }
-            else if ( machinesBefore > 0 && machines.Count == 0 )
-            {
-                userCount--;
-            }
-
-            record.LeaseCount = leaseCount;
-            record.UserCount = userCount;
+            seatCount += seatsAfter - seatsBefore;
+            record.SeatCount = seatCount;
 
             yield return record;
         }

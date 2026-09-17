@@ -51,12 +51,12 @@ public sealed class CancelLeaseTests
         License license = LicenseBuilder.Default().AddTo( context );
         Lease original = LeaseBuilder.For( license ).From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
 
-        Assert.Equal( 1, context.Repository.GetActiveLeads( license.LicenseId, TestClock.Days( 2 ) ) );
+        Assert.Equal( 1, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Days( 2 ) ) );
 
         context.Repository.CancelLease( original, "admin", TestClock.Days( 1 ) );
         await context.Repository.SaveChangesAsync();
 
-        Assert.Equal( 0, context.Repository.GetActiveLeads( license.LicenseId, TestClock.Days( 2 ) ) );
+        Assert.Equal( 0, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Days( 2 ) ) );
     }
 
     /// <summary>

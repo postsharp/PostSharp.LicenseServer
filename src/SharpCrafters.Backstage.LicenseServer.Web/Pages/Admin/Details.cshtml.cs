@@ -41,7 +41,7 @@ public sealed class DetailsModel(
             .AsNoTracking()
             .ToListAsync( cancellationToken );
 
-        this.ConcurrentUsers = repository.GetActiveLeads( this.Id, now );
+        this.ConcurrentUsers = repository.GetActiveSeats( this.Id, now );
         this.IsDisabled = license.Priority < 0;
 
         return this.Page();

@@ -492,7 +492,7 @@ public sealed partial class LeaseService
             {
                 if ( this.usage == -1 )
                 {
-                    this.usage = repository.GetActiveLeads( license.LicenseId, time );
+                    this.usage = repository.GetActiveSeats( license.LicenseId, time );
                 }
 
                 return this.usage;

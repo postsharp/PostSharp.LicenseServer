@@ -5,40 +5,40 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests;
 /// <summary>
 /// How many seats of a license are in use at a given moment.
 /// </summary>
-public sealed class GetActiveLeadsTests
+public sealed class GetActiveSeatsTests
 {
     [Fact]
-    public async Task GetActiveLeads_NoLeases_ReturnsZero()
+    public async Task GetActiveSeats_NoLeases_ReturnsZero()
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
         License license = LicenseBuilder.Default().AddTo( context );
 
-        Assert.Equal( 0, context.Repository.GetActiveLeads( license.LicenseId, TestClock.Days( 1 ) ) );
+        Assert.Equal( 0, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Days( 1 ) ) );
     }
 
     [Fact]
-    public async Task GetActiveLeads_OneUserOneMachine_ReturnsOne()
+    public async Task GetActiveSeats_OneUserOneMachine_ReturnsOne()
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
         License license = LicenseBuilder.Default().AddTo( context );
         LeaseBuilder.For( license ).User( "alice" ).Machine( "desktop-1" ).AddTo( context );
 
-        Assert.Equal( 1, context.Repository.GetActiveLeads( license.LicenseId, TestClock.Days( 1 ) ) );
+        Assert.Equal( 1, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Days( 1 ) ) );
     }
 
     [Fact]
-    public async Task GetActiveLeads_OneUserTwoMachines_StillReturnsOne()
+    public async Task GetActiveSeats_OneUserTwoMachines_StillReturnsOne()
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
         License license = LicenseBuilder.Default().AddTo( context );
         LeaseBuilder.For( license ).User( "alice" ).Machine( "desktop-1" ).AddTo( context );
         LeaseBuilder.For( license ).User( "alice" ).Machine( "laptop-1" ).AddTo( context );
 
-        Assert.Equal( 1, context.Repository.GetActiveLeads( license.LicenseId, TestClock.Days( 1 ) ) );
+        Assert.Equal( 1, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Days( 1 ) ) );
     }
 
     [Fact]
-    public async Task GetActiveLeads_OneUserThreeMachines_ReturnsTwo()
+    public async Task GetActiveSeats_OneUserThreeMachines_ReturnsTwo()
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
         License license = LicenseBuilder.Default().AddTo( context );
@@ -48,42 +48,42 @@ public sealed class GetActiveLeadsTests
             LeaseBuilder.For( license ).User( "alice" ).Machine( machine ).AddTo( context );
         }
 
-        Assert.Equal( 2, context.Repository.GetActiveLeads( license.LicenseId, TestClock.Days( 1 ) ) );
+        Assert.Equal( 2, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Days( 1 ) ) );
     }
 
     [Fact]
-    public async Task GetActiveLeads_TwoUsers_ReturnsTwo()
+    public async Task GetActiveSeats_TwoUsers_ReturnsTwo()
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
         License license = LicenseBuilder.Default().AddTo( context );
         LeaseBuilder.For( license ).User( "alice" ).AddTo( context );
         LeaseBuilder.For( license ).User( "bob" ).AddTo( context );
 
-        Assert.Equal( 2, context.Repository.GetActiveLeads( license.LicenseId, TestClock.Days( 1 ) ) );
+        Assert.Equal( 2, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Days( 1 ) ) );
     }
 
     [Fact]
-    public async Task GetActiveLeads_LeaseStartingExactlyNow_IsCounted()
+    public async Task GetActiveSeats_LeaseStartingExactlyNow_IsCounted()
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
         License license = LicenseBuilder.Default().AddTo( context );
         LeaseBuilder.For( license ).From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
 
-        Assert.Equal( 1, context.Repository.GetActiveLeads( license.LicenseId, TestClock.Origin ) );
+        Assert.Equal( 1, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Origin ) );
     }
 
     [Fact]
-    public async Task GetActiveLeads_LeaseEndingExactlyNow_IsNotCounted()
+    public async Task GetActiveSeats_LeaseEndingExactlyNow_IsNotCounted()
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
         License license = LicenseBuilder.Default().AddTo( context );
         LeaseBuilder.For( license ).From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
 
-        Assert.Equal( 0, context.Repository.GetActiveLeads( license.LicenseId, TestClock.Days( 3 ) ) );
+        Assert.Equal( 0, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Days( 3 ) ) );
     }
 
     [Fact]
-    public async Task GetActiveLeads_OtherLicense_IsNotCounted()
+    public async Task GetActiveSeats_OtherLicense_IsNotCounted()
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
         License first = LicenseBuilder.Default().WithLicenseId( 1 ).AddTo( context );
@@ -91,12 +91,12 @@ public sealed class GetActiveLeadsTests
 
         LeaseBuilder.For( second ).AddTo( context );
 
-        Assert.Equal( 0, context.Repository.GetActiveLeads( first.LicenseId, TestClock.Days( 1 ) ) );
-        Assert.Equal( 1, context.Repository.GetActiveLeads( second.LicenseId, TestClock.Days( 1 ) ) );
+        Assert.Equal( 0, context.Repository.GetActiveSeats( first.LicenseId, TestClock.Days( 1 ) ) );
+        Assert.Equal( 1, context.Repository.GetActiveSeats( second.LicenseId, TestClock.Days( 1 ) ) );
     }
 
     [Fact]
-    public async Task GetActiveLeads_ReplacedLease_IsNotCounted()
+    public async Task GetActiveSeats_ReplacedLease_IsNotCounted()
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
         License license = LicenseBuilder.Default().AddTo( context );
@@ -105,7 +105,7 @@ public sealed class GetActiveLeadsTests
         context.Repository.CancelLease( original, "admin", TestClock.Days( 1 ) );
         await context.Repository.SaveChangesAsync();
 
-        Assert.Equal( 0, context.Repository.GetActiveLeads( license.LicenseId, TestClock.Days( 2 ) ) );
+        Assert.Equal( 0, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Days( 2 ) ) );
     }
 
     /// <summary>
@@ -113,18 +113,18 @@ public sealed class GetActiveLeadsTests
     /// match, so that a test cannot pass here and fail in production.
     /// </summary>
     [Fact]
-    public async Task GetActiveLeads_UserNameCasingDiffers_CountsAsOneUser()
+    public async Task GetActiveSeats_UserNameCasingDiffers_CountsAsOneUser()
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
         License license = LicenseBuilder.Default().AddTo( context );
         LeaseBuilder.For( license ).User( "alice" ).Machine( "desktop-1" ).AddTo( context );
         LeaseBuilder.For( license ).User( "ALICE" ).Machine( "laptop-1" ).AddTo( context );
 
-        Assert.Equal( 1, context.Repository.GetActiveLeads( license.LicenseId, TestClock.Days( 1 ) ) );
+        Assert.Equal( 1, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Days( 1 ) ) );
     }
 
     [Fact]
-    public async Task GetActiveLeads_HonoursMachinesPerUser()
+    public async Task GetActiveSeats_HonoursMachinesPerUser()
     {
         await using LicenseServerTestContext context =
             await LicenseServerTestContext.CreateAsync( o => o.MachinesPerUser = 1 );
@@ -134,6 +134,31 @@ public sealed class GetActiveLeadsTests
         LeaseBuilder.For( license ).User( "alice" ).Machine( "laptop-1" ).AddTo( context );
 
         // With one machine per seat, the same user on two machines consumes two seats.
-        Assert.Equal( 2, context.Repository.GetActiveLeads( license.LicenseId, TestClock.Days( 1 ) ) );
+        Assert.Equal( 2, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Days( 1 ) ) );
+    }
+
+    /// <summary>
+    /// A seat is counted from the machines a user works on, not from the leases they hold. A user can
+    /// hold two leases on one machine, and charging them for a machine they do not have would deny a
+    /// colleague a lease the license has the capacity for.
+    /// </summary>
+    /// <remarks>
+    /// The lease service normally prevents a second lease on one machine by prolonging the first, but
+    /// a server whose clock has moved backwards grants one. A load simulation produced exactly that
+    /// within minutes of a restart.
+    /// </remarks>
+    [Fact]
+    public async Task GetActiveSeats_TwoLeasesOnOneMachine_CountAsOneMachine()
+    {
+        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        License license = LicenseBuilder.Default().AddTo( context );
+
+        LeaseBuilder.For( license ).User( "alice" ).Machine( "desktop-1" ).AddTo( context );
+        LeaseBuilder.For( license ).User( "alice" ).Machine( "desktop-1" ).AddTo( context );
+        LeaseBuilder.For( license ).User( "alice" ).Machine( "laptop-1" ).AddTo( context );
+
+        // Two machines at two machines per seat is one seat. Counting the three leases would make it
+        // two.
+        Assert.Equal( 1, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Days( 1 ) ) );
     }
 }

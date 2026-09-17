@@ -95,7 +95,7 @@ public sealed class BuildServerDetectionTests
         public void CancelLease( Lease lease, string authenticatedUserName, DateTime time )
             => throw new NotSupportedException();
 
-        public int GetActiveLeads( int licenseId, DateTime dateTime ) => throw new NotSupportedException();
+        public int GetActiveSeats( int licenseId, DateTime dateTime ) => throw new NotSupportedException();
 
         public IEnumerable<LeaseCountingPoint> GetLeaseCountingPoints(
             int licenseId,

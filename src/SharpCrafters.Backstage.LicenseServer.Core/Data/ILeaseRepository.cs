@@ -47,7 +47,7 @@ public interface ILeaseRepository
     /// <summary>
     /// Counts the seats of a license in use at a given moment.
     /// </summary>
-    int GetActiveLeads( int licenseId, DateTime dateTime );
+    int GetActiveSeats( int licenseId, DateTime dateTime );
 
     /// <summary>
     /// Returns the usage timeline of a license over a period, as a sequence of lease open and close

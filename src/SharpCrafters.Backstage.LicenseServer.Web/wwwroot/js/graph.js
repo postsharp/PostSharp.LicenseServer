@@ -20,8 +20,8 @@
     Chart.defaults.font.family = styles.getPropertyValue("--font-body").trim() || "sans-serif";
 
     var datasets = [{
-        label: "Users",
-        data: chart.users,
+        label: "Seats",
+        data: chart.seats,
         borderColor: "#973bfc",
         backgroundColor: "rgba(151, 59, 252, 0.16)",
         fill: true,
@@ -62,7 +62,7 @@
                 y: {
                     beginAtZero: true,
                     max: chart.axisMaximum,
-                    title: { display: true, text: "Concurrent users" },
+                    title: { display: true, text: "Seats" },
                     ticks: { precision: 0 }
                 },
                 x: {

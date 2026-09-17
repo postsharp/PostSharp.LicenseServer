@@ -44,7 +44,7 @@ public sealed class IndexModel(
                         LicenseType = parsedLicense.LicenseType,
                         ProductCode = parsedLicense.Product,
                         MaxUsers = parsedLicense.UserNumber,
-                        CurrentUsers = repository.GetActiveLeads( license.LicenseId, now ),
+                        CurrentUsers = repository.GetActiveSeats( license.LicenseId, now ),
                         GraceStartTime = license.GraceStartTime,
                         Status = license.Priority >= 0 ? "Active" : "Disabled",
                         MaintenanceEndDate = parsedLicense.SubscriptionEndDate

@@ -1,14 +1,29 @@
 namespace SharpCrafters.Backstage.LicenseServer.Data;
 
 /// <summary>
-/// Converts machine counts into seat counts.
+/// Counts the seats that the holders of a set of leases consume.
 /// </summary>
+/// <remarks>
+/// <para>
+/// A seat is one user together with the machines that user works on, up to
+/// <c>MachinesPerUser</c> of them. A user working on more machines than that consumes one seat per
+/// <c>MachinesPerUser</c> machines, rounded up: at the default of two, one or two machines are one
+/// seat, three or four are two seats, and so on.
+/// </para>
+/// <para>
+/// The seat is the unit the capacity of a license key is expressed in, and the only place where the
+/// number of machines enters the licensing rules. The licence agreement puts it the other way round,
+/// as a number of authorized users each entitled to a number of devices; the two say the same thing,
+/// and this is the form the server counts in.
+/// </para>
+/// </remarks>
 public static class SeatCounter
 {
     /// <summary>
-    /// Counts the seats consumed by users holding the given numbers of machines. A user consumes one
-    /// seat per <paramref name="machinesPerUser"/> machines, rounded up.
+    /// Counts the seats consumed by users working on the given numbers of machines.
     /// </summary>
+    /// <param name="machinesPerUser">The number of distinct machines each user is working on.</param>
+    /// <param name="machinesPerUserLimit">The number of machines one seat covers.</param>
     /// <remarks>
     /// This arithmetic used to run inside the SQL <c>GROUP BY</c>, which no provider other than SQL
     /// Server can translate. Doing it here keeps the query portable and makes the rounding

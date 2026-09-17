@@ -4,7 +4,7 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
 /// The usage timeline behind the graph: a sequence of lease open and close events, each carrying the
-/// running number of seats and of users.
+/// running seat count.
 /// </summary>
 public sealed class LeaseCountingPointsTests
 {
@@ -24,13 +24,13 @@ public sealed class LeaseCountingPointsTests
 
         Assert.Equal( 2, points.Count );
         Assert.Equal( LeaseCountingPointKind.Open, points[0].Kind );
-        Assert.Equal( 1, points[0].LeaseCount );
+        Assert.Equal( 1, points[0].SeatCount );
         Assert.Equal( LeaseCountingPointKind.Close, points[1].Kind );
-        Assert.Equal( 0, points[1].LeaseCount );
+        Assert.Equal( 0, points[1].SeatCount );
     }
 
     [Fact]
-    public async Task GetLeaseCountingPoints_ThreeUsersOneMachineEach_AreThreeUsers()
+    public async Task GetLeaseCountingPoints_ThreeUsersOneMachineEach_AreThreeSeats()
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
         License license = LicenseBuilder.Default().AddTo( context );
@@ -43,13 +43,12 @@ public sealed class LeaseCountingPointsTests
 
         List<LeaseCountingPoint> points = Timeline( context, license );
 
-        Assert.Equal( 3, points.Max( p => p.UserCount ) );
-        Assert.Equal( 3, points.Max( p => p.LeaseCount ) );
-        Assert.Equal( 0, points[^1].UserCount );
+        Assert.Equal( 3, points.Max( p => p.SeatCount ) );
+        Assert.Equal( 0, points[^1].SeatCount );
     }
 
     /// <summary>
-    /// A user who gives up one machine and keeps another is still counted, and leaves the count only
+    /// A user who gives up one machine and keeps another still holds their seat, and releases it only
     /// when the last of their leases ends.
     /// </summary>
     [Fact]
@@ -66,10 +65,10 @@ public sealed class LeaseCountingPointsTests
 
         List<LeaseCountingPoint> points = Timeline( context, license );
 
-        // The first lease closes on day one and the second on day five. The user is counted
-        // throughout and leaves only at the last point.
-        Assert.All( points[..^1], p => Assert.Equal( 1, p.UserCount ) );
-        Assert.Equal( 0, points[^1].UserCount );
+        // The first lease closes on day one and the second on day five. The seat is held throughout
+        // and released only at the last point.
+        Assert.All( points[..^1], p => Assert.Equal( 1, p.SeatCount ) );
+        Assert.Equal( 0, points[^1].SeatCount );
     }
 
     [Fact]
@@ -85,8 +84,7 @@ public sealed class LeaseCountingPointsTests
 
         List<LeaseCountingPoint> points = Timeline( context, license );
 
-        Assert.Equal( 1, points.Max( p => p.LeaseCount ) );
-        Assert.Equal( 1, points.Max( p => p.UserCount ) );
+        Assert.Equal( 1, points.Max( p => p.SeatCount ) );
     }
 
     [Fact]
@@ -103,10 +101,9 @@ public sealed class LeaseCountingPointsTests
 
         List<LeaseCountingPoint> points = Timeline( context, license );
 
-        // Two seats but one person. This is the difference between the two counts each point carries,
-        // and the reason the chart draws the users.
-        Assert.Equal( 2, points.Max( p => p.LeaseCount ) );
-        Assert.Equal( 1, points.Max( p => p.UserCount ) );
+        // One user on three machines is two seats: one seat covers two machines, and the third takes
+        // a second seat.
+        Assert.Equal( 2, points.Max( p => p.SeatCount ) );
     }
 
     /// <summary>
@@ -131,7 +128,7 @@ public sealed class LeaseCountingPointsTests
         List<LeaseCountingPoint> points = Timeline( context, license );
 
         // With one machine per seat, a transient double-count would show up as 2.
-        Assert.Equal( 1, points.Max( p => p.LeaseCount ) );
+        Assert.Equal( 1, points.Max( p => p.SeatCount ) );
 
         LeaseCountingPoint[] atHandover = points.Where( p => p.Time == TestClock.Days( 1 ) ).ToArray();
         Assert.Equal( 2, atHandover.Length );
@@ -176,7 +173,7 @@ public sealed class LeaseCountingPointsTests
 
         string First() => string.Join(
             "|",
-            Timeline( context, license ).Select( p => $"{p.Time:O}/{p.Kind}/{p.Lease.LeaseId}/{p.LeaseCount}" ) );
+            Timeline( context, license ).Select( p => $"{p.Time:O}/{p.Kind}/{p.Lease.LeaseId}/{p.SeatCount}" ) );
 
         Assert.Equal( First(), First() );
     }
@@ -238,10 +235,8 @@ public sealed class LeaseCountingPointsTests
         List<LeaseCountingPoint> points = Timeline( context, license );
 
         Assert.Equal( 4, points.Count );
-        Assert.Equal( 1, points.Max( p => p.LeaseCount ) );
-        Assert.Equal( 1, points.Max( p => p.UserCount ) );
-        Assert.Equal( 0, points[^1].LeaseCount );
-        Assert.Equal( 0, points[^1].UserCount );
+        Assert.Equal( 1, points.Max( p => p.SeatCount ) );
+        Assert.Equal( 0, points[^1].SeatCount );
     }
 
     [Fact]
@@ -259,7 +254,7 @@ public sealed class LeaseCountingPointsTests
         List<LeaseCountingPoint> points = Timeline( context, license );
 
         Assert.NotEmpty( points );
-        Assert.Equal( 0, points[^1].LeaseCount );
-        Assert.All( points, p => Assert.True( p.LeaseCount >= 0 ) );
+        Assert.Equal( 0, points[^1].SeatCount );
+        Assert.All( points, p => Assert.True( p.SeatCount >= 0 ) );
     }
 }

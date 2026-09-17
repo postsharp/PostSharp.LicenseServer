@@ -85,7 +85,7 @@ public sealed class LeaseAllocationTests
         await context.Repository.SaveChangesAsync();
 
         Assert.NotNull( lease );
-        Assert.Equal( 1, context.Repository.GetActiveLeads( license.LicenseId, TestClock.Days( 1 ) ) );
+        Assert.Equal( 1, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Days( 1 ) ) );
     }
 
     [Fact]

@@ -40,9 +40,17 @@ into `appsettings.json`.
 
 ## Licensing rules
 
+A seat is one user together with the machines that user works on, up to `MachinesPerUser` of them. A
+user working on more machines than that consumes one seat per `MachinesPerUser` machines, rounded up:
+at the default of two, one or two machines are one seat, three or four are two seats, and so on. The
+capacity of a license key is a number of seats, and the seat is the only unit the server counts in.
+
+The license agreement states the same rule the other way round, as a number of authorized users each
+entitled to a number of devices.
+
 | Setting | Default | Meaning |
 |---|---|---|
-| `LicenseServer:MachinesPerUser` | 2 | How many devices one user may use on a single seat. Check your license agreement before changing it. |
+| `LicenseServer:MachinesPerUser` | 2 | How many machines one seat covers. Check your license agreement before changing it. |
 | `LicenseServer:NewLeaseDays` | 3 | How long a new lease lasts. |
 | `LicenseServer:MinLeaseDays` | 1 | How long before the end of a lease a client starts renewing it. If your developers work offline for weeks at a time, raise this above the number of days they are away. Must be smaller than `NewLeaseDays`. |
 | `LicenseServer:BuildServers` | empty | The machine names of build agents, separated by semicolons, commas or spaces. A build agent is served a license but is not given a lease, so that it does not consume a developer's seat. A trailing hexadecimal identifier is ignored, so `buildagent-1f2e` matches `buildagent`. |
