@@ -6,17 +6,6 @@ namespace PostSharp.LicenseServer;
 public partial class Lease
 {
     /// <summary>
-    /// Hashes a user or machine name the way the audit log does.
-    /// </summary>
-    /// <remarks>
-    /// Use this anywhere a name would otherwise be written somewhere it can be read by people who
-    /// have no business knowing who works where, such as a log file. The hash is stable, so it still
-    /// correlates with the audit log.
-    /// </remarks>
-    public static string HashName( string name )
-        => CryptoUtilities.ComputeStringHash64( name ).ToString( "x" );
-
-    /// <summary>
     /// Writes the audit-log representation of this lease: a semicolon-separated line in which the
     /// machine and user names appear only as hashes, so the log can be shared without disclosing who
     /// works where.
