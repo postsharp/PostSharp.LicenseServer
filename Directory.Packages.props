@@ -4,6 +4,17 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- The default for the build project, which is built before the dependencies are resolved and so
+         never sees the version that Versions.g.props carries. 2023.2.455 is the first version that
+         defines the Backstage.LicenseServer product. -->
+    <PostSharpEngineeringVersion Condition="'$(PostSharpEngineeringVersion)'==''">2023.2.455</PostSharpEngineeringVersion>
+  </PropertyGroup>
+
+  <ItemGroup Label="Build system">
+    <PackageVersion Include="PostSharp.Engineering.BuildTools" Version="$(PostSharpEngineeringVersion)" />
+  </ItemGroup>
+
   <ItemGroup Label="PostSharp licensing SDK">
     <!-- The license server uses PostSharp purely as a library, to parse and validate license keys.
          No aspects are woven, so the PostSharp weaver packages are deliberately not referenced. -->

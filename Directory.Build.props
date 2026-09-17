@@ -1,14 +1,20 @@
 <Project>
 
   <PropertyGroup>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
+    <RepoDirectory>$(MSBuildThisFileDirectory)</RepoDirectory>
+    <RepoKind>GitHub</RepoKind> <!-- Valid values: AzureRepos | GitHub -->
+  </PropertyGroup>
+
+  <Import Project="eng\Versions.props" />
+  <Import Sdk="PostSharp.Engineering.Sdk" Project="BuildOptions.props" />
+  <Import Sdk="PostSharp.Engineering.Sdk" Project="SourceLink.props" />
+
+  <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Product>PostSharp License Server</Product>
+    <Product>SharpCrafters Backstage License Server</Product>
     <Company>PostSharp Technologies</Company>
-    <Copyright>Copyright (c) PostSharp Technologies</Copyright>
-    <Version>2025.1.0</Version>
+    <Copyright>Copyright (c) SharpCrafters s.r.o.</Copyright>
   </PropertyGroup>
 
 </Project>

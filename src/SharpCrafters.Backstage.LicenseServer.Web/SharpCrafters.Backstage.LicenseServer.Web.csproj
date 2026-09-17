@@ -25,4 +25,42 @@
     <Content Include="Database\CreateTables.sql" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- The release archive: the public artifact of the product, which is what an administrator unpacks
+       into an IIS application or runs with `dotnet SharpCrafters.Backstage.LicenseServer.dll`. It is
+       built rather than packed because the product ships no NuGet package. -->
+  <Import Project="..\..\eng\DeterministicZip.tasks" />
+
+  <PropertyGroup>
+    <!-- PackageOutputPath is artifacts/publish/private, where PostSharp.Engineering collects every build
+         output; it copies the ones the product declares public into artifacts/publish/public. -->
+    <ReleaseArchivePath>$(PackageOutputPath)$(AssemblyName).$(Version).zip</ReleaseArchivePath>
+
+    <!-- Outside a PostSharp.Engineering build nothing defines the build date, and the archive is then
+         given a fixed timestamp rather than failing: a developer building the solution directly has no
+         use for a reproducible one. -->
+    <ReleaseArchiveDate Condition="'$(BuildDate)'!=''">$(BuildDate)</ReleaseArchiveDate>
+    <ReleaseArchiveDate Condition="'$(ReleaseArchiveDate)'==''">2000-01-01</ReleaseArchiveDate>
+  </PropertyGroup>
+
+  <Target Name="PackAndZip" AfterTargets="Build" Condition="'$(ProduceReleaseArchive)'!='false'">
+
+    <!-- Resolved here rather than in a property group of the project, because OutputPath is set by the
+         SDK targets, which are imported after the body of the project has been evaluated. -->
+    <PropertyGroup>
+      <ReleaseArchiveStagingPath>$([MSBuild]::NormalizeDirectory('$(OutputPath)Packed'))</ReleaseArchiveStagingPath>
+    </PropertyGroup>
+
+    <!-- The staging directory is emptied first, so that the archive never carries a file that only an
+         earlier build produced. -->
+    <RemoveDir Directories="$(ReleaseArchiveStagingPath)" />
+    <Exec Command="dotnet publish &quot;$(MSBuildProjectFullPath)&quot; --no-build --nologo -c $(Configuration) -o &quot;$(ReleaseArchiveStagingPath)&quot;" />
+
+    <!-- Development-only settings must not reach a customer's server. -->
+    <Delete Files="$(ReleaseArchiveStagingPath)appsettings.Development.json" />
+
+    <MakeDir Directories="$(PackageOutputPath)" />
+    <CreateDeterministicZip SourceDirectory="$(ReleaseArchiveStagingPath)" DestinationFile="$(ReleaseArchivePath)" PackageBuildDate="$(ReleaseArchiveDate)" />
+    <Message Text="$(MSBuildProjectName) -&gt; $(ReleaseArchivePath)" Importance="High" />
+  </Target>
+
 </Project>
