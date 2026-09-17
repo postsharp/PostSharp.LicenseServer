@@ -245,10 +245,9 @@ public sealed class LeaseBuilder
             Grace = this.grace
         };
 
-        lease.HMAC = context.Repository.GetSignature( lease );
-
+        // Saved through the repository, so the lease is signed the way a real one is.
         context.Db.Leases.Add( lease );
-        context.Db.SaveChanges();
+        context.Repository.SaveChanges();
 
         return lease;
     }

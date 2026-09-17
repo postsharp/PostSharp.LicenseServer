@@ -132,7 +132,13 @@ public static class LicenseServerEndpoints
 
         if ( elapsed > TimeSpan.FromSeconds( 1 ) )
         {
-            logger.LogWarning( "The lease request for {User} on {Machine} took {Elapsed}.", userName, machine, elapsed );
+            // The user and machine names come from the query string, so they are stripped of
+            // anything that could forge a line in a plain-text log.
+            logger.LogWarning(
+                "The lease request for {User} on {Machine} took {Elapsed}.",
+                Sanitize( userName ),
+                Sanitize( machine ),
+                elapsed );
         }
 
         return Results.Text(
@@ -167,9 +173,18 @@ public static class LicenseServerEndpoints
         int? tm,
         CancellationToken cancellationToken )
     {
-        if ( fy is null or < 1 || ty is null or < 1 || fm is null or < 1 or > 12 || tm is null or < 1 or > 12 )
+        // The same range the form offers. Without an upper bound, a year such as 10000 passes the
+        // check and then throws when the date is constructed.
+        const int firstYear = 2010;
+        const int lastYear = 2100;
+
+        if ( fy is null or < firstYear or > lastYear
+             || ty is null or < firstYear or > lastYear
+             || fm is null or < 1 or > 12
+             || tm is null or < 1 or > 12 )
         {
-            return Results.BadRequest( "The range of months is missing or invalid." );
+            return Results.BadRequest(
+                $"The range of months is missing or invalid. Years must be between {firstYear} and {lastYear}." );
         }
 
         DateTime fromTime = new( fy.Value, fm.Value, 1 );
@@ -195,23 +210,45 @@ public static class LicenseServerEndpoints
             return Results.Text( string.Empty, "text/plain" );
         }
 
-        List<Lease> leases = await repository.Leases
-            .Where( l => l.LeaseId >= bounds.MinLeaseId && l.LeaseId <= bounds.MaxLeaseId )
-            .OrderBy( l => l.LeaseId )
-            .AsNoTracking()
-            .ToListAsync( cancellationToken );
+        int minLeaseId = bounds.MinLeaseId;
+        int maxLeaseId = bounds.MaxLeaseId;
 
-        StringWriter writer = new();
+        // Written straight to the response as the rows arrive. An audit log covering years of
+        // activity is far too large to assemble in memory first, and the caller should not wait for
+        // the whole of it before the download starts.
+        return Results.Stream(
+            async stream =>
+            {
+                await using StreamWriter writer = new( stream );
 
-        foreach ( Lease lease in leases )
-        {
-            lease.Write( writer, true );
-            writer.WriteLine();
-        }
+                IAsyncEnumerable<Lease> leases = repository.Leases
+                    .Where( l => l.LeaseId >= minLeaseId && l.LeaseId <= maxLeaseId )
+                    .OrderBy( l => l.LeaseId )
+                    .AsNoTracking()
+                    .AsAsyncEnumerable();
 
-        return Results.Text( writer.ToString(), "text/plain" );
+                await foreach ( Lease lease in leases.WithCancellation( cancellationToken ) )
+                {
+                    lease.Write( writer, true );
+                    await writer.WriteLineAsync();
+                }
+            },
+            "text/plain" );
     }
 
     private static IResult Error( int statusCode, string description )
         => Results.Text( description, "text/plain", statusCode: statusCode );
+
+    /// <summary>
+    /// Removes control characters from a value taken from the request, so that it cannot forge a
+    /// line break in a log, and caps its length.
+    /// </summary>
+    private static string Sanitize( string value )
+    {
+        const int maximumLength = 200;
+
+        string cleaned = new( value.Where( c => !char.IsControl( c ) ).ToArray() );
+
+        return cleaned.Length <= maximumLength ? cleaned : cleaned[..maximumLength];
+    }
 }

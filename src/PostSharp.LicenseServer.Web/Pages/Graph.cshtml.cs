@@ -58,7 +58,11 @@ public sealed class GraphModel(
         if ( parsedLicense?.UserNumber != null )
         {
             maximum = parsedLicense.UserNumber;
-            graceMaximum = maximum.Value * (100 + parsedLicense.GracePercent) / 100;
+
+            // The same arithmetic the allocator uses, rounding up. Integer division would floor it,
+            // so a one-seat license with 20% grace would be drawn as allowing one seat while the
+            // server actually grants two.
+            graceMaximum = (int) Math.Ceiling( maximum.Value * (100.0 + parsedLicense.GracePercent) / 100.0 );
             axisMaximum = graceMaximum.Value;
         }
 

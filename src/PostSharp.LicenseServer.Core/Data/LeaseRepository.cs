@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 using PostSharp.LicenseServer.Licensing;
 using PostSharp.LicenseServer.Options;
@@ -22,26 +23,47 @@ public sealed class LeaseRepository(
     public IQueryable<License> Licenses => db.Licenses;
 
     /// <summary>
-    /// Signs a lease, chaining it to the signature of the most recently persisted lease.
+    /// Signs one lease, chaining it to the signature of the lease before it.
     /// </summary>
     /// <remarks>
-    /// The query deliberately reads the database rather than the change tracker, so that leases
-    /// created within one unit of work all chain from the same committed predecessor. This matches
-    /// the LINQ to SQL implementation, which never flushed pending inserts before a query.
+    /// The payload is the previous signature, a semicolon, and the lease's own audit line. Signing
+    /// the line that is actually exported is what lets an auditor recompute the chain from an
+    /// exported file.
     /// </remarks>
-    public string GetSignature( Lease lease )
+    public string ComputeSignature( string? previousSignature, Lease lease )
+        => signer.Sign( (previousSignature ?? string.Empty) + ";" + lease.ToAuditLine( false ) );
+
+    /// <summary>
+    /// Signs the leases that have just been inserted, in the order the database assigned them.
+    /// </summary>
+    /// <remarks>
+    /// Leases are signed after they are inserted rather than before, because the audit line starts
+    /// with the lease identifier and the database is what assigns it. Signing beforehand would put a
+    /// zero in every payload, so a signature could not be recomputed from an exported line, and
+    /// leases saved together would all chain from the same predecessor instead of from each other --
+    /// which would let one of them be removed without breaking any later signature.
+    /// </remarks>
+    private void SignInsertedLeases( IReadOnlyList<Lease> inserted )
     {
-        Lease? lastLease = db.Leases
+        if ( inserted.Count == 0 )
+        {
+            return;
+        }
+
+        int firstInsertedId = inserted.Min( l => l.LeaseId );
+
+        string? previousSignature = db.Leases
             .AsNoTracking()
+            .Where( l => l.LeaseId < firstInsertedId )
             .OrderByDescending( l => l.LeaseId )
+            .Select( l => l.HMAC )
             .FirstOrDefault();
 
-        StringWriter stringWriter = new();
-        stringWriter.Write( lastLease != null ? lastLease.HMAC : "" );
-        stringWriter.Write( ';' );
-        lease.Write( stringWriter, false );
-
-        return signer.Sign( stringWriter.ToString() );
+        foreach ( Lease lease in inserted.OrderBy( l => l.LeaseId ) )
+        {
+            previousSignature = this.ComputeSignature( previousSignature, lease );
+            lease.HMAC = previousSignature;
+        }
     }
 
     public Lease? CreateLease(
@@ -56,10 +78,8 @@ public sealed class LeaseRepository(
         {
             License = license,
 
-            // The foreign key is assigned explicitly because the lease is signed before it is added
-            // to the change tracker, and EF Core does not populate foreign keys from navigation
-            // properties until then. LINQ to SQL assigned it inside the navigation setter, so
-            // omitting this would silently change what gets signed.
+            // Assigned alongside the navigation property rather than left to EF Core's fixup, so
+            // that the lease is fully formed before it is tracked.
             LicenseId = license.LicenseId,
 
             AuthenticatedUser = authenticatedUserName,
@@ -175,8 +195,7 @@ public sealed class LeaseRepository(
             }
         }
 
-        lease.HMAC = this.GetSignature( lease );
-
+        // The signature is applied by SaveChanges, once the database has assigned an identifier.
         return true;
     }
 
@@ -261,8 +280,56 @@ public sealed class LeaseRepository(
         }
     }
 
-    public Task<int> SaveChangesAsync( CancellationToken cancellationToken = default )
-        => db.SaveChangesAsync( cancellationToken );
+    /// <summary>
+    /// Saves the unit of work, signing any newly inserted leases.
+    /// </summary>
+    /// <remarks>
+    /// The insert and the signature are two statements, so they run in one transaction: a lease must
+    /// never be readable without its signature.
+    /// </remarks>
+    public async Task<int> SaveChangesAsync( CancellationToken cancellationToken = default )
+    {
+        List<Lease> inserted = this.GetPendingLeases();
 
-    public int SaveChanges() => db.SaveChanges();
+        if ( inserted.Count == 0 )
+        {
+            return await db.SaveChangesAsync( cancellationToken );
+        }
+
+        // The caller may already have opened a transaction, as deleting a license does.
+        IDbContextTransaction? transaction = db.Database.CurrentTransaction == null
+            ? await db.Database.BeginTransactionAsync( cancellationToken )
+            : null;
+
+        try
+        {
+            int result = await db.SaveChangesAsync( cancellationToken );
+
+            this.SignInsertedLeases( inserted );
+            await db.SaveChangesAsync( cancellationToken );
+
+            if ( transaction != null )
+            {
+                await transaction.CommitAsync( cancellationToken );
+            }
+
+            return result;
+        }
+        finally
+        {
+            if ( transaction != null )
+            {
+                await transaction.DisposeAsync();
+            }
+        }
+    }
+
+    public int SaveChanges()
+        => this.SaveChangesAsync().GetAwaiter().GetResult();
+
+    private List<Lease> GetPendingLeases()
+        => db.ChangeTracker.Entries<Lease>()
+            .Where( e => e.State == EntityState.Added )
+            .Select( e => e.Entity )
+            .ToList();
 }

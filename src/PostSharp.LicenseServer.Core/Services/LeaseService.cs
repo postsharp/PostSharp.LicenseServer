@@ -173,16 +173,37 @@ public sealed partial class LeaseService
 
         if ( this.IsBuildServer( machine ) )
         {
-            License? buildServerLicense = licenses.FirstOrDefault( this.IsLicenseValid );
+            Dictionary<int, LicenseState> buildServerStates = [];
 
-            if ( buildServerLicense != null )
+            // A build agent is exempt from consuming a seat, not from the rules about which licenses
+            // may be served at all, so the same validation runs as for anybody else.
+            foreach ( License candidate in licenses )
             {
+                LicenseState? state =
+                    this.GetLicenseState( candidate, version, buildDate, now, buildServerStates, errors );
+
+                if ( state == null )
+                {
+                    continue;
+                }
+
                 DateTime endTime = now.AddDays( this.settings.NewLeaseDays );
+
+                if ( state.ParsedLicense.ValidTo.HasValue && state.ParsedLicense.ValidTo < endTime )
+                {
+                    endTime = state.ParsedLicense.ValidTo.Value;
+                }
+
+                if ( endTime <= now )
+                {
+                    // The license expires before the lease would begin.
+                    continue;
+                }
 
                 // A build server's lease is never persisted, so that build agents cannot consume
                 // the seats of the developers they build for.
                 return new GrantedLease(
-                    buildServerLicense.LicenseKey,
+                    candidate.LicenseKey,
                     now,
                     endTime,
                     endTime.AddDays( -this.settings.MinLeaseDays ) );
@@ -338,10 +359,18 @@ public sealed partial class LeaseService
                 continue;
             }
 
+            if ( !licenseState.Maximum.HasValue )
+            {
+                // A license with no seat limit has no capacity to exceed, so there is no grace
+                // period to fall back on. It reaches this pass only when the second one declined to
+                // grant a lease for some other reason, such as the license having expired.
+                continue;
+            }
+
             license.GraceStartTime ??= now;
 
             int graceLimit = (int) Math.Ceiling(
-                licenseState.Maximum!.Value * (100.0 + licenseState.ParsedLicense.GracePercent) / 100.0 );
+                licenseState.Maximum.Value * (100.0 + licenseState.ParsedLicense.GracePercent) / 100.0 );
 
             DateTime graceEnd = license.GraceStartTime.Value.AddDays( licenseState.ParsedLicense.GraceDays );
 
@@ -403,8 +432,6 @@ public sealed partial class LeaseService
 
         return null;
     }
-
-    private bool IsLicenseValid( License license ) => this.licenseParser.TryParse( license.LicenseKey ) != null;
 
     /// <summary>
     /// Determines whether a machine is a build agent, ignoring the unique-identifier suffix that
