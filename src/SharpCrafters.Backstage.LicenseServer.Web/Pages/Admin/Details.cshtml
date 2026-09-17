@@ -60,7 +60,9 @@ else
 
 <h3>Manage this license</h3>
 
-<p class="actions panel">
+@* A div and not a paragraph: a paragraph cannot contain a form, so the browser closed it at the
+   first form and left an empty panel behind, with the buttons outside it. *@
+<div class="actions panel">
     @if ( Model.IsDisabled )
     {
         <form method="post" asp-page-handler="Enable">
@@ -78,6 +80,6 @@ else
             <button type="submit">Disable</button>
         </form>
 
-        <text>A disabled license serves no new lease, and can then be deleted.</text>
+        <p class="note">A disabled license serves no new lease, and can then be deleted.</p>
     }
-</p>
+</div>

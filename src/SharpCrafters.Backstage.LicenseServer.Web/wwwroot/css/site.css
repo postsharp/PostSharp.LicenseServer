@@ -342,6 +342,18 @@ input:focus, select:focus, textarea:focus {
 
 /* --- Callouts ----------------------------------------------------------- */
 
+/* A row of buttons that act on the thing the page is about, with the sentence that explains them. */
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+}
+
+.actions .note {
+    margin: 0;
+}
+
 /* An explanation of a term used just above it: present, but quieter than what it explains. */
 .note {
     max-width: 68ch;
