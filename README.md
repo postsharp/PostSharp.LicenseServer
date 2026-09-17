@@ -24,6 +24,10 @@ You can download the latest release from https://github.com/postsharp-ops/SharpC
 
 * [Installing the license server](http://doc.postsharp.net/license-server-admin).
 * [Using the license server](http://doc.postsharp.net/license-server).
+* [Configuring the license server](docs/configuration.md).
+* [Running the license server in a container](docs/docker.md).
+* [The license server protocol](docs/protocol.md), for whoever maintains a client or diagnoses a
+  deployment.
 
 ## Trying it out
 
