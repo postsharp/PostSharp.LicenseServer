@@ -80,7 +80,31 @@
                 }
             },
             plugins: {
-                legend: { position: "bottom" },
+                legend: {
+                    position: "bottom",
+
+                    // Each series is a line, so the legend samples it as a line rather than as the
+                    // filled rectangle Chart.js draws by default. The dash pattern and the width
+                    // have to be carried over from the dataset, because the generated legend item
+                    // does not take them, and without them the three samples differ only by colour
+                    // while the lines on the chart are solid, dashed and dotted.
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: "line",
+                        boxWidth: 32,
+                        generateLabels: function (instance) {
+                            var items = Chart.defaults.plugins.legend.labels.generateLabels(instance);
+
+                            items.forEach(function (item) {
+                                var dataset = instance.data.datasets[item.datasetIndex];
+                                item.lineDash = dataset.borderDash || [];
+                                item.lineWidth = dataset.borderWidth || 2;
+                            });
+
+                            return items;
+                        }
+                    }
+                },
                 tooltip: {
                     callbacks: {
                         title: function (items) { return items[0].label; }
