@@ -8,9 +8,15 @@ using SharpCrafters.Backstage.LicenseServer.Licensing;
 namespace SharpCrafters.Backstage.LicenseServer.Pages;
 
 /// <summary>
-/// The usage history of one license: how many seats were in use on each of the last N days, against
+/// The usage history of one license: how many users held a lease on each of the last N days, against
 /// the capacity of the license and its grace allowance.
 /// </summary>
+/// <remarks>
+/// The chart counts users and not the seats they consume. The two are the same until somebody works
+/// on more machines than one seat covers, and the allocator charges that person a second seat while
+/// the chart still draws one person, so a license can be at its capacity with the chart below the
+/// line. <see cref="LeaseCountingPoint.LeaseCount"/> carries the seats for a caller that needs them.
+/// </remarks>
 public sealed class GraphModel(
     ILeaseRepository repository,
     ILicenseParser licenseParser,
@@ -72,11 +78,16 @@ public sealed class GraphModel(
                 day => new
                 {
                     Date = day.Key,
-                    Peak = day.Max( point => point.LeaseCount ),
+
+                    // The number of people holding a lease, not the number of seats they consume.
+                    // The two differ for a user working on more machines than one seat covers; the
+                    // capacity of a license is expressed in users, which is what the two reference
+                    // lines of the chart draw.
+                    Peak = day.Max( point => point.UserCount ),
 
                     // The timeline is ordered, and grouping preserves that order within a group, so
                     // the last point of a day is the count the next day starts from.
-                    AtEndOfDay = day.Last().LeaseCount
+                    AtEndOfDay = day.Last().UserCount
                 } )
             .ToList();
 
@@ -128,7 +139,7 @@ public sealed class GraphModel(
         this.Chart = new UsageChart
         {
             Labels = labels,
-            Used = values,
+            Users = values,
             Maximum = maximum,
             Grace = graceMaximum,
             AxisMaximum = (int) Math.Ceiling( Math.Ceiling( axisMaximum * 1.2 ) / 10 ) * 10
@@ -144,15 +155,18 @@ public sealed class GraphModel(
     {
         public string[] Labels { get; init; } = [];
 
-        public int[] Used { get; init; } = [];
+        /// <summary>
+        /// Gets the number of users holding a lease on each day of the window.
+        /// </summary>
+        public int[] Users { get; init; } = [];
 
         /// <summary>
-        /// Gets the number of seats the license allows, or null when it is unlimited.
+        /// Gets the number of concurrent users the license allows, or null when it is unlimited.
         /// </summary>
         public int? Maximum { get; init; }
 
         /// <summary>
-        /// Gets the number of seats tolerated during the grace period.
+        /// Gets the number of concurrent users tolerated during the grace period.
         /// </summary>
         public int? Grace { get; init; }
 

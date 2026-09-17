@@ -248,6 +248,7 @@ public sealed class LeaseRepository(
         Dictionary<string, Dictionary<string, int>> currentUsers = new( StringComparer.OrdinalIgnoreCase );
 
         int leaseCount = 0;
+        int userCount = 0;
 
         foreach ( LeaseCountingPoint record in allRecords )
         {
@@ -257,7 +258,8 @@ public sealed class LeaseRepository(
                 currentUsers.Add( record.Lease.UserName, machines );
             }
 
-            int seatsBefore = SeatCounter.CountSeats( [machines.Count], this.settings.MachinesPerUser );
+            int machinesBefore = machines.Count;
+            int seatsBefore = SeatCounter.CountSeats( [machinesBefore], this.settings.MachinesPerUser );
             string machine = record.Lease.Machine;
 
             if ( record.Kind == LeaseCountingPointKind.Open )
@@ -286,7 +288,21 @@ public sealed class LeaseRepository(
             int seatsAfter = SeatCounter.CountSeats( [machines.Count], this.settings.MachinesPerUser );
 
             leaseCount += seatsAfter - seatsBefore;
+
+            // A user joins the count when their first machine takes a lease and leaves it when their
+            // last one gives it up. The entry in currentUsers stays behind, so the users are counted
+            // from the machines they hold rather than from the number of entries.
+            if ( machinesBefore == 0 && machines.Count > 0 )
+            {
+                userCount++;
+            }
+            else if ( machinesBefore > 0 && machines.Count == 0 )
+            {
+                userCount--;
+            }
+
             record.LeaseCount = leaseCount;
+            record.UserCount = userCount;
 
             yield return record;
         }

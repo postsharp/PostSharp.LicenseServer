@@ -96,7 +96,7 @@ public sealed class PageTests : IDisposable
         JsonElement root = document.RootElement;
 
         Assert.Equal( 90, root.GetProperty( "labels" ).GetArrayLength() );
-        Assert.Equal( 90, root.GetProperty( "used" ).GetArrayLength() );
+        Assert.Equal( 90, root.GetProperty( "users" ).GetArrayLength() );
         Assert.Equal( 10, root.GetProperty( "maximum" ).GetInt32() );
         Assert.Equal( 12, root.GetProperty( "grace" ).GetInt32() );
         Assert.True( root.GetProperty( "axisMaximum" ).GetInt32() >= 12 );

@@ -20,8 +20,8 @@
     Chart.defaults.font.family = styles.getPropertyValue("--font-body").trim() || "sans-serif";
 
     var datasets = [{
-        label: "Used",
-        data: chart.used,
+        label: "Users",
+        data: chart.users,
         borderColor: "#973bfc",
         backgroundColor: "rgba(151, 59, 252, 0.16)",
         fill: true,

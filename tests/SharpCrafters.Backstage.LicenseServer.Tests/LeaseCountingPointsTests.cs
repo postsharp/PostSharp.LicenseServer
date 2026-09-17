@@ -3,8 +3,8 @@ using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
-/// The usage timeline behind the graph: a sequence of lease open and close events carrying the
-/// running seat count.
+/// The usage timeline behind the graph: a sequence of lease open and close events, each carrying the
+/// running number of seats and of users.
 /// </summary>
 public sealed class LeaseCountingPointsTests
 {
@@ -30,6 +30,49 @@ public sealed class LeaseCountingPointsTests
     }
 
     [Fact]
+    public async Task GetLeaseCountingPoints_ThreeUsersOneMachineEach_AreThreeUsers()
+    {
+        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        License license = LicenseBuilder.Default().AddTo( context );
+
+        foreach ( string user in new[] { "alice", "bob", "carol" } )
+        {
+            LeaseBuilder.For( license ).User( user ).Machine( $"desktop-{user}" )
+                .From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
+        }
+
+        List<LeaseCountingPoint> points = Timeline( context, license );
+
+        Assert.Equal( 3, points.Max( p => p.UserCount ) );
+        Assert.Equal( 3, points.Max( p => p.LeaseCount ) );
+        Assert.Equal( 0, points[^1].UserCount );
+    }
+
+    /// <summary>
+    /// A user who gives up one machine and keeps another is still counted, and leaves the count only
+    /// when the last of their leases ends.
+    /// </summary>
+    [Fact]
+    public async Task GetLeaseCountingPoints_UserKeepingOneMachine_StaysCounted()
+    {
+        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        License license = LicenseBuilder.Default().AddTo( context );
+
+        LeaseBuilder.For( license ).User( "alice" ).Machine( "desktop-1" )
+            .From( TestClock.Origin ).Lasting( 1 ).AddTo( context );
+
+        LeaseBuilder.For( license ).User( "alice" ).Machine( "laptop-1" )
+            .From( TestClock.Origin ).Lasting( 5 ).AddTo( context );
+
+        List<LeaseCountingPoint> points = Timeline( context, license );
+
+        // The first lease closes on day one and the second on day five. The user is counted
+        // throughout and leaves only at the last point.
+        Assert.All( points[..^1], p => Assert.Equal( 1, p.UserCount ) );
+        Assert.Equal( 0, points[^1].UserCount );
+    }
+
+    [Fact]
     public async Task GetLeaseCountingPoints_OneUserTwoMachines_NeverExceedsOneSeat()
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
@@ -40,7 +83,10 @@ public sealed class LeaseCountingPointsTests
         LeaseBuilder.For( license ).User( "alice" ).Machine( "laptop-1" ).From( TestClock.Days( 1 ) ).Lasting( 3 )
             .AddTo( context );
 
-        Assert.Equal( 1, Timeline( context, license ).Max( p => p.LeaseCount ) );
+        List<LeaseCountingPoint> points = Timeline( context, license );
+
+        Assert.Equal( 1, points.Max( p => p.LeaseCount ) );
+        Assert.Equal( 1, points.Max( p => p.UserCount ) );
     }
 
     [Fact]
@@ -55,7 +101,12 @@ public sealed class LeaseCountingPointsTests
                 .AddTo( context );
         }
 
-        Assert.Equal( 2, Timeline( context, license ).Max( p => p.LeaseCount ) );
+        List<LeaseCountingPoint> points = Timeline( context, license );
+
+        // Two seats but one person. This is the difference between the two counts each point carries,
+        // and the reason the chart draws the users.
+        Assert.Equal( 2, points.Max( p => p.LeaseCount ) );
+        Assert.Equal( 1, points.Max( p => p.UserCount ) );
     }
 
     /// <summary>
@@ -188,50 +239,9 @@ public sealed class LeaseCountingPointsTests
 
         Assert.Equal( 4, points.Count );
         Assert.Equal( 1, points.Max( p => p.LeaseCount ) );
+        Assert.Equal( 1, points.Max( p => p.UserCount ) );
         Assert.Equal( 0, points[^1].LeaseCount );
-    }
-
-    /// <summary>
-    /// The same user on two machines still occupies one seat at two machines per user, which is what
-    /// shows that the counting of duplicates did not turn into a count of leases.
-    /// </summary>
-    [Fact]
-    public async Task GetLeaseCountingPoints_TwoOpenLeasesOnTwoMachines_CountAsOneSeat()
-    {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        License license = LicenseBuilder.Default().AddTo( context );
-
-        LeaseBuilder.For( license ).User( "alice" ).Machine( "desktop-1" )
-            .From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
-
-        LeaseBuilder.For( license ).User( "alice" ).Machine( "notebook-1" )
-            .From( TestClock.Days( 1 ) ).Lasting( 3 ).AddTo( context );
-
-        List<LeaseCountingPoint> points = Timeline( context, license );
-
-        Assert.Equal( 1, points.Max( p => p.LeaseCount ) );
-        Assert.Equal( 0, points[^1].LeaseCount );
-    }
-
-    /// <summary>
-    /// A third machine takes a second seat, at two machines per user.
-    /// </summary>
-    [Fact]
-    public async Task GetLeaseCountingPoints_ThreeOpenLeasesOnThreeMachines_CountAsTwoSeats()
-    {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        License license = LicenseBuilder.Default().AddTo( context );
-
-        foreach ( string machine in new[] { "desktop-1", "notebook-1", "desktop-2" } )
-        {
-            LeaseBuilder.For( license ).User( "alice" ).Machine( machine )
-                .From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
-        }
-
-        List<LeaseCountingPoint> points = Timeline( context, license );
-
-        Assert.Equal( 2, points.Max( p => p.LeaseCount ) );
-        Assert.Equal( 0, points[^1].LeaseCount );
+        Assert.Equal( 0, points[^1].UserCount );
     }
 
     [Fact]
