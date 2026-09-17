@@ -132,12 +132,13 @@ public static class LicenseServerEndpoints
 
         if ( elapsed > TimeSpan.FromSeconds( 1 ) )
         {
-            // The user and machine names come from the query string, so they are stripped of
-            // anything that could forge a line in a plain-text log.
+            // Hashed, as in the audit log: the names come from the query string, so writing them
+            // verbatim would both let a caller forge a line in a plain-text log and disclose who
+            // works where to anyone who can read it. The hash still correlates with the audit log.
             logger.LogWarning(
-                "The lease request for {User} on {Machine} took {Elapsed}.",
-                Sanitize( userName ),
-                Sanitize( machine ),
+                "A lease request for user {User} on machine {Machine} took {Elapsed}.",
+                Lease.HashName( userName ),
+                Lease.HashName( machine ),
                 elapsed );
         }
 
@@ -238,17 +239,4 @@ public static class LicenseServerEndpoints
 
     private static IResult Error( int statusCode, string description )
         => Results.Text( description, "text/plain", statusCode: statusCode );
-
-    /// <summary>
-    /// Removes control characters from a value taken from the request, so that it cannot forge a
-    /// line break in a log, and caps its length.
-    /// </summary>
-    private static string Sanitize( string value )
-    {
-        const int maximumLength = 200;
-
-        string cleaned = new( value.Where( c => !char.IsControl( c ) ).ToArray() );
-
-        return cleaned.Length <= maximumLength ? cleaned : cleaned[..maximumLength];
-    }
 }
