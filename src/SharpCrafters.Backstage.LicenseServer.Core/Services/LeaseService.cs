@@ -375,8 +375,9 @@ public sealed partial class LeaseService
 
             license.GraceStartTime ??= now;
 
-            int graceLimit = (int) Math.Ceiling(
-                licenseState.Maximum.Value * (100.0 + licenseState.ParsedLicense.GracePercent) / 100.0 );
+            int graceLimit = LicenseCapacity.GetGraceLimit(
+                licenseState.Maximum.Value,
+                licenseState.ParsedLicense.GracePercent );
 
             DateTime graceEnd = license.GraceStartTime.Value.AddDays( licenseState.ParsedLicense.GraceDays );
 

@@ -4,6 +4,7 @@ using SharpCrafters.Backstage.LicenseServer;
 using SharpCrafters.Backstage.LicenseServer.Data;
 using SharpCrafters.Backstage.LicenseServer.Email;
 using SharpCrafters.Backstage.LicenseServer.Endpoints;
+using SharpCrafters.Backstage.LicenseServer.Health;
 using SharpCrafters.Backstage.LicenseServer.Licensing;
 using SharpCrafters.Backstage.LicenseServer.Locking;
 using SharpCrafters.Backstage.LicenseServer.Options;
@@ -36,6 +37,15 @@ IReadOnlyList<byte> testLicensingAuthorities =
     builder.Services.AddLicenseServerLicensing( builder.Configuration, builder.Environment );
 
 builder.Services.AddSingleton<ILicenseServerVersion, BackstageServerVersion>();
+
+builder.Services.AddScoped<LicenseAvailabilityService>();
+
+// The health checks of the two probes. The liveness probe at /health/live runs none of them; see
+// OperationsEndpoints.
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>( "database" )
+    .AddCheck<LicenseHealthCheck>( "licenses" );
+
 builder.Services.AddSingleton<ILeaseSerializer, LeaseSerializer>();
 
 builder.Services.AddSingleton<IAuditKeyProvider>(
@@ -153,6 +163,7 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapLicenseServerEndpoints();
+app.MapOperationsEndpoints();
 app.MapLegacyUrlRedirects();
 
 // On SQL Server the schema is created by Database/CreateTables.sql, which is the source of truth and

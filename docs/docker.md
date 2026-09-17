@@ -53,6 +53,20 @@ explicit mount still keeps these files outside its own writable layer. Name the 
 deployment: an anonymous one is easy to prune by accident. `LicenseServer__DataDirectory` moves the
 directory somewhere else.
 
+## Probing it
+
+The server answers `/health/live` with the state of the process, `/health` with the state of the
+process, the database and the licenses, and `/version` with the build it runs. All three are
+anonymous. In Kubernetes, the liveness probe is `/health/live` and the readiness probe is `/health`.
+A missing or expired license does not fail either of them, so a deployment is never held back by one;
+it is reported in the body of `/health` and in the log of the server. See
+[Monitoring](configuration.md#monitoring).
+
+The image declares no `HEALTHCHECK`, and the compose file none either. A health check runs inside the
+container, and the ASP.NET runtime image carries no HTTP client to run it with: adding `curl` to the
+image for that is more attack surface than a probe is worth, when everything that runs containers can
+make an HTTP request of its own.
+
 ## Trying it out without a license key
 
 A server with no license key cannot serve a lease, and every key the production licensing authority

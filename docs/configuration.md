@@ -171,6 +171,67 @@ In a container this directory has to be a volume. The image declares one at `/ap
 files survive the container being replaced even when no mount is given; name the volume in a real
 deployment and back it up with the database. See [docker.md](docker.md).
 
+## Monitoring
+
+| Path | Answers |
+|---|---|
+| `/health/live` | Whether the process answers. It runs no check. |
+| `/health` | Whether the process answers, the database can be queried, and a license can serve a lease. |
+| `/version` | Which build is deployed, and which version of the licensing library it parses license keys with. |
+
+The three are served anonymously, like `Lease.ashx` and unlike the administrative pages, because a
+load balancer or a monitoring agent holds no Windows credentials and a probe answered with 401 reads
+as a server that is down. None of them discloses a license key, a user name or a connection string.
+The version number is disclosed to whoever can reach the server, which is the price of a probe that
+works.
+
+`/health` names each check in its body, and has three states:
+
+| Status | Code | Means |
+|---|---|---|
+| `Healthy` | 200 | The database answers and a license can serve a lease. |
+| `Degraded` | 200 | The server works, but no license can serve a lease. |
+| `Unhealthy` | 503 | The database cannot be queried. |
+
+```json
+{
+  "status": "Degraded",
+  "checks": [
+    { "name": "database", "status": "Healthy", "description": "The database answers." },
+    { "name": "licenses", "status": "Degraded", "description": "No license can serve a lease: 1 expired." }
+  ]
+}
+```
+
+The database check queries the license table rather than opening a connection, because the server
+never creates its own schema on SQL Server: a database that accepts connections but was never given
+`Database\CreateTables.sql` is the deployment mistake it catches.
+
+The license check reports whether any license can serve a lease now. It warns when every license is
+expired, disabled, unparsable, or full with its grace period over, and on a server that has no
+license at all. This is what distinguishes a server that is running from a server that is working: a
+server with nothing left to serve answers every lease request with 403 and looks perfectly well from
+the outside.
+
+It warns rather than fails, which is why a license that has expired leaves the endpoint answering
+200. Nothing that watches a probe can add a license: restarting the server, failing over to another
+one, or taking this one out of a load balancer all leave the problem exactly where it was, and the
+server goes on serving the leases it has already granted. Only the process and the database fail the
+probe.
+
+A monitoring system should therefore alert on the status in the body and not only on the status code.
+The server also writes a warning to its own log at every degraded check, naming the reason:
+
+```
+warn: Microsoft.Extensions.Diagnostics.HealthChecks.DefaultHealthCheckService[103]
+      Health check licenses with status Degraded completed after 33.8303ms with message 'No license is registered.'
+```
+
+The license check asks a weaker question than a lease request does. A request names a product, a
+version and a build date, and a license can be refused on any of the three, so a server that reports
+itself healthy can still deny an individual request. See
+[the protocol](protocol.md#what-decides-a-grant).
+
 ## Testing
 
 | Setting | Default | Meaning |
