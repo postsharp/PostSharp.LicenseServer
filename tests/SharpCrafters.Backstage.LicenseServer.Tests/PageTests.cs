@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
@@ -7,9 +8,16 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests;
 /// <summary>
 /// The pages an administrator uses, exercised through the real pipeline.
 /// </summary>
-public sealed class PageTests : IDisposable
+public sealed partial class PageTests : IDisposable
 {
     private readonly LicenseServerApplication application = new();
+
+    /// <summary>
+    /// Collapses every run of whitespace, so that an assertion on a sentence does not depend on where
+    /// the markup wraps it.
+    /// </summary>
+    [GeneratedRegex( @"\s+" )]
+    private static partial Regex Whitespace();
 
     public void Dispose() => this.application.Dispose();
 
@@ -57,6 +65,33 @@ public sealed class PageTests : IDisposable
         HttpResponseMessage response = await client.GetAsync( "/Admin/Details?id=3" );
 
         Assert.Equal( HttpStatusCode.OK, response.StatusCode );
+    }
+
+    /// <summary>
+    /// The page states what a seat is, because it reports a number of them. The rule is stated with
+    /// the value this server is configured with, so an installation that changed it is not told the
+    /// default.
+    /// </summary>
+    [Fact]
+    public async Task Details_ExplainsWhatASeatIs()
+    {
+        this.application.AddLicense( LicenseBuilder.Default().WithLicenseId( 3 ) );
+        HttpClient client = this.application.CreateClient();
+
+        // The markup wraps the sentence over several lines, and where it wraps is not what this test
+        // is about.
+        string body = Whitespace().Replace( await client.GetStringAsync( "/Admin/Details?id=3" ), " " );
+
+        // LicenseServerApplication configures two machines per seat.
+        Assert.Contains(
+            "A seat is one user together with the machines that user works on, up to 2 of them.",
+            body,
+            StringComparison.Ordinal );
+
+        Assert.Contains(
+            "consumes one seat per 2 machine(s), rounded up",
+            body,
+            StringComparison.Ordinal );
     }
 
     [Fact]

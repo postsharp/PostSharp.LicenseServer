@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Options;
 
 namespace SharpCrafters.Backstage.LicenseServer.Pages.Admin;
 
@@ -11,6 +13,7 @@ namespace SharpCrafters.Backstage.LicenseServer.Pages.Admin;
 public sealed class DetailsModel(
     ILeaseRepository repository,
     LicenseServerDbContext db,
+    IOptions<LicenseServerOptions> options,
     TimeProvider timeProvider ) : PageModel
 {
     [BindProperty( SupportsGet = true )]
@@ -18,7 +21,13 @@ public sealed class DetailsModel(
 
     public IReadOnlyList<Lease> Leases { get; private set; } = [];
 
-    public int ConcurrentUsers { get; private set; }
+    public int Seats { get; private set; }
+
+    /// <summary>
+    /// Gets the number of machines one seat covers, so that the page states the rule with the value
+    /// this server is configured with rather than with the default.
+    /// </summary>
+    public int MachinesPerSeat => options.Value.MachinesPerUser;
 
     public bool IsDisabled { get; private set; }
 
@@ -41,7 +50,7 @@ public sealed class DetailsModel(
             .AsNoTracking()
             .ToListAsync( cancellationToken );
 
-        this.ConcurrentUsers = repository.GetActiveSeats( this.Id, now );
+        this.Seats = repository.GetActiveSeats( this.Id, now );
         this.IsDisabled = license.Priority < 0;
 
         return this.Page();

@@ -11,8 +11,14 @@
 
 <p>
     <strong>@Model.Leases.Count</strong> current lease(s), consuming
-    <strong>@Model.ConcurrentUsers</strong> seat(s).
+    <strong>@Model.Seats</strong> seat(s).
     <a asp-page="/Graph" asp-route-id="@Model.Id">See the usage history</a>.
+</p>
+
+<p class="note">
+    A seat is one user together with the machines that user works on, up to
+    @Model.MachinesPerSeat of them. A user working on more machines consumes one seat per
+    @Model.MachinesPerSeat machine(s), rounded up. The capacity of a license is a number of seats.
 </p>
 
 @if ( Model.Leases.Count == 0 )
