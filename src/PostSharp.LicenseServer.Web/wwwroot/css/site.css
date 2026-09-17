@@ -1,0 +1,63 @@
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    padding: 20px;
+    color: #222;
+}
+
+h1 {
+    font-size: 1.8em;
+}
+
+header {
+    cursor: pointer;
+}
+
+header img {
+    float: right;
+}
+
+hr {
+    margin-top: 50px;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+td, th {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+th {
+    border-bottom: 2px solid #999;
+}
+
+.no-licenses {
+    padding: 20px;
+    background: #f6f6f6;
+    border-left: 4px solid #58006e;
+}
+
+.validation-error, .field-validation-error, .validation-summary-errors {
+    color: #b00020;
+}
+
+.actions form {
+    display: inline;
+}
+
+.toolbar {
+    float: right;
+}
+
+#usage-chart {
+    width: 100%;
+    height: 400px;
+}
+
+button, input[type="submit"] {
+    padding: 6px 14px;
+    cursor: pointer;
+}

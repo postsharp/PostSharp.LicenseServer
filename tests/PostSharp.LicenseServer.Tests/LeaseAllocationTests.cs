@@ -54,7 +54,7 @@ public sealed class LeaseAllocationTests
         Lease? lease = await RequestAsync( context, [license], now: TestClock.Days( 1 ) );
 
         Assert.Equal( existing.LeaseId, lease!.LeaseId );
-        Assert.Empty( context.Db.ChangeTracker.Entries<Lease>().Where( e => e.State == EntityState.Added ) );
+        Assert.DoesNotContain( context.Db.ChangeTracker.Entries<Lease>(), e => e.State == EntityState.Added );
     }
 
     [Fact]

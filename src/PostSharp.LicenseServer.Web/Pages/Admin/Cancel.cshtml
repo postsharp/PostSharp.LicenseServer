@@ -1,0 +1,26 @@
+@page
+@model PostSharp.LicenseServer.Pages.Admin.CancelModel
+@{
+    ViewData["Title"] = "Cancel a lease";
+}
+
+<p class="toolbar">
+    <a asp-page="/Admin/Details" asp-route-id="@Model.Lease!.LicenseId">Back</a>
+</p>
+
+<h2>Cancel a lease</h2>
+
+<p>
+    Cancel the lease of <strong>@Model.Lease!.UserName</strong> on
+    <strong>@Model.Lease.Machine</strong>, which currently runs until
+    @Model.Lease.EndTime.ToString( "g" )?
+</p>
+
+<p>
+    The seat is released immediately. The lease itself is kept in the audit log.
+</p>
+
+<form method="post">
+    <button type="submit">Cancel the lease</button>
+    <a asp-page="/Admin/Details" asp-route-id="@Model.Lease.LicenseId">Keep it</a>
+</form>

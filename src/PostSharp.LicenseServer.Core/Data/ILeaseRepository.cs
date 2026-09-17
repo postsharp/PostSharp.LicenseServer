@@ -11,6 +11,11 @@ public interface ILeaseRepository
     /// </summary>
     IQueryable<Lease> OpenLeases { get; }
 
+    /// <summary>
+    /// Gets every lease ever recorded, including those since replaced. This is the audit log.
+    /// </summary>
+    IQueryable<Lease> Leases { get; }
+
     IQueryable<License> Licenses { get; }
 
     /// <summary>

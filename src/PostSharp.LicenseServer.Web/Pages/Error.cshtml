@@ -1,0 +1,18 @@
+@page
+@model ErrorModel
+@{
+    ViewData["Title"] = "Error";
+}
+
+<h2>Something went wrong</h2>
+
+<p>An unexpected error occurred while handling your request.</p>
+
+@if ( Model.RequestId != null )
+{
+    <p>Request identifier: <code>@Model.RequestId</code></p>
+}
+
+<p>The details are in the server log.</p>
+
+<p><a asp-page="/Index">Back to the licenses</a></p>

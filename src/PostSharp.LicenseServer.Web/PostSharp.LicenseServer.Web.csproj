@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Keep the historical root namespace and assembly name so that deployments, log filters and
+         documentation that refer to PostSharp.LicenseServer remain valid. -->
+    <RootNamespace>PostSharp.LicenseServer</RootNamespace>
+    <AssemblyName>PostSharp.LicenseServer</AssemblyName>
+    <UserSecretsId>postsharp-license-server</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PostSharp.LicenseServer.Core\PostSharp.LicenseServer.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shipped so that an administrator can create the database on a new installation. -->
+    <Content Include="Database\CreateTables.sql" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

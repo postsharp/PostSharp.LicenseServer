@@ -1,0 +1,38 @@
+@page
+@model PostSharp.LicenseServer.Pages.Admin.ExportModel
+@{
+    ViewData["Title"] = "Export the audit log";
+}
+
+<p class="toolbar">
+    <a asp-page="/Index">Back</a>
+</p>
+
+<h2>Export the audit log</h2>
+
+<p>
+    The export is a text file with one line per lease. User and machine names appear only as hashes,
+    so the file can be shared without disclosing who works where.
+</p>
+
+<form method="post">
+    <div asp-validation-summary="All" class="validation-summary-errors"></div>
+
+    <p>
+        <label asp-for="FromMonth"></label>
+        <select asp-for="FromMonth" asp-items="PostSharp.LicenseServer.Pages.Admin.ExportModel.Months"></select>
+        <input asp-for="FromYear" type="number" min="2010" max="2100" />
+        <span asp-validation-for="FromYear" class="field-validation-error"></span>
+    </p>
+
+    <p>
+        <label asp-for="ToMonth"></label>
+        <select asp-for="ToMonth" asp-items="PostSharp.LicenseServer.Pages.Admin.ExportModel.Months"></select>
+        <input asp-for="ToYear" type="number" min="2010" max="2100" />
+        <span asp-validation-for="ToYear" class="field-validation-error"></span>
+    </p>
+
+    <p>
+        <button type="submit">Download</button>
+    </p>
+</form>

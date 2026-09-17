@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - PostSharp License Server</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync( "Head", required: false )
+</head>
+<body>
+<header onclick="document.location='@Url.Content( "~/" )'">
+    <img src="~/Img/PostSharpText_Light_240x33.png" alt="PostSharp" />
+    <h1>PostSharp License Server</h1>
+</header>
+
+<hr />
+
+<main>
+    @RenderBody()
+</main>
+
+@await RenderSectionAsync( "Scripts", required: false )
+</body>
+</html>

@@ -1,0 +1,27 @@
+@page
+@model PostSharp.LicenseServer.Pages.Admin.AddLicenseModel
+@{
+    ViewData["Title"] = "Add a license";
+}
+
+<p class="toolbar">
+    <a asp-page="/Index">Back</a>
+</p>
+
+<h2>Add a license</h2>
+
+<p>Paste the license key sent to you by PostSharp Technologies.</p>
+
+<form method="post">
+    <div asp-validation-summary="All" class="validation-summary-errors"></div>
+
+    <p>
+        <label asp-for="LicenseKey"></label><br />
+        <textarea asp-for="LicenseKey" rows="4" cols="80"></textarea>
+        <span asp-validation-for="LicenseKey" class="field-validation-error"></span>
+    </p>
+
+    <p>
+        <button type="submit">Add</button>
+    </p>
+</form>

@@ -17,6 +17,8 @@ public sealed class LeaseRepository(
 
     public IQueryable<Lease> OpenLeases => db.OpenLeases;
 
+    public IQueryable<Lease> Leases => db.Leases;
+
     public IQueryable<License> Licenses => db.Licenses;
 
     /// <summary>

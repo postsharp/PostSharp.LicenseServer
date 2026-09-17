@@ -1,0 +1,35 @@
+@page
+@model PostSharp.LicenseServer.Pages.Admin.GenerateDemoDataModel
+@{
+    ViewData["Title"] = "Generate demo data";
+}
+
+<p class="toolbar">
+    <a asp-page="/Index">Back</a>
+</p>
+
+<h2>Generate demo data</h2>
+
+<p>
+    Simulates a team building software over a period, so that the dashboard and the usage graph have
+    something to show. This page exists only in a development environment.
+</p>
+
+@if ( Model.Message != null )
+{
+    <p><strong>@Model.Message</strong></p>
+}
+
+<form method="post">
+    <p>
+        <label for="userCount">Users</label>
+        <input id="userCount" name="userCount" type="number" min="1" max="200" value="@Model.UserCount" />
+    </p>
+    <p>
+        <label for="days">Days of history</label>
+        <input id="days" name="days" type="number" min="1" max="365" value="@Model.Days" />
+    </p>
+    <p>
+        <button type="submit">Generate</button>
+    </p>
+</form>

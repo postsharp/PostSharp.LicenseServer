@@ -1,0 +1,76 @@
+@page
+@model PostSharp.LicenseServer.Pages.Admin.DetailsModel
+@{
+    ViewData["Title"] = $"License {Model.Id}";
+}
+
+<p class="toolbar">
+    <a asp-page="/Index">Back</a>
+</p>
+
+<h2>License @Model.Id</h2>
+
+<p>
+    <strong>@Model.Leases.Count</strong> current lease(s), consuming
+    <strong>@Model.ConcurrentUsers</strong> seat(s).
+    <a asp-page="/Graph" asp-route-id="@Model.Id">See the usage history</a>.
+</p>
+
+@if ( Model.Leases.Count == 0 )
+{
+    <p>No lease is currently held against this license.</p>
+}
+else
+{
+    <table>
+        <thead>
+        <tr>
+            <th>Lease</th>
+            <th>User</th>
+            <th>Machine</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Grace</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach ( var lease in Model.Leases )
+        {
+            <tr>
+                <td>@lease.LeaseId</td>
+                <td>@lease.UserName</td>
+                <td>@lease.Machine</td>
+                <td>@lease.StartTime.ToString( "g" )</td>
+                <td>@lease.EndTime.ToString( "g" )</td>
+                <td>@(lease.Grace ? "Yes" : "")</td>
+                <td><a asp-page="/Admin/Cancel" asp-route-id="@lease.LeaseId">Cancel</a></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+<h3>Manage this license</h3>
+
+<p class="actions">
+    @if ( Model.IsDisabled )
+    {
+        <form method="post" asp-page-handler="Enable">
+            <button type="submit">Enable</button>
+        </form>
+
+        <form method="post" asp-page-handler="Delete"
+              onsubmit="return confirm('Delete this license and all of its leases? This cannot be undone.');">
+            <button type="submit">Delete</button>
+        </form>
+    }
+    else
+    {
+        <form method="post" asp-page-handler="Disable">
+            <button type="submit">Disable</button>
+        </form>
+
+        <text>A disabled license serves no new lease, and can then be deleted.</text>
+    }
+</p>

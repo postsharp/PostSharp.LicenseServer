@@ -76,6 +76,8 @@ public sealed class BuildServerDetectionTests
     {
         public IQueryable<Lease> OpenLeases => Array.Empty<Lease>().AsQueryable();
 
+        public IQueryable<Lease> Leases => Array.Empty<Lease>().AsQueryable();
+
         public IQueryable<License> Licenses => Array.Empty<License>().AsQueryable();
 
         public Lease? CreateLease(

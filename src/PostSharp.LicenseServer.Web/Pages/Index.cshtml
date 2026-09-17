@@ -1,0 +1,59 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Licenses";
+}
+
+<p class="toolbar">
+    <a asp-page="/Admin/AddLicense">Add a license</a> |
+    <a asp-page="/Admin/Export">Export the audit log</a>
+</p>
+
+<h2>Licenses</h2>
+
+@if ( Model.Licenses.Count == 0 )
+{
+    <div class="no-licenses">
+        <p>
+            No license has been registered yet. <a asp-page="/Admin/AddLicense">Add a license key</a> to
+            let this server serve leases.
+        </p>
+    </div>
+}
+else
+{
+    <table>
+        <thead>
+        <tr>
+            <th>License</th>
+            <th>Type</th>
+            <th>Product</th>
+            <th>Seats</th>
+            <th>In use</th>
+            <th>Grace started</th>
+            <th>Maintenance ends</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach ( var license in Model.Licenses )
+        {
+            <tr>
+                <td>@license.LicenseId</td>
+                <td>@license.LicenseType</td>
+                <td>@license.ProductCode</td>
+                <td>@(license.MaxUsers?.ToString() ?? "Unlimited")</td>
+                <td>@license.CurrentUsers</td>
+                <td>@license.GraceStartTime?.ToString( "d" )</td>
+                <td>@license.MaintenanceEndDate?.ToString( "d" )</td>
+                <td>@license.Status</td>
+                <td>
+                    <a asp-page="/Admin/Details" asp-route-id="@license.LicenseId">Details</a>
+                    <a asp-page="/Graph" asp-route-id="@license.LicenseId">Usage</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
