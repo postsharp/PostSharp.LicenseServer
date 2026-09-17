@@ -83,13 +83,10 @@ public sealed partial class PageTests : IDisposable
         string body = Whitespace().Replace( await client.GetStringAsync( "/Admin/Details?id=3" ), " " );
 
         // LicenseServerApplication configures two machines per seat.
-        Assert.Contains(
-            "A seat is one user together with the machines that user works on, up to 2 of them.",
-            body,
-            StringComparison.Ordinal );
+        Assert.Contains( "A seat is one user working on up to 2 machines.", body, StringComparison.Ordinal );
 
         Assert.Contains(
-            "consumes one seat per 2 machine(s), rounded up",
+            "the number of machines divided by 2, rounded up",
             body,
             StringComparison.Ordinal );
     }

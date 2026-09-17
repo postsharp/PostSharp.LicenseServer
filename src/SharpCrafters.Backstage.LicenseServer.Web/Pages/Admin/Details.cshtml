@@ -16,9 +16,9 @@
 </p>
 
 <p class="note">
-    A seat is one user together with the machines that user works on, up to
-    @Model.MachinesPerSeat of them. A user working on more machines consumes one seat per
-    @Model.MachinesPerSeat machine(s), rounded up. The capacity of a license is a number of seats.
+    A seat is one user working on up to @Model.MachinesPerSeatText. A user working on more machines
+    takes more than one seat: the number of machines divided by @Model.MachinesPerSeat, rounded up.
+    The capacity of a license is a number of seats.
 </p>
 
 @if ( Model.Leases.Count == 0 )

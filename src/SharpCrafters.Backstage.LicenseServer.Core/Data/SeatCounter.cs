@@ -5,10 +5,9 @@ namespace SharpCrafters.Backstage.LicenseServer.Data;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A seat is one user together with the machines that user works on, up to
-/// <c>MachinesPerUser</c> of them. A user working on more machines than that consumes one seat per
-/// <c>MachinesPerUser</c> machines, rounded up: at the default of two, one or two machines are one
-/// seat, three or four are two seats, and so on.
+/// A seat is one user working on up to <c>MachinesPerUser</c> machines. A user working on more
+/// machines takes more than one seat: the number of machines divided by <c>MachinesPerUser</c>,
+/// rounded up. At the default of two, one or two machines are one seat and three or four are two.
 /// </para>
 /// <para>
 /// The seat is the unit the capacity of a license key is expressed in, and the only place where the

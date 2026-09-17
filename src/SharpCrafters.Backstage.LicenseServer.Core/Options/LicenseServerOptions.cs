@@ -19,8 +19,8 @@ public sealed class LicenseServerOptions
     public int GracePeriodWarningDays { get; set; } = 1;
 
     /// <summary>
-    /// Gets or sets the number of machines that one seat covers. A user working on more machines than
-    /// this consumes one seat per this many machines, rounded up; see
+    /// Gets or sets the number of machines that one seat covers. A user working on more machines
+    /// takes more than one seat: the number of machines divided by this value, rounded up. See
     /// <see cref="Data.SeatCounter"/>. The default value is 2. Check your license agreement for a
     /// different value.
     /// </summary>

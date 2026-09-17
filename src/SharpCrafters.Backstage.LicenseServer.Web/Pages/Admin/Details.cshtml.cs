@@ -29,6 +29,13 @@ public sealed class DetailsModel(
     /// </summary>
     public int MachinesPerSeat => options.Value.MachinesPerUser;
 
+    /// <summary>
+    /// Gets <see cref="MachinesPerSeat"/> with its noun, so that a server configured with one machine
+    /// per seat reads as "1 machine" and not as "1 machines".
+    /// </summary>
+    public string MachinesPerSeatText
+        => this.MachinesPerSeat == 1 ? "1 machine" : $"{this.MachinesPerSeat} machines";
+
     public bool IsDisabled { get; private set; }
 
     public async Task<IActionResult> OnGetAsync( CancellationToken cancellationToken )

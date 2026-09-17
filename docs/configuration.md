@@ -40,13 +40,13 @@ into `appsettings.json`.
 
 ## Licensing rules
 
-A seat is one user together with the machines that user works on, up to `MachinesPerUser` of them. A
-user working on more machines than that consumes one seat per `MachinesPerUser` machines, rounded up:
-at the default of two, one or two machines are one seat, three or four are two seats, and so on. The
-capacity of a license key is a number of seats, and the seat is the only unit the server counts in.
+A seat is one user working on up to `MachinesPerUser` machines. A user working on more machines takes
+more than one seat: the number of machines divided by `MachinesPerUser`, rounded up. At the default of
+two, one or two machines are one seat and three or four are two.
 
-The license agreement states the same rule the other way round, as a number of authorized users each
-entitled to a number of devices.
+The capacity of a license key is a number of seats, and the seat is the only unit the server counts
+in. The license agreement states the same rule the other way round, as a number of authorized users
+each entitled to a number of devices.
 
 | Setting | Default | Meaning |
 |---|---|---|

@@ -187,11 +187,10 @@ skips a license whose priority is negative. For each license, in order:
 3. A new lease is granted if the license has a free seat.
 4. A new lease is granted beyond capacity if the license is within its grace period.
 
-A seat is one user together with the machines that user works on, up to
-`LicenseServer:MachinesPerUser` of them. A user working on more machines consumes one seat per that
-many machines, rounded up, so at the default of two a user on one or two machines is one seat and a
-user on three is two. The capacity of a license key is a number of seats, and the seat is the only
-unit the server counts in.
+A seat is one user working on up to `LicenseServer:MachinesPerUser` machines. A user working on more
+machines takes more than one seat: the number of machines divided by that setting, rounded up. At the
+default of two, one or two machines are one seat and three or four are two. The capacity of a license
+key is a number of seats, and the seat is the only unit the server counts in.
 
 `EndTime` is `NewLeaseDays` from now, clamped to the expiry of the license key. `RenewTime` is
 `MinLeaseDays` before `EndTime`. The server refuses to start unless `MinLeaseDays` is smaller than
