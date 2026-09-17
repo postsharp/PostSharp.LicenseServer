@@ -1,15 +1,22 @@
 # Running the license server in a container
 
-`docker-compose.yml` brings up a complete license server: the application, a SQL Server database,
-and a one-shot job that creates the schema from `Database/CreateTables.sql`.
+`docker-compose.yml` brings up a license server: the application, a SQL Server database, and a
+one-shot job that creates the schema from `Database/CreateTables.sql`.
 
 ```
+export MSSQL_SA_PASSWORD='...'
 ./Build.ps1 build
 docker compose up
 ```
 
 The build comes first because the image carries the contents of the release archive rather than
 building the sources again, so the container runs exactly what is released.
+
+The deployment serves the license keys you add to it and holds nothing else. The database password
+comes from the environment rather than from a file in the repository, and the server generates its
+own audit signing key into a volume. To bring it up with license keys it issues to itself, which is
+what a trial or a load simulation wants, see
+[Trying it out without a license key](#trying-it-out-without-a-license-key).
 
 The server is then at http://localhost:8080 and the database at `localhost:1433`. Add a license key
 on the **Add a license** page and point a PostSharp client at
@@ -35,26 +42,51 @@ docker compose down --volumes
 | `database-schema` | Runs once: creates the database if it does not exist, then runs `CreateTables.sql` if the tables are not already there. Re-running `docker compose up` does not fail on an existing schema. It reuses the SQL Server image, which already carries `sqlcmd`, rather than pulling a second one. |
 | `licenseserver` | The application, from `Dockerfile`. Waits for the schema job to finish. |
 
-The application keeps its audit signing key in the `licenseserver-data` volume, so the signature
-chain survives the container being replaced. The database keeps its files in `database-data`.
+The application keeps the files it generates and must not lose in the `licenseserver-data` volume,
+mounted at `/app/App_Data`: the audit signing key, and the test licensing authority when there is
+one. They have to outlive the container. Losing the audit signing key does not invalidate the rows
+already written, but it does start a new signature chain, and losing the test authority stops the
+license keys it signed from being accepted. The database keeps its files in `database-data`.
 
-## This is a test deployment
+The image declares `/app/App_Data` as a volume, so a container started with `docker run` and no
+explicit mount still keeps these files outside its own writable layer. Name the volume in a real
+deployment: an anonymous one is easy to prune by accident. `LicenseServer__DataDirectory` moves the
+directory somewhere else.
 
-It is meant for trying the license server out and for development. Four things make it unsuitable as
-it stands for anything else.
+## Trying it out without a license key
 
-- **The `sa` password is in the compose file in plain text**, and `sa` is what the application
-  connects as. A real deployment uses a login with rights on the one database, and supplies the
-  password from a secret rather than from a file in the repository.
+A server with no license key cannot serve a lease, and every key the production licensing authority
+signs is one that was sold. The test override lets the server issue itself the keys it serves:
+
+```
+docker compose -f docker-compose.yml -f docker-compose.test.yml up
+```
+
+It puts the server in the Development environment, sets `LicenseServer__SeedTestLicenses`, and runs
+the clock 1440 times faster than real time so that a fortnight of leases fits into a coffee break.
+The server generates a licensing authority of its own into the data volume, trusts it, and adds one
+license key per product family. No other server accepts those keys, and the server refuses to start
+with either setting outside the Development environment, so the override cannot quietly turn a real
+deployment into a test one.
+
+This is also what [LicenseServerLoadSimulator](protocol.md#reading-the-server-clock-gettimeashx) in
+the SharpCrafters.Backstage repository expects. Drop the data volume between two simulations: the
+virtual clock is anchored when the process starts, so a restart moves it backwards and leaves leases
+dated in the future.
+
+## Before you run it for real
+
+- **The application connects as `sa`.** A real deployment uses a login with rights on the one
+  database. The password comes from `MSSQL_SA_PASSWORD` in the environment, and compose refuses to
+  start without it.
 - **Nobody is authenticated.** There is no domain controller in a container, so
   `Authentication__Scheme` is `None` and every lease is recorded without a user name. To attribute
   leases, run the container on a host joined to your domain with a Kerberos keytab and set the
   scheme to `Negotiate`.
-- **The administrative pages are open**, as they are in the default configuration everywhere. Set
-  `LicenseServer__AdminRoles` once you have an identity to check against.
-- **The audit signing key is a fixed value in the compose file**, so that restarting the stack does
-  not start a new signature chain. Remove it for a real deployment and let the server generate one
-  into the volume.
+- **The administrative pages are open**, as they are in the default configuration everywhere. Nothing
+  in the container closes them. See
+  [Securing the administrative pages](configuration.md#securing-the-administrative-pages).
+- **Back up the `licenseserver-data` volume with the database.** It holds the audit signing key.
 
 ## The image on its own
 

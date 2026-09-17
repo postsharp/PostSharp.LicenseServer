@@ -157,15 +157,39 @@ on first start and written to `App_Data\audit-signing.key`.
 Include that file in your backups and preserve it across upgrades. Losing it does not invalidate the
 rows already written, but it does start a new chain.
 
+## Storage
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `LicenseServer:DataDirectory` | `App_Data` | Where the server keeps the files it generates and must not lose. |
+
+The directory holds the audit signing key, and the test licensing authority when there is one. A
+relative path is resolved against the application, so the default works wherever the archive is
+unpacked. Set an absolute path to put the directory on storage of its own.
+
+In a container this directory has to be a volume. The image declares one at `/app/App_Data`, so the
+files survive the container being replaced even when no mount is given; name the volume in a real
+deployment and back it up with the database. See [docker.md](docker.md).
+
 ## Testing
 
 | Setting | Default | Meaning |
 |---|---|---|
 | `LicenseServer:TimeAcceleration` | 1 | How much faster than real time the server's clock runs. |
+| `LicenseServer:SeedTestLicenses` | `false` | Whether the server issues itself the license keys it serves. |
 | `LicenseServer:TestLicensingAuthorities` | empty | Licensing authorities whose license keys a development server accepts besides the production one. |
+
+The server refuses to start with either of the last two set outside the Development environment.
 
 Leave `TimeAcceleration` at 1. Any other value exists so that a multi-day licensing scenario can be
 replayed in minutes against a test server, and the server warns at startup when it is set.
+
+`SeedTestLicenses` exists so that a trial or a load simulation has something to lease without anybody
+buying a license first. The server generates a licensing authority of its own into
+[`DataDirectory`](#storage), trusts it, and adds one license key per product family if the database
+has none. No other server accepts those keys. The authority has to survive a restart, because the
+license keys it signed are in the database and stop verifying when the key pair changes; in a
+container that means the data directory has to be a volume.
 
 `TestLicensingAuthorities` exists so that a load simulation can be run against license keys that
 nobody sells. Each entry carries the identifier that the signature of a license key names and the

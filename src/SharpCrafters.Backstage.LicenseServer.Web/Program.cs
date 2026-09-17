@@ -43,8 +43,9 @@ builder.Services.AddSingleton<IAuditKeyProvider>(
         services.GetRequiredService<IOptions<LicenseServerOptions>>(),
         services.GetRequiredService<ILogger<FileAuditKeyProvider>>(),
         Path.Combine(
-            services.GetRequiredService<IHostEnvironment>().ContentRootPath,
-            "App_Data",
+            LicensingRegistration.ResolveDataDirectory(
+                builder.Configuration.GetSection( LicenseServerOptions.SectionName ),
+                services.GetRequiredService<IHostEnvironment>() ),
             "audit-signing.key" ) ) );
 
 builder.Services.AddSingleton<ILeaseSigner, HmacLeaseSigner>();
@@ -164,6 +165,24 @@ if ( string.Equals(
 {
     using IServiceScope scope = app.Services.CreateScope();
     scope.ServiceProvider.GetRequiredService<LicenseServerDbContext>().Database.EnsureCreated();
+}
+
+// A development server can issue itself the license keys it serves, so that a trial or a load
+// simulation has something to lease. The registration has already refused to start if this is set
+// outside the Development environment.
+{
+    TestLicenseAuthority? testAuthority = app.Services.GetService<TestLicenseAuthority>();
+
+    if ( testAuthority != null )
+    {
+        using IServiceScope scope = app.Services.CreateScope();
+
+        TestLicenseSeeder.Seed(
+            scope.ServiceProvider.GetRequiredService<LicenseServerDbContext>(),
+            testAuthority,
+            app.Services.GetRequiredService<TimeProvider>(),
+            app.Logger );
+    }
 }
 
 // The administrative pages are the only way to add or revoke a license, so an open default deserves

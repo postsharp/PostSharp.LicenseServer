@@ -35,6 +35,7 @@ The quickest way to see the license server working, on any machine with Docker, 
 deployment. It starts the server, a SQL Server database and a job that creates the schema:
 
 ```
+export MSSQL_SA_PASSWORD='...'
 ./Build.ps1 build
 docker compose up
 ```
@@ -42,8 +43,14 @@ docker compose up
 The image carries the contents of the release archive, so the build comes first and the container
 runs exactly what is released.
 
-Then open http://localhost:8080 and add your license key. See
-[docs/docker.md](docs/docker.md) for what it contains and what to change before using it for
+Then open http://localhost:8080 and add your license key. If you have none to hand, the test
+override has the server issue itself the keys it serves:
+
+```
+docker compose -f docker-compose.yml -f docker-compose.test.yml up
+```
+
+See [docs/docker.md](docs/docker.md) for what it contains and what to change before using it for
 anything other than a trial.
 
 ## Installing on IIS

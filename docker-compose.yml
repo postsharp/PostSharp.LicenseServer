@@ -1,14 +1,20 @@
-# A complete PostSharp License Server for testing: the server, a SQL Server database, and a one-shot
-# job that creates the schema from Database/CreateTables.sql.
+# The license server and a SQL Server database, with the schema created from CreateTables.sql.
 #
-#   docker compose up --build
-#   open http://localhost:8080
+#   export MSSQL_SA_PASSWORD='...'
+#   ./Build.ps1 build
+#   docker compose up
 #
-# This is a TEST deployment. The password below is in plain text, the database is thrown away with
-# its volume, and nobody is authenticated, so every lease is recorded without a user name. See
-# docs/configuration.md before running it for real.
+# This deployment serves the license keys you add to it, and holds nothing that is not yours. To
+# bring it up with license keys it issues to itself instead, which is what a trial or a load
+# simulation wants, add the test override:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.test.yml up
+#
+# Read docs/docker.md before running either for anything that matters. The database password is
+# taken from the environment and the server has no administrator credentials of its own, so securing
+# the pages under /Admin is still yours to do; see docs/configuration.md.
 
-name: postsharp-license-server
+name: backstage-license-server
 
 services:
 
@@ -16,7 +22,7 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "LicenseServer!2026"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in the environment}
       MSSQL_PID: Developer
     ports:
       - "1433:1433"
@@ -38,6 +44,8 @@ services:
     depends_on:
       database:
         condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in the environment}
     volumes:
       - ./src/SharpCrafters.Backstage.LicenseServer.Web/Database:/schema:ro
     entrypoint:
@@ -46,13 +54,13 @@ services:
       - |
         set -e
         SQLCMD=/opt/mssql-tools18/bin/sqlcmd
-        $$SQLCMD -S database -U sa -P "LicenseServer!2026" -C -b \
+        $$SQLCMD -S database -U sa -P "$$MSSQL_SA_PASSWORD" -C -b \
           -Q "IF DB_ID('PostSharpLicenseServer') IS NULL CREATE DATABASE PostSharpLicenseServer"
         # Re-running compose must not fail on an existing schema.
-        TABLES=$$($$SQLCMD -S database -U sa -P "LicenseServer!2026" -C -h -1 -W -d PostSharpLicenseServer \
+        TABLES=$$($$SQLCMD -S database -U sa -P "$$MSSQL_SA_PASSWORD" -C -h -1 -W -d PostSharpLicenseServer \
           -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM sys.tables WHERE name = 'Licenses'")
         if [ "$$TABLES" = "0" ]; then
-          $$SQLCMD -S database -U sa -P "LicenseServer!2026" -C -b -d PostSharpLicenseServer -i /schema/CreateTables.sql
+          $$SQLCMD -S database -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -d PostSharpLicenseServer -i /schema/CreateTables.sql
           echo "Schema created."
         else
           echo "Schema already present."
@@ -69,13 +77,15 @@ services:
     environment:
       LicenseServer__DatabaseProvider: SqlServer
       ConnectionStrings__SharpCrafters_LicenseServerConnectionString: >-
-        Server=database,1433;Database=PostSharpLicenseServer;User Id=sa;Password=LicenseServer!2026;TrustServerCertificate=True
-      # No domain controller in a container, so nobody is authenticated.
+        Server=database,1433;Database=PostSharpLicenseServer;User Id=sa;Password=${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in the environment};TrustServerCertificate=True
+      # A container has no domain controller to authenticate against, so leases record no user name.
+      # Whatever fronts the container has to restrict the pages under /Admin.
       Authentication__Scheme: None
-      # Keeps the audit signature chain stable across restarts.
-      LicenseServer__AuditHmacKey: "dGVzdC1vbmx5LWF1ZGl0LWtleS1kby1ub3QtdXNlLWxpdmU="
       Smtp__Enabled: "false"
     volumes:
+      # The audit signing key lives here. It has to outlive the container: losing it does not
+      # invalidate the rows already written, but it does start a new signature chain. Back this
+      # volume up with the database.
       - licenseserver-data:/app/App_Data
 
 volumes:

@@ -108,5 +108,25 @@ public sealed class LicenseServerOptions
     /// </summary>
     public TestLicensingAuthority[] TestLicensingAuthorities { get; set; } = [];
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the server issues itself the license keys it serves.
+    /// It exists so that a trial or a load simulation has something to lease without anybody buying
+    /// a license first, and the server refuses to start with it set outside the Development
+    /// environment.
+    /// </summary>
+    /// <remarks>
+    /// The server generates a licensing authority of its own, keeps it in <see cref="DataDirectory"/>
+    /// and trusts it. The license keys it signs are accepted by this server alone.
+    /// </remarks>
+    public bool SeedTestLicenses { get; set; }
+
+    /// <summary>
+    /// Gets or sets the directory holding the files the server generates and must not lose: the audit
+    /// signing key, and the test licensing authority when there is one. Relative to the application
+    /// by default. In a container it has to be a volume, or the audit signature chain restarts every
+    /// time the container is replaced.
+    /// </summary>
+    public string DataDirectory { get; set; } = "App_Data";
+
     public TimeSpan MutexTimeoutSpan => TimeSpan.FromSeconds( this.MutexTimeout );
 }
