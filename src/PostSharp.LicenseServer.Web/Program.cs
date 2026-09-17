@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Server.IISIntegration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using PostSharp.LicenseServer;
 using PostSharp.LicenseServer.Data;
 using PostSharp.LicenseServer.Email;
 using PostSharp.LicenseServer.Endpoints;
@@ -31,9 +32,7 @@ builder.Services
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
-builder.Services.AddDbContext<LicenseServerDbContext>(
-    options => options.UseSqlServer(
-        builder.Configuration.GetConnectionString( "SharpCrafters_LicenseServerConnectionString" ) ) );
+builder.Services.AddLicenseServerDatabase( builder.Configuration );
 
 builder.Services.AddScoped<ILeaseRepository, LeaseRepository>();
 builder.Services.AddScoped<LeaseService>();

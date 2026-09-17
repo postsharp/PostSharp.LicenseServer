@@ -14,12 +14,14 @@
     <PackageReference Include="SQLitePCLRaw.core" />
     <PackageReference Include="SQLitePCLRaw.provider.e_sqlite3" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\PostSharp.LicenseServer.Core\PostSharp.LicenseServer.Core.csproj" />
+    <ProjectReference Include="..\..\src\PostSharp.LicenseServer.Web\PostSharp.LicenseServer.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>
