@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Keep the historical root namespace so the ported sources stay unchanged. -->
+    <RootNamespace>PostSharp.LicenseServer</RootNamespace>
+    <AssemblyName>PostSharp.LicenseServer.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Relational only: the database provider is chosen by the hosting application,
+         so that tests can run against SQLite while production runs against SQL Server. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+    <PackageReference Include="MailKit" />
+    <PackageReference Include="PostSharp.Compiler.Common" />
+    <PackageReference Include="PostSharp.Compiler.Settings" />
+    <PackageReference Include="PostSharp.Compiler.Platforms" />
+  </ItemGroup>
+
+</Project>
