@@ -87,10 +87,10 @@ public sealed partial class LeaseService
             return null;
         }
 
-        if ( parsedLicense.MinPostSharpVersion > this.serverVersion.SdkVersion )
+        if ( parsedLicense.MinPostSharpVersion > this.serverVersion.LicensingLibraryVersion )
         {
             errors[license.LicenseId] = string.Format(
-                "The license #{0} requires higher version of PostSharp on the License Server. Please upgrade PostSharp NuGet package of the License Server to >= {1}.{2}.{3}",
+                "The license #{0} requires a higher version of the licensing library on the License Server. Please upgrade the License Server to >= {1}.{2}.{3}",
                 license.LicenseId,
                 parsedLicense.MinPostSharpVersion.Major,
                 parsedLicense.MinPostSharpVersion.Minor,
@@ -165,8 +165,14 @@ public sealed partial class LeaseService
         Dictionary<int, string> errors,
         CancellationToken cancellationToken = default )
     {
+        // A client that names no product is served from any pool, which is what every PostSharp
+        // client relies on: none of them sent the argument.
+        IReadOnlyList<string> productCodes = string.IsNullOrEmpty( productCode )
+            ? []
+            : ProductCodes.Matching( productCode );
+
         License[] licenses = await this.repository.Licenses
-            .Where( license => (string.IsNullOrEmpty( productCode ) || license.ProductCode == productCode)
+            .Where( license => (productCodes.Count == 0 || productCodes.Contains( license.ProductCode ))
                                && license.Priority >= 0 )
             .OrderBy( license => license.Priority )
             .ToArrayAsync( cancellationToken );

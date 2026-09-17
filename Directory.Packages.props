@@ -15,13 +15,11 @@
     <PackageVersion Include="PostSharp.Engineering.BuildTools" Version="$(PostSharpEngineeringVersion)" />
   </ItemGroup>
 
-  <ItemGroup Label="PostSharp licensing SDK">
-    <!-- The license server uses PostSharp purely as a library, to parse and validate license keys.
-         No aspects are woven, so the PostSharp weaver packages are deliberately not referenced. -->
-    <PackageVersion Include="PostSharp.Compiler.Common" Version="2025.1.5" />
-    <PackageVersion Include="PostSharp.Compiler.Settings" Version="2025.1.5" />
-    <PackageVersion Include="PostSharp.Compiler.Platforms" Version="2025.1.5" />
-    <PackageVersion Include="PostSharp.Compiler.Engine" Version="2025.1.5" />
+  <ItemGroup Label="Licensing">
+    <!-- The version comes from the Backstage dependency of the product, resolved by
+         `./Build.ps1 prepare` into eng/Versions.g.props. eng/AutoUpdatedVersions.props holds the
+         value used when nothing else resolves it. -->
+    <PackageVersion Include="SharpCrafters.Backstage" Version="$(BackstageVersion)" />
   </ItemGroup>
 
   <ItemGroup Label="Runtime">

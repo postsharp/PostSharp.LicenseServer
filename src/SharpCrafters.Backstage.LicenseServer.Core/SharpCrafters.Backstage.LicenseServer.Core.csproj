@@ -12,9 +12,10 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
     <PackageReference Include="MailKit" />
-    <PackageReference Include="PostSharp.Compiler.Common" />
-    <PackageReference Include="PostSharp.Compiler.Settings" />
-    <PackageReference Include="PostSharp.Compiler.Platforms" />
+
+    <!-- The licensing component: parses and validates license keys, and defines the wire contract
+         with the clients of both product families. -->
+    <PackageReference Include="SharpCrafters.Backstage" />
   </ItemGroup>
 
 </Project>

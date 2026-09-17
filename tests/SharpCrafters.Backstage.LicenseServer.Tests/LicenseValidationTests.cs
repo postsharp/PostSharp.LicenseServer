@@ -64,7 +64,10 @@ public sealed class LicenseValidationTests
         var (lease, errors) = await RequestAsync( context, license );
 
         Assert.Null( lease );
-        Assert.Contains( "requires higher version of PostSharp on the License Server", errors[1], StringComparison.Ordinal );
+        Assert.Contains(
+            "requires a higher version of the licensing library on the License Server",
+            errors[1],
+            StringComparison.Ordinal );
         Assert.Contains( "2099.3.7", errors[1], StringComparison.Ordinal );
     }
 

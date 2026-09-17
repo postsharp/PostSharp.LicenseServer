@@ -13,9 +13,6 @@ using SharpCrafters.Backstage.LicenseServer.Time;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder( args );
 
-// The PostSharp SDK parses license keys, and has to be initialized once before it is first used.
-PostSharpPlatform.EnsureInitialized();
-
 builder.Services
     .AddOptions<LicenseServerOptions>()
     .Bind( builder.Configuration.GetSection( LicenseServerOptions.SectionName ) )
@@ -36,10 +33,10 @@ builder.Services.AddScoped<ILeaseRepository, LeaseRepository>();
 builder.Services.AddScoped<LeaseService>();
 
 builder.Services.AddSingleton<ILicenseParser>(
-    _ => new CachingLicenseParser( new PostSharpLicenseParser() ) );
+    _ => new CachingLicenseParser( new BackstageLicenseParser() ) );
 
-builder.Services.AddSingleton<ILicenseServerVersion, PostSharpServerVersion>();
-builder.Services.AddSingleton<ILeaseSerializer, PostSharpLeaseSerializer>();
+builder.Services.AddSingleton<ILicenseServerVersion, BackstageServerVersion>();
+builder.Services.AddSingleton<ILeaseSerializer, LeaseSerializer>();
 
 builder.Services.AddSingleton<IAuditKeyProvider>(
     services => new FileAuditKeyProvider(

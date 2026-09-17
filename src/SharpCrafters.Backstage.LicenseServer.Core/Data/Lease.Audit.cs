@@ -1,5 +1,5 @@
 using System.Xml;
-using PostSharp.Sdk.Extensibility.Licensing;
+using SharpCrafters.Backstage.LicenseServer.Security;
 
 namespace SharpCrafters.Backstage.LicenseServer;
 
@@ -29,9 +29,9 @@ public partial class Lease
         textWriter.Write( ';' );
         textWriter.Write( XmlConvert.ToString( this.EndTime, XmlDateTimeSerializationMode.RoundtripKind ) );
         textWriter.Write( ';' );
-        textWriter.Write( CryptoUtilities.ComputeStringHash64( this.Machine ).ToString( "x" ) );
+        textWriter.Write( StringHash.ComputeStringHash64( this.Machine ).ToString( "x" ) );
         textWriter.Write( ';' );
-        textWriter.Write( CryptoUtilities.ComputeStringHash64( this.UserName ).ToString( "x" ) );
+        textWriter.Write( StringHash.ComputeStringHash64( this.UserName ).ToString( "x" ) );
 
         if ( includeHmac )
         {

@@ -1,10 +1,10 @@
 namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
-/// The version of the PostSharp SDK embedded in this license server. A license requiring a higher
-/// version cannot be served until the license server itself is upgraded.
+/// The version of the licensing library embedded in this license server. A license key that declares
+/// a higher minimal version cannot be served until the server itself is upgraded.
 /// </summary>
 public interface ILicenseServerVersion
 {
-    Version SdkVersion { get; }
+    Version LicensingLibraryVersion { get; }
 }
