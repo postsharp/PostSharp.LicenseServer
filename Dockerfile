@@ -1,23 +1,16 @@
-# Builds the PostSharp License Server as a Linux container.
+# Runs the SharpCrafters Backstage License Server as a Linux container.
 #
-# The image runs the same application as the Windows release package; only the host differs. See
-# docker-compose.yml for a ready-to-run deployment with a SQL Server database.
-
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /src
-
-# Restore against the manifests alone, so that a change to the sources does not invalidate the
-# restore layer.
-COPY Directory.Build.props Directory.Packages.props nuget.config global.json ./
-COPY src/SharpCrafters.Backstage.LicenseServer.Core/SharpCrafters.Backstage.LicenseServer.Core.csproj src/SharpCrafters.Backstage.LicenseServer.Core/
-COPY src/SharpCrafters.Backstage.LicenseServer.Web/SharpCrafters.Backstage.LicenseServer.Web.csproj src/SharpCrafters.Backstage.LicenseServer.Web/
-RUN dotnet restore src/SharpCrafters.Backstage.LicenseServer.Web/SharpCrafters.Backstage.LicenseServer.Web.csproj
-
-COPY src/ src/
-RUN dotnet publish src/SharpCrafters.Backstage.LicenseServer.Web/SharpCrafters.Backstage.LicenseServer.Web.csproj \
-        --configuration Release \
-        --no-restore \
-        --output /app
+# The image carries the contents of the release archive, so it runs exactly what is released rather
+# than a second build of the same sources. Build the product first:
+#
+#   ./Build.ps1 build
+#   docker compose up
+#
+# See docker-compose.yml for a ready-to-run deployment with a SQL Server database.
+#
+# The build is not done inside the image on purpose. The licensing component comes from a private
+# feed and the build needs the generated global.json and nuget.config that `./Build.ps1 prepare`
+# writes, none of which belongs in a container that a customer may build.
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
@@ -28,7 +21,8 @@ RUN mkdir -p /app/App_Data && useradd --uid 64198 --create-home licenseserver \
     && chown -R licenseserver /app
 USER licenseserver
 
-COPY --from=build --chown=licenseserver /app ./
+# Written by the PackAndZip target of the web project; it is what the release archive contains.
+COPY --chown=licenseserver artifacts/app/ ./
 
 ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080

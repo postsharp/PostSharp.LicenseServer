@@ -35,6 +35,10 @@
          output; it copies the ones the product declares public into artifacts/publish/public. -->
     <ReleaseArchivePath>$(PackageOutputPath)$(AssemblyName).$(Version).zip</ReleaseArchivePath>
 
+    <!-- The contents of the archive, at a path that does not carry the version, so that the Dockerfile
+         and any other consumer can name it. The container therefore runs exactly what is released. -->
+    <ReleaseArchiveStagingPath>$([MSBuild]::NormalizeDirectory('$(RepoDirectory)artifacts\app'))</ReleaseArchiveStagingPath>
+
     <!-- Outside a PostSharp.Engineering build nothing defines the build date, and the archive is then
          given a fixed timestamp rather than failing: a developer building the solution directly has no
          use for a reproducible one. -->
@@ -43,12 +47,6 @@
   </PropertyGroup>
 
   <Target Name="PackAndZip" AfterTargets="Build" Condition="'$(ProduceReleaseArchive)'!='false'">
-
-    <!-- Resolved here rather than in a property group of the project, because OutputPath is set by the
-         SDK targets, which are imported after the body of the project has been evaluated. -->
-    <PropertyGroup>
-      <ReleaseArchiveStagingPath>$([MSBuild]::NormalizeDirectory('$(OutputPath)Packed'))</ReleaseArchiveStagingPath>
-    </PropertyGroup>
 
     <!-- The staging directory is emptied first, so that the archive never carries a file that only an
          earlier build produced. -->

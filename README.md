@@ -1,6 +1,8 @@
 # SharpCrafters.Backstage.LicenseServer
 
-This repository contains the source code and releases of PostSharp License Server.
+This repository contains the source code and the releases of the license server of PostSharp and
+Metalama. It serves the license keys of both product families: which products it serves is decided
+by the license keys its administrator adds to it.
 
 The use of the license server is optional. Since all commercial licenses are floating ones,
 the license server can help teams knowing how many licenses they actually use.
@@ -16,7 +18,7 @@ The license server itself is licensed under the *MIT License*. Note that PostSha
 
 ## Download
 
-You can download the latest release from https://github.com/postsharp/SharpCrafters.Backstage.LicenseServer/releases/latest.
+You can download the latest release from https://github.com/postsharp-ops/SharpCrafters.Backstage.LicenseServer/releases/latest.
 
 ## Documentation
 
@@ -29,8 +31,12 @@ The quickest way to see the license server working, on any machine with Docker, 
 deployment. It starts the server, a SQL Server database and a job that creates the schema:
 
 ```
-docker compose up --build
+./Build.ps1 build
+docker compose up
 ```
+
+The image carries the contents of the release archive, so the build comes first and the container
+runs exactly what is released.
 
 Then open http://localhost:8080 and add your license key. See
 [docs/docker.md](docs/docker.md) for what it contains and what to change before using it for
@@ -48,7 +54,7 @@ anything other than a trial.
 
 1. Install the ASP.NET Core Hosting Bundle on the web server, then restart IIS with `iisreset`.
 2. Create the database and run `Database\CreateTables.sql` against it.
-3. Unpack `SharpCrafters.Backstage.LicenseServer.zip` into the directory of an IIS application.
+3. Unpack `SharpCrafters.Backstage.LicenseServer.<version>.zip` into the directory of an IIS application.
 4. Edit `appsettings.json`: set the connection string, the notification e-mail addresses and the
    SMTP server. The settings are described in [docs/configuration.md](docs/configuration.md).
 5. In IIS Manager, enable **Windows Authentication** on the application and disable
@@ -91,6 +97,17 @@ so an existing database is used as it is, with no migration step. Four things do
   Previously they were written as if local time were UTC, which shifted them by the server's offset.
   Exports taken after the upgrade therefore differ from earlier ones by that offset.
 
+License keys are now parsed by SharpCrafters.Backstage instead of the PostSharp SDK, which changes
+two things in what a key is taken to mean.
+
+* **A license key that carries no grace period now gets thirty days rather than none.** Such a
+  license used to deny a request as soon as its capacity was exceeded; it now keeps serving for
+  thirty days beyond capacity, with the warning e-mail sent as usual. License keys issued with an
+  explicit grace period are unaffected, and the grace capacity is unchanged.
+* **Products are recorded under a new name.** A license added from now on is stored as
+  `PostSharpUltimate` where it used to be stored as `Ultimate`. Existing rows are left alone and a
+  request naming either spelling finds both, so nothing has to be migrated.
+
 The audit log is signed with a key kept in `App_Data\audit-signing.key`, generated on first start.
 Include it in your backups and preserve it across upgrades: losing it does not invalidate existing
 rows, but it does start a new signature chain.
@@ -100,19 +117,32 @@ rows, but it does start a new signature chain.
 ### Requirements
 
 * The [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
+* PowerShell 7.4 or later.
+* Access to the package feed that carries `SharpCrafters.Backstage`, which is where the licensing
+  component comes from.
 
 ### Instructions
 
+The repository is built with [PostSharp.Engineering](https://github.com/postsharp/PostSharp.Engineering)
+as the `Backstage.LicenseServer` product of the Backstage 2027.0 family.
+
 ```
-dotnet test
-.\eng\Package.ps1
+./Build.ps1 prepare
+./Build.ps1 test
 ```
 
-The package is written to `artifacts\SharpCrafters.Backstage.LicenseServer.zip`.
+`prepare` resolves the dependencies and writes `global.json`, `nuget.config` and the version files,
+none of which is in source control. `build` and `test` do it themselves, so `prepare` is only needed
+before opening the solution in an IDE or running `dotnet` directly.
+
+`./Build.ps1 build` writes the release archive to `artifacts\publish\private`, and leaves its
+contents unpacked in `artifacts\app`, which is what the container image is made from. A public build
+also copies the archive to `artifacts\publish\public`, which is what the deployment uploads.
 
 ### Running locally
 
 ```
+./Build.ps1 prepare
 dotnet run --project src\SharpCrafters.Backstage.LicenseServer.Web
 ```
 
@@ -127,10 +157,11 @@ page exists only in a development environment.
 | `src\SharpCrafters.Backstage.LicenseServer.Core` | The licensing rules, the database model and the services they depend on. |
 | `src\SharpCrafters.Backstage.LicenseServer.Web` | The web application: the pages, the endpoints and the composition root. |
 | `tests\SharpCrafters.Backstage.LicenseServer.Tests` | The test suite. Runs against an in-memory database, so it needs no SQL Server. |
-| `tests\SharpCrafters.Backstage.LicenseServer.Simulator` | A manual load-testing tool. See the note below. |
+| `eng` | The product definition and the version files that PostSharp.Engineering builds from. |
 
-The simulator does not currently run: it needs a client that can download a lease, which is being
-written in SharpCrafters.Backstage. It is kept building so that it is ready when that client is.
+To put a server under load, use `LicenseServerLoadSimulator` in the SharpCrafters.Backstage
+repository. It simulates an organization of many users on many machines, and it builds the same
+request the product builds, so what it measures is what a real client costs.
 
 ## Support
 

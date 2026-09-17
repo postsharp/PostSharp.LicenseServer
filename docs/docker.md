@@ -4,8 +4,12 @@
 and a one-shot job that creates the schema from `Database/CreateTables.sql`.
 
 ```
-docker compose up --build
+./Build.ps1 build
+docker compose up
 ```
+
+The build comes first because the image carries the contents of the release archive rather than
+building the sources again, so the container runs exactly what is released.
 
 The server is then at http://localhost:8080 and the database at `localhost:1433`. Add a license key
 on the **Add a license** page and point a PostSharp client at
@@ -29,7 +33,7 @@ docker compose down --volumes
 |---|---|
 | `database` | SQL Server 2022 Developer Edition. Its health check runs a real query, because the server accepts connections well before it can answer one. |
 | `database-schema` | Runs once: creates the database if it does not exist, then runs `CreateTables.sql` if the tables are not already there. Re-running `docker compose up` does not fail on an existing schema. It reuses the SQL Server image, which already carries `sqlcmd`, rather than pulling a second one. |
-| `licenseserver` | The application, built from `Dockerfile`. Waits for the schema job to finish. |
+| `licenseserver` | The application, from `Dockerfile`. Waits for the schema job to finish. |
 
 The application keeps its audit signing key in the `licenseserver-data` volume, so the signature
 chain survives the container being replaced. The database keeps its files in `database-data`.
@@ -57,12 +61,13 @@ it stands for anything else.
 The image does not need the compose file. Against an existing SQL Server:
 
 ```
-docker build -t postsharp-licenseserver .
+./Build.ps1 build
+docker build -t backstage-licenseserver .
 docker run --rm -p 8080:8080 \
   -e ConnectionStrings__SharpCrafters_LicenseServerConnectionString="Server=db;Database=PostSharpLicenseServer;User Id=licenseserver;Password=...;TrustServerCertificate=True" \
   -e Authentication__Scheme=None \
   -v licenseserver-data:/app/App_Data \
-  postsharp-licenseserver
+  backstage-licenseserver
 ```
 
 Any setting from [configuration.md](configuration.md) can be given as an environment variable, with
@@ -76,15 +81,20 @@ docker run --rm -p 8080:8080 \
   -e LicenseServer__DatabaseProvider=Sqlite \
   -e ConnectionStrings__SharpCrafters_LicenseServerConnectionString="DataSource=/app/App_Data/licenseserver.db" \
   -v licenseserver-data:/app/App_Data \
-  postsharp-licenseserver
+  backstage-licenseserver
 ```
 
 SQL Server remains the supported engine for a real installation.
 
 ## The image
 
-`Dockerfile` builds in two stages, publishing with the .NET SDK image and running on the ASP.NET
-runtime image. It runs as a non-root user and listens on port 8080.
+`Dockerfile` has a single stage on the ASP.NET runtime image. It copies `artifacts/app`, which is
+what `./Build.ps1 build` unpacks the release archive into, so the image and the archive carry the
+same files. It runs as a non-root user and listens on port 8080.
 
-It does not run the tests: run `dotnet test` before building, or use `eng/Package.ps1`, which runs
-them for you.
+The product is deliberately not built inside the image. The licensing component comes from a private
+feed, and the build needs the `global.json` and `nuget.config` that `./Build.ps1 prepare` generates,
+neither of which belongs in a container a customer may build.
+
+`./Build.ps1 build` does not run the tests. Run `./Build.ps1 test` if the image is going anywhere
+beyond your own machine.
