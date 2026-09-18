@@ -38,7 +38,7 @@ public static class LicenseServerEndpoints
         HttpContext context,
         LeaseService leaseService,
         ILeaseRepository repository,
-        ILeaseSerializer leaseSerializer,
+        LeaseSerializer leaseSerializer,
         ILeaseLock leaseLock,
         IOptions<LicenseServerOptions> options,
         TimeProvider timeProvider,

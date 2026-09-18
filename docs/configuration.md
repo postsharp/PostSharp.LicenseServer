@@ -1,5 +1,25 @@
 # Configuring the license server
 
+## Why this server exists
+
+Respecting the license agreement is the responsibility of the customer. The license server is a tool
+that helps a customer to measure how many licenses are used, inside the network of the customer. It
+sends nothing to PostSharp Technologies.
+
+The source code is published, so the server can be read, built and modified. A modified server, and
+an unmodified one, can both be operated in a way that does not comply with the license agreement.
+What the server reports is not, by itself, a proof of compliance.
+
+The license server is independent of the license audit that the license agreement and the privacy
+policy describe. The audit reports the use of the product to PostSharp Technologies. The license
+server reports it to the administrator of the customer.
+
+A customer who uses the license server is eligible for a waiver of the license audit. The waiver is
+what guarantees that no data about the use of the product reaches PostSharp Technologies. Ask the
+[sales team](https://www.postsharp.net/support) for it.
+
+## Where the settings are read from
+
 The server reads its settings from `appsettings.json`, in the application directory. Every setting
 can also be given as an environment variable. In the name of the variable, a colon becomes a double
 underscore: the connection string is `ConnectionStrings__SharpCrafters_LicenseServerConnectionString`.
@@ -239,6 +259,9 @@ The lock is held by the database and not by the process. Several worker processe
 therefore serialized against each other, which covers a web garden of Internet Information Services,
 several containers, and two servers that share one database.
 
+The deployments described here are the deployments that are supported today. If you need another one,
+for instance one database per site, ask the [support team](https://www.postsharp.net/support).
+
 The mechanism depends on the database engine, and there is no setting to choose it.
 
 On SQL Server, the server calls `sp_getapplock` at the beginning of the request and
@@ -259,8 +282,10 @@ The `Leases` table is the audit log. The server never updates a lease and never 
 prolonging a lease and cancelling a lease both insert a new row. Export the log from the page
 [Audit log](protocol.md#exporting-the-audit-log-get-adminexportashx), which writes one line per lease.
 
-The audit log has no setting. Protect it as you protect the database: with the permissions of the
-database and with your backups.
+The audit log has no setting. It names the user and the machine of every lease, so it contains
+personal data. Protect it as you protect the database, which contains the same names: with the
+permissions of the database and with your backups. The log is for the organization that runs the
+server, and it is not sent to PostSharp Technologies.
 
 ## Storage
 
@@ -293,8 +318,10 @@ version number is readable by anyone who can reach the server.
 
 The operating requirements of this server are low. One developer sends about one request per day,
 because the client stores its lease and renews it after `NewLeaseDays` minus `MinLeaseDays` days. A
-client that cannot reach the server keeps the lease it holds, so an interruption of a few hours
-affects nobody. Monitor the server to learn that it needs attention, and not to fail over.
+client that cannot reach the server keeps the lease it holds. An interruption of a few hours
+therefore affects only a user or a machine that holds no lease yet, which means a new user, a new
+machine, or one whose lease has expired. Monitor the server to learn that it needs attention, and
+not to fail over.
 
 `/health` reports the result of each check in its body. It has three states:
 
@@ -342,6 +369,9 @@ reports `Healthy` can therefore still deny an individual request. See
 
 ## Testing
 
+The settings of this section exist for the developers of the license server itself, and for an
+evaluation of it. A customer who serves license keys needs none of them.
+
 | Setting | Default | Meaning |
 |---|---|---|
 | `LicenseServer:TimeAcceleration` | 1 | How much faster than real time the clock of the server runs. |
@@ -350,6 +380,12 @@ reports `Healthy` can therefore still deny an individual request. See
 
 The server refuses to start when one of the last two settings is set outside the Development
 environment.
+
+The environment is the one of ASP.NET Core. It is read from the variable `ASPNETCORE_ENVIRONMENT`,
+and the server runs in the environment `Production` when that variable is not set. The value
+`Development` is set by `Properties/launchSettings.json` when the project is started from an editor
+or with `dotnet run`, and by nothing else. A published server therefore runs as `Production`, unless
+an administrator sets the variable.
 
 Keep `TimeAcceleration` at 1. Another value exists so that a licensing scenario that lasts several
 days can be replayed against a test server in a few minutes. The server writes a warning to the log

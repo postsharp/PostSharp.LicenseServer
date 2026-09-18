@@ -81,6 +81,11 @@ public sealed class BackstageLicenseParser( ILicensingAuthorityProvider? authori
             ValidTo = properties.ValidTo,
             SubscriptionEndDate = properties.SubscriptionEndDate,
             MinPostSharpVersion = properties.MinPostSharpVersion,
+            MinMetalamaVersion = properties.MinMetalamaVersion,
+
+            // The enumeration of the products names the family first, and Backstage offers no other
+            // way to read it.
+            IsMetalamaProduct = properties.Product.ToString().StartsWith( "Metalama", StringComparison.Ordinal ),
             GraceDays = data.GraceDays,
             GracePercent = data.GracePercent ?? defaultGracePercent,
             IsLicenseServerEligible = properties.LicenseServerEligible,
@@ -94,9 +99,10 @@ public sealed class BackstageLicenseParser( ILicensingAuthorityProvider? authori
     /// </summary>
     /// <remarks>
     /// After its identifier and a hyphen, a license key contains only Base32 characters, so it
-    /// contains no whitespace. Backstage has no equivalent method. It trims a license string and
-    /// does nothing else, because its keys come from a command line or from a configuration file,
-    /// and not from a web form.
+    /// contains no whitespace. Backstage cleans a key in <c>License.CleanLicenseKey</c>, which is
+    /// private, so this server cannot call it. That method also keeps letters, digits and hyphens
+    /// alone and converts the result to upper case, which changes a key rather than only trimming
+    /// what a web form added.
     /// </remarks>
     public string CleanLicenseString( string licenseKey )
         => new( licenseKey.Where( c => !char.IsWhiteSpace( c ) ).ToArray() );

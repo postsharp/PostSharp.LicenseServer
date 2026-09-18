@@ -47,14 +47,15 @@ public sealed class AuditLogExportTests : IDisposable
 
         foreach ( string line in lines )
         {
-            // The identifier, the overwritten lease, the license, the two instants and the two
-            // hashed names.
+            // The identifier, the overwritten lease, the license, the two instants, the machine and
+            // the user.
             string[] fields = line.TrimEnd( '\r' ).Split( ';' );
 
             Assert.Equal( 7, fields.Length );
         }
 
-        Assert.DoesNotContain( "alice", string.Join( "", lines ), StringComparison.OrdinalIgnoreCase );
+        // The log is read by the administrator of the server, so it names the user.
+        Assert.Contains( "alice", string.Join( "", lines ), StringComparison.Ordinal );
     }
 
     /// <summary>

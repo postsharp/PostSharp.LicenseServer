@@ -39,6 +39,34 @@ public sealed record LicenseInfo
     public required Version MinPostSharpVersion { get; init; }
 
     /// <summary>
+    /// Gets the lowest version of Metalama that can read this license, or null when every version of
+    /// Metalama can read it. The signature algorithm of the license key decides the value: a key
+    /// signed with an elliptic curve is read by no version released before that algorithm.
+    /// </summary>
+    public Version? MinMetalamaVersion { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether <see cref="Product"/> is a Metalama product. A Metalama client
+    /// reads <see cref="MinMetalamaVersion"/> and a PostSharp client reads
+    /// <see cref="MinPostSharpVersion"/>, and the two are independent of each other.
+    /// </summary>
+    public bool IsMetalamaProduct { get; init; }
+
+    /// <summary>
+    /// Gets the lowest version of the client that can read this license, which is the minimum of the
+    /// family of <see cref="Product"/>.
+    /// </summary>
+    public Version MinClientVersion
+        => this.IsMetalamaProduct
+            ? this.MinMetalamaVersion ?? new Version( 0, 0, 0 )
+            : this.MinPostSharpVersion;
+
+    /// <summary>
+    /// Gets the name of the product family, which the messages that name a version use.
+    /// </summary>
+    public string ClientName => this.IsMetalamaProduct ? "Metalama" : "PostSharp";
+
+    /// <summary>
     /// Gets the number of days during which the license may be used above its capacity before the
     /// server denies a request.
     /// </summary>

@@ -44,7 +44,7 @@ builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>( "database" )
     .AddCheck<LicenseHealthCheck>( "licenses" );
 
-builder.Services.AddSingleton<ILeaseSerializer, LeaseSerializer>();
+builder.Services.AddSingleton<LeaseSerializer>();
 
 builder.Services.AddSingleton<IEmailSender>(
     services => services.GetRequiredService<IOptions<SmtpOptions>>().Value.Enabled
@@ -74,14 +74,18 @@ builder.Services.AddSingleton<TimeProvider>(
 
 string authenticationScheme = builder.Services.AddLicenseServerAuthentication( builder.Configuration );
 
+// A policy is built before the options are available from the container, so the section is bound
+// here. It is bound as a whole, and not read key by key, so that the policy and the rest of the
+// application read the same properties of the same type.
+LicenseServerOptions startupOptions =
+    builder.Configuration.GetSection( LicenseServerOptions.SectionName ).Get<LicenseServerOptions>() ?? new LicenseServerOptions();
+
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(
         AuthorizationPolicies.Admin,
         policy =>
         {
-            string[] roles = builder.Configuration
-                .GetSection( $"{LicenseServerOptions.SectionName}:AdminRoles" )
-                .Get<string[]>() ?? [];
+            string[] roles = startupOptions.AdminRoles;
 
             // When no role is configured, the administrative pages are open, as they were in the
             // legacy Web.config. A restrictive default would lock administrators out of their own
@@ -99,11 +103,7 @@ builder.Services.AddAuthorizationBuilder()
         AuthorizationPolicies.LeaseRequest,
         policy =>
         {
-            bool requireAuthentication = builder.Configuration.GetValue(
-                $"{LicenseServerOptions.SectionName}:RequireAuthenticatedLeaseRequests",
-                false );
-
-            if ( requireAuthentication )
+            if ( startupOptions.RequireAuthenticatedLeaseRequests )
             {
                 policy.RequireAuthenticatedUser();
             }

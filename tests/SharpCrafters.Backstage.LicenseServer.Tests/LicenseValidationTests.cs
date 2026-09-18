@@ -87,6 +87,49 @@ public sealed class LicenseValidationTests
         Assert.Contains( "the requested version is 6.5.4", errors[1], StringComparison.Ordinal );
     }
 
+    /// <summary>
+    /// A Metalama license names the lowest version of Metalama that can read it, which the signature
+    /// algorithm of the key decides. That minimum is independent of the minimum PostSharp version.
+    /// </summary>
+    [Fact]
+    public async Task MetalamaClientIsOlderThanTheLicenseRequires_SaysSo()
+    {
+        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+
+        License license = LicenseBuilder.Default()
+            .AsMetalamaProduct()
+            .WithMinMetalamaVersion( new Version( 2026, 1, 0 ) )
+            .AddTo( context );
+
+        var (lease, errors) = await RequestAsync( context, license, new Version( 2025, 2, 3 ) );
+
+        Assert.Null( lease );
+        Assert.Contains( "requires Metalama version >= 2026.1.0", errors[1], StringComparison.Ordinal );
+        Assert.Contains( "the requested version is 2025.2.3", errors[1], StringComparison.Ordinal );
+    }
+
+    /// <summary>
+    /// A Metalama client is not refused by the minimum PostSharp version of the same license. The two
+    /// minimums belong to two product families, and a Metalama version number is lower than the
+    /// PostSharp version numbers of the same years.
+    /// </summary>
+    [Fact]
+    public async Task MetalamaLicense_IgnoresTheMinimumPostSharpVersion()
+    {
+        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+
+        License license = LicenseBuilder.Default()
+            .AsMetalamaProduct()
+            .WithMinPostSharpVersion( new Version( 2024, 0, 0 ) )
+            .WithMinMetalamaVersion( null )
+            .AddTo( context );
+
+        var (lease, errors) = await RequestAsync( context, license, new Version( 2023, 4, 0 ) );
+
+        Assert.NotNull( lease );
+        Assert.Empty( errors );
+    }
+
     [Fact]
     public async Task LicenseNotEligibleForALicenseServer_SaysSo()
     {

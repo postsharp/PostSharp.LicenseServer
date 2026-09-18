@@ -1,8 +1,13 @@
 # The license server protocol
 
 A client asks this server for a lease: the permission to use a license key during a limited period.
-The protocol has not changed since PostSharp 5, and every deployed client uses it. The shape of each
-request and of each response is therefore a contract that this server cannot change.
+Every client of PostSharp and of Metalama uses this protocol, and clients of several versions use one
+server at the same time. The protocol is compatible with all of them, including the versions released
+before PostSharp 5.
+
+The shape of each request and of each response is therefore a contract. A later version of the
+protocol may add an argument or a part, and a client that sends neither is served as it was before.
+This server cannot change what is already there.
 
 This document describes what the server accepts and what it answers. It is written for the developer
 who maintains a client, diagnoses a deployment, or modifies this server.
@@ -261,9 +266,12 @@ dated in the future. Delete the database as well as restarting the process betwe
 
 ## Exporting the audit log: `GET /Admin/Export.ashx`
 
-The export is not part of the client protocol. An administrator gives the exported file to an
-auditor. Its format is a contract of its own, because customers archive these files and compare them
-across years.
+The export is not part of the client protocol. The administrator of the server exports the log to
+understand how the licenses are used: which user held which seat, on which machine, and when. Its
+format is a contract of its own, because customers archive these files and compare them across years.
+
+The exported file contains personal data. It is meant for the organization that runs the server, and
+it is not meant to be sent to PostSharp Technologies.
 
 ### Request
 
@@ -284,7 +292,7 @@ rows.
 One line per lease, with seven fields separated by `;`:
 
 ```
-40;;900001;2026-09-17T11:02:14.1234567Z;2026-09-20T11:02:14.1234567Z;d97556dbab6becaa;93cf1e71b44530bd
+40;;900001;2026-09-17T11:02:14.1234567Z;2026-09-20T11:02:14.1234567Z;desktop-1;alice
 ```
 
 | Field | Meaning |
@@ -294,16 +302,15 @@ One line per lease, with seven fields separated by `;`:
 | 3 | The identifier of the license. |
 | 4 | The instant the lease began, in UTC. |
 | 5 | The instant the lease ended, in UTC. |
-| 6 | The hash of the machine name. |
-| 7 | The hash of the user name. |
+| 6 | The machine name. |
+| 7 | The user name. |
 
-Names appear only as hashes, so the file can be shared without disclosing who works where. The hash
-is the hexadecimal representation, in lower case, of an unkeyed 64-bit hash of the name. The name is
-trimmed and converted to lower case first. The algorithm is MD5, truncated to its first eight bytes
-and read as a little-endian signed integer. MD5 is not used for its cryptographic properties, which
-are irrelevant to an anonymizing hash. It is used because the values must be equal to the values
-PostSharp has produced since 2013, and because the license audit of Backstage hashes the same names
-in the same way.
+The two names are written as the server recorded them, which is in lower case, because the endpoint
+converts them before it stores them.
+
+A version earlier than 2027.0 wrote the two names as hashes. The log is read by the administrator of
+the server, who needs to know which user and which machine hold a seat, and a hash answers neither
+question.
 
 A version earlier than 2027.0 wrote an eighth field, which contained a signature of the line. That
 signature could not be verified: the server generated a random key at every call, so no two lines
@@ -327,4 +334,4 @@ breaks a client that is already deployed.
 | The four part names of a lease. | A client matches the parts by name and ignores a part it does not know. |
 | The status codes, and the body of a 403. | A client displays the body of a 403 to the user and treats every other status than 200 as a failure. |
 | The trailing hexadecimal suffix of a machine name is removed before a build server is matched. | The list of build servers in an existing configuration names the machines without it. |
-| The order of the first seven fields of an audit line, and the hash of the names. | Customers archive exported files and compare them across years. |
+| The order of the seven fields of an audit line. | Customers archive exported files and compare them across years. |

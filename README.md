@@ -130,11 +130,17 @@ points in the interpretation of a license key.
   `PostSharpUltimate` where it used to be stored as `Ultimate`. The existing rows are not modified,
   and a request that names either spelling finds both, so there is nothing to migrate.
 
-One more change concerns the exported audit log. A line now has seven fields instead of eight. The
-eighth field contained a signature of the line, and that signature could not be verified: the server
-generated a random key at every call, so no two lines were signed with the same key. The server no
-longer writes that field, and it no longer writes the `HMAC` column of the `Leases` table. The column
-is left in place, and the values already written are left as they are.
+Two changes concern the exported audit log.
+
+* A line now has seven fields instead of eight. The eighth field contained a signature of the line,
+  and that signature could not be verified: the server generated a random key at every call, so no
+  two lines were signed with the same key. The server no longer writes that field, and it no longer
+  writes the `HMAC` column of the `Leases` table. The column is left in place, and the values already
+  written are left as they are.
+* The sixth field and the seventh field contain the machine name and the user name, where they used
+  to contain a hash of each. The log is read by the administrator of the server, who needs to know
+  which user and which machine hold a seat. The exported file therefore contains personal data.
+  Handle it as you handle the database, which has always contained the same names.
 
 ## Building from source
 

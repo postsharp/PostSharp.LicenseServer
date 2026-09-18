@@ -12,7 +12,8 @@ obj
 *.db
 *.db-shm
 *.db-wal
-# The audit signing key is generated on first start and is a secret. The pattern is not anchored,
+# The directory the server writes its own files to. It holds the key pair of the test licensing
+# authority, which a development server signs its own license keys with. The pattern is not anchored,
 # because the directory is created next to whichever project is being run.
 App_Data/
 

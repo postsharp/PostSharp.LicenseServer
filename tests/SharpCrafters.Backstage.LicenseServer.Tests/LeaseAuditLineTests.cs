@@ -12,10 +12,6 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests;
 /// </summary>
 public sealed class LeaseAuditLineTests
 {
-    // The hashes that CryptoUtilities.ComputeStringHash64 produces. They anonymize the names.
-    private const string aliceHash = "f5cb4b18b2e28463";
-    private const string desktop1Hash = "da7251349d0ffa49";
-
     private static Lease CreateLease()
         => new()
         {
@@ -33,7 +29,7 @@ public sealed class LeaseAuditLineTests
     public void Write_ProducesTheExpectedLine()
     {
         Assert.Equal(
-            $"42;41;7;2026-01-05T09:00:00Z;2026-01-08T09:00:00Z;{desktop1Hash};{aliceHash}",
+            "42;41;7;2026-01-05T09:00:00Z;2026-01-08T09:00:00Z;desktop-1;alice",
             CreateLease().ToAuditLine() );
     }
 
@@ -44,17 +40,22 @@ public sealed class LeaseAuditLineTests
         lease.OverwrittenLeaseId = null;
 
         Assert.Equal(
-            $"42;;7;2026-01-05T09:00:00Z;2026-01-08T09:00:00Z;{desktop1Hash};{aliceHash}",
+            "42;;7;2026-01-05T09:00:00Z;2026-01-08T09:00:00Z;desktop-1;alice",
             lease.ToAuditLine() );
     }
 
+    /// <summary>
+    /// The administrator of the server reads the log to learn which user and which machine hold a
+    /// seat, so both names are written as they were recorded. A version earlier than 2027.0 wrote
+    /// them as hashes, which nothing could read.
+    /// </summary>
     [Fact]
-    public void Write_NeverDisclosesTheUserOrMachineName()
+    public void Write_NamesTheUserAndTheMachine()
     {
-        string line = CreateLease().ToAuditLine();
+        string[] fields = CreateLease().ToAuditLine().Split( ';' );
 
-        Assert.DoesNotContain( "alice", line, StringComparison.OrdinalIgnoreCase );
-        Assert.DoesNotContain( "desktop", line, StringComparison.OrdinalIgnoreCase );
+        Assert.Equal( "desktop-1", fields[5] );
+        Assert.Equal( "alice", fields[6] );
     }
 
     /// <summary>
@@ -104,7 +105,7 @@ public sealed class LeaseAuditLineTests
             CultureInfo.CurrentCulture = new CultureInfo( "de-DE" );
 
             Assert.Equal(
-                $"42;41;7;2026-01-05T09:00:00Z;2026-01-08T09:00:00Z;{desktop1Hash};{aliceHash}",
+                "42;41;7;2026-01-05T09:00:00Z;2026-01-08T09:00:00Z;desktop-1;alice",
                 CreateLease().ToAuditLine() );
         }
         finally

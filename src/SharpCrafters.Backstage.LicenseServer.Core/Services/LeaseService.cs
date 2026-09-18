@@ -90,28 +90,26 @@ public sealed partial class LeaseService
 
         if ( parsedLicense.MinPostSharpVersion > this.serverVersion.LicensingLibraryVersion )
         {
-            errors[license.LicenseId] = string.Format(
-                "The license #{0} requires a higher version of the licensing library on the License Server. Please upgrade the License Server to >= {1}.{2}.{3}",
-                license.LicenseId,
-                parsedLicense.MinPostSharpVersion.Major,
-                parsedLicense.MinPostSharpVersion.Minor,
-                parsedLicense.MinPostSharpVersion.Build );
+            errors[license.LicenseId] =
+                $"The license #{license.LicenseId} requires a higher version of the licensing library on the License Server. "
+                + $"Please upgrade the License Server to >= {parsedLicense.MinPostSharpVersion.Major}."
+                + $"{parsedLicense.MinPostSharpVersion.Minor}.{parsedLicense.MinPostSharpVersion.Build}";
 
             return null;
         }
 
-        if ( parsedLicense.MinPostSharpVersion > version )
+        // A PostSharp license names the lowest version of PostSharp that can read it, and a Metalama
+        // license names the lowest version of Metalama. The two are independent, so the minimum that
+        // applies is the one of the family of the licensed product.
+        Version minClientVersion = parsedLicense.MinClientVersion;
+
+        if ( minClientVersion > version )
         {
-            errors[license.LicenseId] = string.Format(
-                "The license #{0} of type {1} requires PostSharp version >= {2}.{3}.{4} but the requested version is {5}.{6}.{7}.",
-                license.LicenseId,
-                parsedLicense.LicenseType,
-                parsedLicense.MinPostSharpVersion.Major,
-                parsedLicense.MinPostSharpVersion.Minor,
-                parsedLicense.MinPostSharpVersion.Build,
-                version.Major,
-                version.Minor,
-                version.Build );
+            errors[license.LicenseId] =
+                $"The license #{license.LicenseId} of type {parsedLicense.LicenseType} requires "
+                + $"{parsedLicense.ClientName} version >= {minClientVersion.Major}.{minClientVersion.Minor}."
+                + $"{minClientVersion.Build} but the requested version is "
+                + $"{version.Major}.{version.Minor}.{version.Build}.";
 
             return null;
         }
@@ -129,19 +127,12 @@ public sealed partial class LeaseService
         {
             // The version number was introduced in the license server protocol in PostSharp 5.
             errors[license.LicenseId] = version.Major >= 5
-                ? string.Format(
-                    "The maintenance subscription of license #{0} ends on {1:d} but the requested version {2}.{3}.{4} has been built on {5:d}.",
-                    license.LicenseId,
-                    parsedLicense.SubscriptionEndDate,
-                    version.Major,
-                    version.Minor,
-                    version.Build,
-                    buildDate )
-                : string.Format(
-                    "The maintenance subscription of license #{0} ends on {1:d} but the requested version has been built on {2:d}.",
-                    license.LicenseId,
-                    parsedLicense.SubscriptionEndDate,
-                    buildDate );
+                ? $"The maintenance subscription of license #{license.LicenseId} ends on "
+                  + $"{parsedLicense.SubscriptionEndDate:d} but the requested version "
+                  + $"{version.Major}.{version.Minor}.{version.Build} has been built on {buildDate:d}."
+                : $"The maintenance subscription of license #{license.LicenseId} ends on "
+                  + $"{parsedLicense.SubscriptionEndDate:d} but the requested version has been built on "
+                  + $"{buildDate:d}.";
 
             return null;
         }
@@ -387,16 +378,13 @@ public sealed partial class LeaseService
                 if ( license.GraceLastWarningTime.GetValueOrDefault( DateTime.MinValue )
                         .AddDays( this.settings.GracePeriodWarningDays ) < now )
                 {
-                    string body = string.Format(
-                        "The license #{0} has a capacity of {1} concurrent user(s), but {2} users are currently using the product {3}. "
-                        + "The grace period has started on {4} and will end on {5}. After this date, additional leases will be denied."
-                        + "Please contact PostSharp Technologies to acquire additional licenses.",
-                        license.LicenseId,
-                        licenseState.Maximum,
-                        licenseState.Usage + 1,
-                        licenseState.ParsedLicense.Product,
-                        license.GraceStartTime,
-                        graceEnd );
+                    string body =
+                        $"The license #{license.LicenseId} has a capacity of {licenseState.Maximum} concurrent user(s), "
+                        + $"but {licenseState.Usage + 1} users are currently using the product "
+                        + $"{licenseState.ParsedLicense.Product}. "
+                        + $"The grace period has started on {license.GraceStartTime} and will end on {graceEnd}. "
+                        + "After this date, additional leases will be denied."
+                        + "Please contact PostSharp Technologies to acquire additional licenses.";
 
                     await this.SendEmailAsync(
                         this.settings.GracePeriodWarningEmailTo,
@@ -429,13 +417,9 @@ public sealed partial class LeaseService
             this.settings.DeniedRequestEmailTo,
             null,
             "ERROR: license request denied",
-            string.Format(
-                "No license with free capacity was found to satisfy the lease request for the product {0} from "
-                + "the user '{1}' (authentication: '{2}'), machine '{3}'. " + string.Join( ". ", errors.Values ),
-                productCode,
-                userName,
-                authenticatedUserName,
-                machine ),
+            $"No license with free capacity was found to satisfy the lease request for the product "
+            + $"{productCode} from the user '{userName}' (authentication: '{authenticatedUserName}'), "
+            + $"machine '{machine}'. " + string.Join( ". ", errors.Values ),
             cancellationToken );
 
         return null;

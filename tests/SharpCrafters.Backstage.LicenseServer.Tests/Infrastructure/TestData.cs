@@ -35,6 +35,8 @@ public sealed class LicenseBuilder
     private DateTime? validTo;
     private DateTime? subscriptionEndDate;
     private Version minPostSharpVersion = new( 1, 0, 0 );
+    private Version? minMetalamaVersion;
+    private bool isMetalamaProduct;
     private int graceDays = 30;
     private int gracePercent = 20;
     private bool isLicenseServerEligible = true;
@@ -106,6 +108,25 @@ public sealed class LicenseBuilder
         return this;
     }
 
+    /// <summary>
+    /// Makes this a license of a Metalama product, whose client reads the minimum Metalama version
+    /// and not the minimum PostSharp version.
+    /// </summary>
+    public LicenseBuilder AsMetalamaProduct( string productCode = "MetalamaProfessional" )
+    {
+        this.isMetalamaProduct = true;
+        this.product = productCode;
+
+        return this;
+    }
+
+    public LicenseBuilder WithMinMetalamaVersion( Version? value )
+    {
+        this.minMetalamaVersion = value;
+
+        return this;
+    }
+
     public LicenseBuilder WithGraceDays( int value )
     {
         this.graceDays = value;
@@ -144,6 +165,8 @@ public sealed class LicenseBuilder
             ValidTo = this.validTo,
             SubscriptionEndDate = this.subscriptionEndDate,
             MinPostSharpVersion = this.minPostSharpVersion,
+            MinMetalamaVersion = this.minMetalamaVersion,
+            IsMetalamaProduct = this.isMetalamaProduct,
             GraceDays = this.graceDays,
             GracePercent = this.gracePercent,
             IsLicenseServerEligible = this.isLicenseServerEligible,

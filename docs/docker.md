@@ -1,5 +1,11 @@
 # Running the license server in a container
 
+This deployment is provided for development and for testing, and it is not recommended for
+production. The database it starts is SQL Server 2022 Developer Edition, whose license does not cover
+a production installation. For a production installation, run the server against a SQL Server or a
+PostgreSQL that your organization licenses and operates, as
+[configuration.md](configuration.md) describes.
+
 `docker-compose.yml` starts a license server: the application, a SQL Server database, and a job that
 creates the schema from `Database/CreateTables.sql` and then stops.
 
