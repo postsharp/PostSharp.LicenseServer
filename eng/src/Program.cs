@@ -1,6 +1,5 @@
 // Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
 
-using BuildBackstageLicenseServer.Docker;
 using PostSharp.Engineering.BuildTools;
 using PostSharp.Engineering.BuildTools.Build;
 using PostSharp.Engineering.BuildTools.Build.Model;
@@ -29,21 +28,30 @@ var product = new Product( BackstageDependencies.BackstageLicenseServer )
         Components = [new DotNetComponent( dotNetSdkVersion, DotNetComponentKind.Sdk )]
     },
 
-    // The image of each database test run. Both are Linux images: Microsoft publishes no SQL Server for a Windows
-    // container after the 2019 version, and PostgreSQL is deployed on Linux. Each image carries its server rather
-    // than starting a second container, which a build step running inside a container cannot do without the
-    // Docker socket of the agent.
-    AdditionalDockerfiles =
-    [
-        DatabaseTests.SqlServer.Dockerfile( dotNetSdkVersion ),
-        DatabaseTests.PostgreSql.Dockerfile( dotNetSdkVersion )
-    ],
-
     // The test runs that need a database server. The build itself runs the suite on SQLite, which needs no
-    // server; these configurations run the same tests against the two engines that customers deploy, and they
-    // are what proves the lock, the collation and the column types of each one. See eng/TestDatabase.ps1 and the
-    // section "Running the tests" of README.md.
-    AdditionalCiBuildConfigurations = [DatabaseTests.SqlServer.Configuration, DatabaseTests.PostgreSql.Configuration],
+    // server; these runs exercise the same tests against the two engines that customers deploy, each in a
+    // container of its own. See Tests/Docker and the section "Running the tests" of README.md.
+    //
+    // One configuration runs every test of a platform, so there is one per platform and not one per engine.
+    // SQL Server runs on amd64 alone, which is why linux-x64 is the only platform declared here.
+    AdditionalCiBuildConfigurations = DockerTestsAdditionalCiBuildConfiguration.WithCompositeConfiguration(
+        new DockerTestsAdditionalCiBuildConfiguration(
+            "DockerTestsLinuxX64",
+            "Docker Tests (Linux x64)",
+            DockerTestPlatform.LinuxX64,
+
+            // The directories of this repository are named in lower case, so the tests are under tests/docker
+            // and not under the default Tests/Docker. The name is compared as it is written on a Linux agent.
+            "tests/docker" )
+        {
+            // The tests build the product from the sources of the repository, and they need the packages of the
+            // licensing component, which the artifacts of the debug build carry.
+            BuildSnapshotDependency = BuildConfiguration.Debug,
+
+            // Each test acquires an image of several hundred megabytes on an agent that meets it for the first
+            // time, installs a database server, and then builds and runs the suite.
+            TimeoutInMinutes = 60
+        } ),
 
     // Built rather than packed: the product ships a deployable archive and no NuGet package, so the Pack
     // target of every project would be a no-op.

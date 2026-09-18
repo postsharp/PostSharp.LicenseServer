@@ -203,19 +203,32 @@ Commit your work before you reformat, so that the reformatting is a commit of it
 
 ### Running the tests
 
-`./Build.ps1 test` runs the suite on SQLite, which needs no server and keeps the loop short. Run the
-same tests again against each engine that customers deploy before you open a pull request. The
+`./Build.ps1 test` runs the suite on SQLite, which needs no server and keeps the loop short. The same
+tests run again against each engine that customers deploy, each in a container of its own. The
 engines differ in the collation, in the column types and in the lock that serializes the lease
-requests, so a defect can appear on one of them alone:
+requests, so a defect can appear on one of them alone. Run them before you open a pull request:
 
 ```
-./eng/TestDatabase.ps1 -Engine SqlServer
-./eng/TestDatabase.ps1 -Engine PostgreSql
+pwsh ./eng/RunDockerTests.ps1
+pwsh ./eng/RunDockerTests.ps1 -Test PostgreSql
+pwsh ./tests/docker/PostgreSql/RunTest.ps1 -Platform linux-x64
 ```
 
-Each run starts its server in a container, waits for it, and runs `Build.ps1 test` against it. Docker
-is the only prerequisite. To use a server of your own instead, set the connection string and the
-script leaves the server alone:
+The first command runs every test that the container engine of this host can run. The second runs one
+of them, reported the way the continuous integration build reports it. The third runs the same test
+without the launcher, which is the shortest path while a test is being written.
+
+The host needs PowerShell 7.5 and a container engine, and nothing else: the .NET SDK and the database
+server live in the image of the test. On Windows, Linux containers run on the engine inside the
+Windows Subsystem for Linux, and the scripts reach it themselves.
+
+Each test is a directory under `tests/docker`: `test.psd1` names the platforms the test applies to,
+`Dockerfile` installs the server and the SDK, `RunTest.ps1` starts the container through
+`DockerBuild.ps1 -Test`, and `run.sh` starts the server inside the container and runs `dotnet test`.
+The continuous integration build runs them in the configuration `Docker Tests (Linux x64)`. See
+[the harness](https://github.com/postsharp-ops/PostSharp.Engineering/blob/HEAD/doc/docker-tests.md).
+
+To run the suite against a server of your own instead, name it and run the tests directly:
 
 ```
 $env:LICENSESERVER_TEST_SQLSERVER = "Server=127.0.0.1,1433;User Id=sa;Password=<a password>;TrustServerCertificate=True;Encrypt=False"
@@ -229,10 +242,6 @@ or from `Database\CreateTables.PostgreSql.sql`, so each run also proves that the
 Entity Framework model agree. The databases are named `licenseserver_test_` followed by a hexadecimal
 number. They are reused during the run, and the next run drops the ones an interrupted run left
 behind, so the login needs the permission to create a database.
-
-The continuous integration build runs both of them, in the configurations `Tests on SQL Server` and
-`Tests on PostgreSQL`. Each one runs `eng\TestDatabase.ps1` in an image that carries its server,
-described by `eng\src\Docker\SqlServerComponent.cs` and `eng\src\Docker\PostgreSqlComponent.cs`.
 
 ### Running locally
 

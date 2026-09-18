@@ -16,10 +16,12 @@ project {
     buildType(PublicBuild)
     buildType(PublicDeployment)
     buildType(VersionBump)
-    buildType(SqlServerTests)
-    buildType(PostgreSqlTests)
 
-    buildTypesOrder = arrayListOf(DebugBuild,ReleaseBuild,PublicBuild,PublicDeployment,VersionBump,SqlServerTests,PostgreSqlTests)
+    buildTypesOrder = arrayListOf(DebugBuild,ReleaseBuild,PublicBuild,PublicDeployment,VersionBump)
+
+    subProject(DockerTests)
+
+    subProjectsOrder = arrayListOf(DockerTests)
 
 }
 
@@ -562,16 +564,16 @@ object VersionBump : BuildType({
 
 })
 
-object SqlServerTests : BuildType({
+object DockerTestsLinuxX64 : BuildType({
 
-    name = "Tests on SQL Server"
+    name = "Docker Tests (Linux x64)"
 
     params {
         text(
             "Exec.Arguments", 
             "", 
-            label ="DockerBuild.ps1 Arguments",
-            description = "Arguments to append to the 'Execute ./eng/TestDatabase.ps1' build step.", allowEmpty = true)
+            label ="eng/RunDockerTests.ps1 Arguments",
+            description = "Arguments to append to the 'Execute eng/RunDockerTests.ps1' build step.", allowEmpty = true)
     }
 
     vcs {
@@ -608,35 +610,19 @@ object SqlServerTests : BuildType({
             noProfile = false
         }
         powerShell {
-            name = "Prepare Docker image backstagelicenseserver-2027.0-sqlservertests"
-            id = "PrepareImage"
-            edition = PowerShellStep.Edition.Core
-            scriptMode = file {
-                path = "DockerBuild.ps1"
-            }
-            noProfile = false
-            scriptArgs = "-BuildImage -ImageName backstagelicenseserver-2027.0-sqlservertests -Dockerfile eng/docker/sqlserver-build.Dockerfile "
-        }
-        powerShell {
-            name = "Execute ./eng/TestDatabase.ps1"
+            name = "Execute eng/RunDockerTests.ps1"
             id = "Exec"
             edition = PowerShellStep.Edition.Core
             scriptMode = file {
-                path = "DockerBuild.ps1"
+                path = "eng/RunDockerTests.ps1"
             }
             noProfile = false
-            scriptArgs = "-Script ./eng/TestDatabase.ps1 -ImageName backstagelicenseserver-2027.0-sqlservertests -Dockerfile eng/docker/sqlserver-build.Dockerfile -NoBuildImage -Label %system.teamcity.buildType.id%_%build.number% -Engine SqlServer %Exec.Arguments%"
+            scriptArgs = "-Platform linux-x64 %Exec.Arguments%"
         }
-        powerShell {
-            name = "Cleanup Docker containers"
-            id = "DockerCleanup"
-            executionMode = BuildStep.ExecutionMode.ALWAYS
-            edition = PowerShellStep.Edition.Core
-            scriptMode = script {
-                content = "${'$'}label = \"%system.teamcity.buildType.id%_%build.number%\"; ${'$'}ids = docker ps -a -q --filter \"label=postsharp.build=${'$'}label\"; if (${'$'}ids) { docker rm -f ${'$'}ids 2>&1 | Out-Null }"
-            }
-            noProfile = false
-        }
+    }
+
+    failureConditions {
+        executionTimeoutMin = 60
     }
 
     requirements {
@@ -678,119 +664,12 @@ object SqlServerTests : BuildType({
 
 })
 
-object PostgreSqlTests : BuildType({
+object DockerTests : Project({
 
-    name = "Tests on PostgreSQL"
+    name = "Docker Tests"
 
-    params {
-        text(
-            "Exec.Arguments", 
-            "", 
-            label ="DockerBuild.ps1 Arguments",
-            description = "Arguments to append to the 'Execute ./eng/TestDatabase.ps1' build step.", allowEmpty = true)
-    }
+    buildType(DockerTestsLinuxX64)
 
-    vcs {
-        root(AbsoluteId("Backstage_BackstageLicenseServer20270"))
-     checkoutMode = CheckoutMode.ON_AGENT
-    }
-
-    steps {
-        powerShell {
-            name = "Clean NuGet cache of produced and dependency packages"
-            id = "CleanNuGetCache"
-            edition = PowerShellStep.Edition.Core
-            scriptMode = script {
-                content = "${'$'}nugetPackages = if ( ${'$'}env:NUGET_PACKAGES ) { ${'$'}env:NUGET_PACKAGES } else { Join-Path ${'$'}HOME '.nuget' 'packages' }; ${'$'}removedDirs = 0; ${'$'}removedFiles = 0; if ( Test-Path -LiteralPath ${'$'}nugetPackages ) { foreach ( ${'$'}pattern in @('metalama.backstage*', 'postsharp.engineering', 'postsharp.engineering.*', 'sharpcrafters.backstage*', 'sharpcrafters.backstage.licenseserver*', 'sharpcrafters.common*') ) { Get-ChildItem -LiteralPath ${'$'}nugetPackages -Directory -Filter ${'$'}pattern -ErrorAction SilentlyContinue | ForEach-Object { ${'$'}files = @( Get-ChildItem -LiteralPath ${'$'}_.FullName -Recurse -File -ErrorAction SilentlyContinue ).Count; Write-Host \"Removing NuGet cache directory: ${'$'}(${'$'}_.FullName) (${'$'}files file(s))\"; Remove-Item -LiteralPath ${'$'}_.FullName -Recurse -Force -ErrorAction SilentlyContinue; if ( -not ( Test-Path -LiteralPath ${'$'}_.FullName ) ) { ${'$'}removedDirs++; ${'$'}removedFiles += ${'$'}files } } } Write-Host \"Removed ${'$'}removedDirs package directory(ies) and ${'$'}removedFiles file(s) from the NuGet cache.\"; } else { Write-Host \"NuGet packages folder not found: ${'$'}nugetPackages\" }"
-            }
-            noProfile = false
-        }
-        powerShell {
-            name = "Copy nuget.restored.config to nuget.config"
-            id = "CopyNuGetConfig"
-            edition = PowerShellStep.Edition.Core
-            scriptMode = script {
-                content = "Copy-Item -Path \"artifacts/publish/private/nuget.restored.config\" -Destination \"nuget.config\" -Force;"
-            }
-            noProfile = false
-        }
-        powerShell {
-            name = "Create eng/Versions.g.props"
-            id = "CreateVersionsFile"
-            edition = PowerShellStep.Edition.Core
-            scriptMode = script {
-                content = "New-Item -Path \"eng/Versions.g.props\" -ItemType File -Force -Value \"<Project><Import Project=`\"../artifacts/publish/private/Backstage.LicenseServer.version.props`\" /><Import Project=`\"../dependencies/Backstage/Backstage.version.props`\" /></Project>\" | Out-Null;"
-            }
-            noProfile = false
-        }
-        powerShell {
-            name = "Prepare Docker image backstagelicenseserver-2027.0-postgresqltests"
-            id = "PrepareImage"
-            edition = PowerShellStep.Edition.Core
-            scriptMode = file {
-                path = "DockerBuild.ps1"
-            }
-            noProfile = false
-            scriptArgs = "-BuildImage -ImageName backstagelicenseserver-2027.0-postgresqltests -Dockerfile eng/docker/postgresql-build.Dockerfile "
-        }
-        powerShell {
-            name = "Execute ./eng/TestDatabase.ps1"
-            id = "Exec"
-            edition = PowerShellStep.Edition.Core
-            scriptMode = file {
-                path = "DockerBuild.ps1"
-            }
-            noProfile = false
-            scriptArgs = "-Script ./eng/TestDatabase.ps1 -ImageName backstagelicenseserver-2027.0-postgresqltests -Dockerfile eng/docker/postgresql-build.Dockerfile -NoBuildImage -Label %system.teamcity.buildType.id%_%build.number% -Engine PostgreSql %Exec.Arguments%"
-        }
-        powerShell {
-            name = "Cleanup Docker containers"
-            id = "DockerCleanup"
-            executionMode = BuildStep.ExecutionMode.ALWAYS
-            edition = PowerShellStep.Edition.Core
-            scriptMode = script {
-                content = "${'$'}label = \"%system.teamcity.buildType.id%_%build.number%\"; ${'$'}ids = docker ps -a -q --filter \"label=postsharp.build=${'$'}label\"; if (${'$'}ids) { docker rm -f ${'$'}ids 2>&1 | Out-Null }"
-            }
-            noProfile = false
-        }
-    }
-
-    requirements {
-        equals("teamcity.agent.jvm.os.name", "Linux")
-        equals("teamcity.agent.jvm.os.arch", "amd64")
-    }
-
-    features {
-        swabra {
-            filesCleanup = Swabra.FilesCleanup.BEFORE_BUILD
-            lockingProcesses = Swabra.LockingProcessPolicy.KILL
-            verbose = true
-        }
-        gitHubAppBuildScopedToken {
-            parameterName = "env.GITHUB_TOKEN"
-            connectionId = "%GITHUB_CONNECTION_POSTSHARP_OPS%"
-            targetRepositories = "SharpCrafters.Backstage.LicenseServer"
-        }
-    }
-
-    dependencies {
-        snapshot(DebugBuild) {
-                 onDependencyFailure = FailureAction.FAIL_TO_START
-        }
-
-        artifacts(DebugBuild) { 
-            cleanDestination = true
-            artifactRules = "+:artifacts/publish/private/**/*=>artifacts/publish/private"
-        }
-        snapshot(AbsoluteId("Backstage_Backstage20270_DebugBuild")) {
-                 onDependencyFailure = FailureAction.FAIL_TO_START
-        }
-
-        artifacts(AbsoluteId("Backstage_Backstage20270_DebugBuild")) { 
-            cleanDestination = true
-            artifactRules = "+:artifacts/publish/private/**/*=>dependencies/Backstage"
-        }
-     }
+    buildTypesOrder = arrayListOf(DockerTestsLinuxX64)
 
 })
-

@@ -16,7 +16,8 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 /// runs the suite again against each engine that customers use.
 /// </para>
 /// <para>
-/// Start either server with <c>eng\TestDatabase.ps1</c>, which also runs the suite against it.
+/// A Docker test starts either server in a container and sets the variable. See <c>tests/docker</c> and
+/// the section "Running the tests" of <c>README.md</c>.
 /// </para>
 /// </remarks>
 public static class TestDatabases

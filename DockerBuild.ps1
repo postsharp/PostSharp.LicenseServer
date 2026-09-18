@@ -68,6 +68,35 @@
 .PARAMETER Dockerfile
     Path to a custom Dockerfile. Defaults to Dockerfile or Dockerfile.claude based on -Claude.
 
+.PARAMETER OS
+    The operating system of the containers this run builds and starts: windows or linux. Defaults to the
+    operating system of the host.
+
+    A build agent runs one engine, so there the default is the only possibility and anything else fails with
+    that reason. A development machine is the case that differs: Windows containers run on Docker Desktop
+    while Linux containers run on the Docker engine inside WSL. Asking for linux on a Windows development
+    machine therefore re-executes this script inside WSL, after checking that WSL, PowerShell 7 and a Linux
+    Docker engine of the host's own architecture are all there.
+
+.PARAMETER Test
+    Runs a Docker test container instead of the product build. Requires -Dockerfile and -Command.
+    The image is built and cached exactly as a product image is, with the same content-hash tag and the same
+    registry push and pull. What differs is that no product image chain is resolved and no product environment
+    variable is passed: the container gets what -Env asks for and nothing else, so the product credentials stay
+    out of it. The mounts are those of an ordinary build -- the repository, the caches and the dependency
+    repositories -- and the command runs with the repository as its working directory, so a test addresses what
+    it needs by a path relative to the repository root. Use it for a test that needs a container of its own.
+
+.PARAMETER Context
+    (-Test) The Docker build context directory. Defaults to the directory containing the Dockerfile.
+
+.PARAMETER Command
+    (-Test) The command line executed in the test container, instead of the build script. Mutually exclusive
+    with -Script: -Script names a PowerShell file that the container runs through pwsh, which the image must
+    therefore carry, while -Command is a command line run through the container's own shell, which any image
+    has. -Test requires -Command; -Script belongs to an ordinary build. The container's exit code
+    becomes the exit code of this script.
+
 .PARAMETER RegistryImage
     Use a pre-built image from a registry, skipping Dockerfile build entirely.
 
@@ -170,6 +199,11 @@ param(
     [switch]$StartVsmon, # Enable the remote debugger.
     [string]$Script = 'Build.ps1', # The build script to be executed inside Docker.
     [string]$Dockerfile, # Path to custom Dockerfile (defaults to Dockerfile or Dockerfile.claude based on -Claude).
+    [ValidateSet('windows', 'linux')]
+    [string]$OS, # The operating system of the containers. Defaults to the host's. On a Windows development machine, 'linux' re-executes this script inside WSL.
+    [switch]$Test, # Run an isolated Docker test container. Requires -Dockerfile and -Command. Builds no product image chain, mounts no repository directory, and passes no product environment variable.
+    [string]$Context, # (-Test) The Docker build context directory. Defaults to the directory containing the Dockerfile.
+    [string]$Command, # (-Test) The command line executed in the test container, instead of the build script.
     [string]$RegistryImage, # Use a pre-built image from a registry, skipping Dockerfile build entirely.
     [switch]$NoRegistry, # Ignore DOCKER_REGISTRY and its credentials; build locally without pulling or pushing.
     [switch]$NoInit, # Do not generate or call Init.g.ps1 (skips git config, safe.directory, etc).
@@ -228,6 +262,203 @@ if ($null -eq $IsWindows)
     $IsWindows = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
 }
 $IsUnix = -not $IsWindows  # Covers both Linux and macOS
+
+# Converts a host path to the form WSL sees it under: C:\src\x becomes /mnt/c/src/x. Used only when this
+# script hands its own arguments to a copy of itself running inside WSL, where every path it was given names
+# a Windows location that the Linux side reaches through /mnt.
+# Quotes a value as a PowerShell single-quoted literal, doubling any apostrophe it contains. The WSL hop builds
+# a command line rather than passing arguments, so every value it forwards goes through here: a path holding an
+# apostrophe would otherwise end the literal early and have its remainder parsed as PowerShell.
+function ConvertTo-PowerShellLiteral([string]$value)
+{
+    return "'" + ( $value -replace "'", "''" ) + "'"
+}
+
+function ConvertTo-WslHostPath([string]$path)
+{
+    if ($path -match '^([A-Za-z]):[\\/](.*)$')
+    {
+        return "/mnt/$( $Matches[1].ToLowerInvariant() )/$( $Matches[2] -replace '\\', '/' )"
+    }
+
+    return $path -replace '\\', '/'
+}
+
+# A caller that splats an ARRAY -- `& ./DockerBuild.ps1 @arguments` where $arguments is @('-Test', ...) -- does not
+# bind these parameters by name. -BuildArgs takes the remaining arguments, so every value lands there and this
+# script goes on to run an ordinary product build, mounting the source tree and forwarding the product secrets,
+# instead of whatever mode was asked for. That failure is silent and its consequences are not, so it is refused
+# here. Callers splat a hashtable: @{ Test = $true; OS = 'linux' }.
+# The parameter names are read from the command rather than from $MyInvocation, whose MyCommand.Parameters is
+# empty at script scope and silently matched nothing.
+$declaredParameters = ( Get-Command -Name $PSCommandPath ).Parameters.Keys
+
+$misboundArguments = @( $BuildArgs | Where-Object {
+    $_ -and $_.StartsWith('-') -and $declaredParameters -contains $_.Substring(1)
+} )
+
+if ($misboundArguments.Count -gt 0)
+{
+    Write-Host "These arguments name parameters of this script but were not bound to them: $( $misboundArguments -join ', ' )" -ForegroundColor Red
+    Write-Host "That happens when a caller splats an array. Splat a hashtable instead, for example:" -ForegroundColor Red
+    Write-Host "  `$arguments = @{ Test = `$true; OS = 'linux' }; ./DockerBuild.ps1 @arguments" -ForegroundColor Red
+    exit 1
+}
+
+# The operating system of the containers. The host's own is the default and, on a build agent, the only
+# possibility: an agent runs one engine, and a build that needs the other one is routed to another agent.
+#
+# A development machine is where the two can differ, because Windows containers run on Docker Desktop while
+# Linux containers run on the Docker engine inside WSL. Rather than special-casing every place that branches
+# on the host -- the isolation flag, the escape character, the base image tag, the path conversion -- this
+# script re-executes itself inside WSL, where it is running on a genuine Linux host and none of those places
+# needs to know that a Windows machine started it.
+$hostOs = if ($IsWindows) { 'windows' } else { 'linux' }
+
+if (-not $OS)
+{
+    $OS = $hostOs
+}
+
+if ($OS -ne $hostOs)
+{
+    if ($IsUnix)
+    {
+        Write-Host "This host runs $hostOs containers, and -OS $OS was requested." -ForegroundColor Red
+        Write-Host "Windows containers need a Windows host. There is no counterpart of WSL in that direction." -ForegroundColor Red
+        exit 1
+    }
+
+    # Switching on an agent would run the build on an engine other than the one it was routed to, and would
+    # hide a wrong agent requirement behind a silent fallback. It is refused with the reason instead.
+    if ($env:IS_TEAMCITY_AGENT)
+    {
+        Write-Host "This agent runs $hostOs containers, and -OS $OS was requested." -ForegroundColor Red
+        Write-Host "A build agent does not switch. Route this build to an agent whose engine is $OS." -ForegroundColor Red
+        exit 1
+    }
+
+    if (-not (Get-Command wsl.exe -ErrorAction SilentlyContinue))
+    {
+        Write-Host "Linux containers on a Windows development machine run on the Docker engine inside WSL, and wsl.exe was not found." -ForegroundColor Red
+        Write-Host "Install it with 'wsl --install', then install PowerShell 7 and a Docker engine inside the distribution." -ForegroundColor Red
+        exit 1
+    }
+
+    $wslPwsh = (& wsl.exe -- sh -c 'command -v pwsh' 2>&1 | Out-String).Trim()
+
+    if ($LASTEXITCODE -ne 0 -or -not $wslPwsh)
+    {
+        Write-Host "PowerShell 7 is not installed inside the WSL distribution, so this script cannot run there." -ForegroundColor Red
+        Write-Host "Install pwsh in the distribution and try again." -ForegroundColor Red
+        exit 1
+    }
+
+    $wslEngineOs = (& wsl.exe -- docker version --format '{{.Server.Os}}' 2>&1 | Out-String).Trim()
+
+    if ($LASTEXITCODE -ne 0 -or $wslEngineOs -ne 'linux')
+    {
+        Write-Host "The Docker engine inside WSL did not answer, or is not a Linux engine: $wslEngineOs" -ForegroundColor Red
+        Write-Host "Start it inside the distribution, for example with 'sudo service docker start'." -ForegroundColor Red
+        exit 1
+    }
+
+    # An engine of another architecture would build images this machine cannot run, and the failure would come
+    # much later and name something else, so it is checked here.
+    $wslEngineArch = (& wsl.exe -- docker version --format '{{.Server.Arch}}' 2>&1 | Out-String).Trim()
+
+    $hostArch = switch ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)
+    {
+        'X64' { 'amd64' }
+        'Arm64' { 'arm64' }
+        default { $null }
+    }
+
+    if ($hostArch -and $wslEngineArch -and $wslEngineArch -ne $hostArch)
+    {
+        Write-Host "The Docker engine inside WSL reports $wslEngineArch while this host is $hostArch." -ForegroundColor Red
+        Write-Host "An emulated engine produces images of the wrong architecture, so the run is refused." -ForegroundColor Red
+        exit 1
+    }
+
+    # Rebuild the invocation for the Linux side. Everything is forwarded as it was given except -OS, which has
+    # been answered by the hop itself, and the parameters holding a path, which name Windows locations.
+    $pathParameters = @('Dockerfile', 'Context', 'PostInit', 'BuildAgentPath')
+    $wslArguments = @()
+
+    foreach ($parameter in $PSBoundParameters.GetEnumerator())
+    {
+        if ($parameter.Key -eq 'OS' -or $parameter.Key -eq 'BuildArgs')
+        {
+            continue
+        }
+
+        $value = $parameter.Value
+
+        if ($value -is [System.Management.Automation.SwitchParameter])
+        {
+            if ($value.IsPresent)
+            {
+                $wslArguments += "-$( $parameter.Key )"
+            }
+
+            continue
+        }
+
+        $items = @()
+
+        foreach ($item in @($value))
+        {
+            $text = [string]$item
+
+            if ($pathParameters -contains $parameter.Key)
+            {
+                $text = ConvertTo-WslHostPath $text
+            }
+            elseif ($parameter.Key -eq 'Mount')
+            {
+                # A mount is a host directory, optionally followed by ':w'. Only the directory is a path.
+                if ($text -match '^(.*):w$')
+                {
+                    $text = ( ConvertTo-WslHostPath $Matches[1] ) + ':w'
+                }
+                else
+                {
+                    $text = ConvertTo-WslHostPath $text
+                }
+            }
+
+            $items += $text
+        }
+
+        # A collection is written as an array literal, and a single value as a scalar. Joining with commas will
+        # not do: `pwsh -File` passes arguments as literal strings, so '-Mount a,b' arrives as the one element
+        # 'a,b' rather than as two mounts, and the second would silently become part of a path that does not
+        # exist. Repeating the parameter is not an option either -- `pwsh -File` rejects that outright -- so the
+        # hop goes through -Command, where an array literal means what it says.
+        if ($items.Count -gt 1)
+        {
+            $wslArguments += "-$( $parameter.Key ) @(" + ( ( $items | ForEach-Object { ConvertTo-PowerShellLiteral $_ } ) -join ',' ) + ")"
+        }
+        else
+        {
+            $wslArguments += "-$( $parameter.Key ) " + ( ConvertTo-PowerShellLiteral $items[0] )
+        }
+    }
+
+    foreach ($buildArg in $BuildArgs)
+    {
+        $wslArguments += ConvertTo-PowerShellLiteral ([string]$buildArg)
+    }
+
+    Write-Host "Linux containers run on the Docker engine inside WSL; re-executing this script there." -ForegroundColor Cyan
+
+    $wslCommand = "& " + ( ConvertTo-PowerShellLiteral ( ConvertTo-WslHostPath $PSCommandPath ) ) + " " + ( $wslArguments -join ' ' )
+
+    & wsl.exe -- $wslPwsh -NoProfile -Command $wslCommand
+
+    exit $LASTEXITCODE
+}
 
 # Docker isolation is Windows-only. Windows Server supports process isolation (faster,
 # no per-container VM); Windows Desktop (client) only reliably runs hyperv isolation.
@@ -306,6 +537,52 @@ try
     {
         Write-Error "-PostInit cannot be used with -KeepInit."
         exit 1
+    }
+
+    # -Test shares this script's image caching and registry handling, and nothing else. What it excludes is
+    # implied rather than requested, so that a test cannot acquire the build container's credentials by
+    # forgetting a flag.
+    if ($Test)
+    {
+        if (-not $Dockerfile)
+        {
+            Write-Error "-Test requires -Dockerfile."
+            exit 1
+        }
+
+        if (-not $Command)
+        {
+            Write-Error "-Test requires -Command."
+            exit 1
+        }
+
+        foreach ($excluded in @('Claude', 'Interactive', 'BuildImage', 'StartVsmon', 'PostInit', 'KeepInit', 'Script'))
+        {
+            if ( $PSBoundParameters.ContainsKey($excluded))
+            {
+                Write-Error "-Test cannot be combined with -$excluded."
+                exit 1
+            }
+        }
+
+        $testContext = if ($Context) { $Context } else { Split-Path -Parent $Dockerfile }
+
+        if (-not (Test-Path -LiteralPath $testContext -PathType Container))
+        {
+            Write-Error "The build context directory '$testContext' does not exist."
+            exit 1
+        }
+
+        $script:TestContextDirectory = (Resolve-Path -LiteralPath $testContext).Path
+
+        # Init.g.ps1 is not invoked in a test container, because a test image is chosen for the tool chain under
+        # test and is not required to carry PowerShell 7. That is the only reason. The environment it would have
+        # inlined reaches the container as -e arguments instead, so a test container is configured like a build
+        # container: this repository builds it from a Dockerfile it owns and runs it, and it is trusted the same
+        # way. Withholding the environment bought no isolation worth the cost, because NUGET_PACKAGES is in that
+        # set and without it NuGet falls back to $HOME/.nuget/packages and the host cache mapped below is never
+        # read -- every test restored over the network, the opposite of what the mount is for.
+        $NoInit = $true
     }
 
     # Validate and parse -Cpus parameter
@@ -834,6 +1111,13 @@ try
     # directory is treated as an empty context by Get-ContentHash, and Build-OneImage creates it before building.
     function Get-ContextDirFor([string]$dfPath)
     {
+        # A test image takes its context from the test's own directory. The test owns the files its Dockerfile
+        # copies, and it is not part of the repository's image chain.
+        if ($Test)
+        {
+            return $script:TestContextDirectory
+        }
+
         return Join-Path $dockerContextDirectory (Get-DockerfileStem $dfPath)
     }
 
@@ -908,7 +1192,18 @@ try
 
         # OS discriminator so ltsc2025 / ltsc2022 produce distinct tags of the same image name. Propagates to
         # descendants through $baseFold.
-        $extra = "os=$windowsVersion|base=$baseFold"
+        #
+        # The architecture discriminates too, always, including amd64. The content hash is otherwise identical
+        # for the same Dockerfile built on x64 and on ARM64: both agents compute one tag, the first pushes an
+        # image of its own architecture, and the second pulls it and fails -- with "no matching manifest" if the
+        # registry rejects it, or, worse, with "exec /bin/sh: exec format error" once it has been pulled, which
+        # names neither the image nor the architecture.
+        #
+        # Folding it in only for non-amd64 was tried and is not enough: it gives a future ARM64 build its own
+        # tag, but leaves amd64 on the name an ARM64 build may already have pushed to, so the poisoning survives
+        # the fix. Including it everywhere changes every tag once, which is a rebuild, and is what actually
+        # abandons the bad ones.
+        $extra = "os=$windowsVersion|arch=$( Get-DockerArchitecture )|base=$baseFold"
 
         # Fold the weekly stamp only for images that bake the update.timestamp cache-buster (the Claude leaf), so
         # @latest npm installs of the Claude CLI and plug-ins refresh once per UTC week.
@@ -917,7 +1212,10 @@ try
         $hash = Get-ContentHash -DockerfilePath $dfPath -ContextDirectory (Get-ContextDirFor $dfPath) -DayStamp $hashDayStamp -ExtraInput $extra
         # The image NAME carries the product/version prefix ($DockerImagePrefix); the Dockerfile file stem does
         # not. e.g. stem 'build' -> image '<prefix>-build'. ARG BASE_IMAGE references stems (prefix-free).
-        $imageName = "$DockerImagePrefix-$( Get-DockerfileStem $dfPath )"
+        # Lower-cased because a Docker repository name must be lower case, while the stem is the file name as
+        # written: a custom -Dockerfile named 'Dockerfile', which is the conventional name and the one the
+        # container tests use, would otherwise produce an invalid tag and fail the build.
+        $imageName = "$DockerImagePrefix-$( Get-DockerfileStem $dfPath )".ToLowerInvariant()
         $tag = if ($dockerRegistry) { "${dockerRegistry}/${imageName}:${hash}" } else { "${imageName}:${hash}" }
         $script:resolvedTags[$key] = $tag
         return $tag
@@ -932,6 +1230,12 @@ try
         {
             return @"
 ARG MOUNTPOINTS
+# The RUN below is PowerShell, so the shell has to be declared. A Windows image inherits whatever SHELL its base
+# declares, and that differs between the images this script is pointed at: the .NET Framework SDK images declare
+# PowerShell, while the .NET SDK images leave the Docker default of cmd, which fails on the first brace. The
+# product build image happens to declare PowerShell, which is why this only surfaced once a test container -- on
+# an arbitrary base image -- was given mounts and therefore a boot image.
+SHELL ["powershell", "-Command", "`$ErrorActionPreference = 'Stop';"]
 RUN if (`$env:MOUNTPOINTS) { ``
         `$mounts = `$env:MOUNTPOINTS -split ';'; ``
         foreach (`$dir in `$mounts) { ``
@@ -1859,7 +2163,8 @@ RUN if [ -n "`$MOUNTPOINTS" ]; then \
         param(
             [Parameter(Mandatory = $true)]
             [string]$Path,
-            [switch]$Writable
+            [switch]$Writable,
+            [switch]$Requested   # Asked for by -Mount, rather than part of the default build-container set.
         )
 
         $normalizedPath = $Path.TrimEnd('\', '/')
@@ -2012,6 +2317,7 @@ RUN if [ -n "`$MOUNTPOINTS" ]; then \
         }
 
         if ($Claude)
+
         {
             # Use Claude-specific environment variables (filtered and renamed)
             New-ClaudeEnvHashtable
@@ -2327,7 +2633,7 @@ RUN if [ -n "`$MOUNTPOINTS" ]; then \
                                 "readonly"
                             }
                             Write-Host "Mounting from -Mount pattern '$pattern': $dirPath ($rwStatus)" -ForegroundColor Cyan
-                            Add-VolumeMount -Path $dirPath -Writable:$isWritable
+                            Add-VolumeMount -Path $dirPath -Writable:$isWritable -Requested
                         }
                     }
                 }
@@ -2350,7 +2656,7 @@ RUN if [ -n "`$MOUNTPOINTS" ]; then \
                         "readonly"
                     }
                     Write-Host "Mounting from -Mount: $pattern ($rwStatus)" -ForegroundColor Cyan
-                    Add-VolumeMount -Path $pattern -Writable:$isWritable
+                    Add-VolumeMount -Path $pattern -Writable:$isWritable -Requested
                 }
                 else
                 {
@@ -2381,7 +2687,8 @@ RUN if [ -n "`$MOUNTPOINTS" ]; then \
         }
     }
 
-    # Execute auto-generated DockerMounts.g.ps1 script to add more directory mounts.
+    # Execute auto-generated DockerMounts.g.ps1 script to add more directory mounts. A test container gets these
+    # like any other build: a test that consumes a source dependency needs the same repositories the build needs.
     $dockerMountsScript = Join-Path $EngPath 'DockerMounts.g.ps1'
     if (Test-Path $dockerMountsScript)
     {
@@ -2837,7 +3144,40 @@ $envVarAssignments$gitConfigCommands$postInitCommands
             $volumeArgs += @("-v", $mapping)
         }
 
-        if ($Claude)
+        if ($Test)
+        {
+            Write-Host "Running the test command in the container." -ForegroundColor Green
+
+            # The command runs through the container's own shell rather than through pwsh, because a test image
+            # is chosen for the tool chain under test and is not required to carry PowerShell 7.
+            $testCommandArgs = if ($IsUnix)
+            {
+                @('sh', '-c', $Command)
+            }
+            else
+            {
+                @('cmd', '/S', '/C', $Command)
+            }
+
+            $pwshArgs = $null
+            $dockerArgs = @()
+            $inlineScript = $null
+            $needsMcpCleanup = $false
+
+            # The same environment a build container gets, as -e arguments rather than through Init.g.ps1: see
+            # where $NoInit is set for why that script cannot be invoked in a test image. What -Env named is
+            # already folded into this set by New-EnvHashtable, so an explicitly named variable is here too.
+            $envArgs = @()
+
+            if ($script:ContainerEnvironmentVariables)
+            {
+                foreach ($key in $script:ContainerEnvironmentVariables.Keys | Sort-Object)
+                {
+                    $envArgs += @('-e', "$key=$( $script:ContainerEnvironmentVariables[$key] )")
+                }
+            }
+        }
+        elseif ($Claude)
         {
             # MCP server configuration
             $mcpPort = $null
@@ -3039,6 +3379,13 @@ $envVarAssignments$gitConfigCommands$postInitCommands
             $dockerCmd += $volumeArgs
             $dockerCmd += $envArgs
 
+            # A test command runs with the mounted repository as its working directory, so that a test addresses
+            # what it needs by a path relative to the repository root rather than by one it has to compute.
+            if ($Test)
+            {
+                $dockerCmd += @('-w', $ContainerSourceDir)
+            }
+
             # Add port mappings from -Ports parameter
             if ($Ports -and $Ports.Count -gt 0)
             {
@@ -3054,7 +3401,19 @@ $envVarAssignments$gitConfigCommands$postInitCommands
                 $dockerCmd += @('--label', "postsharp.build=$Label")
             }
 
-            if ($pwshArgs)
+            if ($Test)
+            {
+                # The label the launcher removes by, when a test overruns its timeout. The container outlives the
+                # process that started it, so without this a timed-out test leaves it running on the agent.
+                if ($env:POSTSHARP_DOCKER_TEST_RUN_ID)
+                {
+                    $dockerCmd += @('--label', "postsharp.test-run=$( $env:POSTSHARP_DOCKER_TEST_RUN_ID )")
+                }
+
+                # The working directory was set above, to the mounted repository.
+                $dockerCmd += @($ImageTag) + $testCommandArgs
+            }
+            elseif ($pwshArgs)
             {
                 $dockerCmd += @('-w', $ContainerCallingDir, $ImageTag, $pwshPath, $pwshArgs, '-Command', $inlineScript)
             }

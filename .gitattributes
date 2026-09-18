@@ -12,6 +12,10 @@
 *.js      text
 *.sql     text
 *.ps1     text eol=crlf
+
+# The launcher of the Docker tests is generated with Unix line endings by `Build.ps1 generate-scripts`. Without
+# this line the rule above rewrites the whole file at every regeneration.
+eng/RunDockerTests.ps1 text eol=lf
 *.sh      text eol=lf
 Dockerfile text eol=lf
 *.yml     text eol=lf
