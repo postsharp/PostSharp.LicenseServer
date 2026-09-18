@@ -205,8 +205,9 @@ public static class LicenseServerEndpoints
                 $"The range of months is missing or invalid. Years must be between {firstYear} and {lastYear}." );
         }
 
-        DateTime fromTime = new( fy.Value, fm.Value, 1 );
-        DateTime toTime = new DateTime( ty.Value, tm.Value, 1 ).AddMonths( 1 );
+        // The months are read as UTC, which is the time zone of every timestamp of the database.
+        DateTime fromTime = new( fy.Value, fm.Value, 1, 0, 0, 0, DateTimeKind.Utc );
+        DateTime toTime = new DateTime( ty.Value, tm.Value, 1, 0, 0, 0, DateTimeKind.Utc ).AddMonths( 1 );
 
         // The range of months is resolved to a range of lease identifiers, and every lease in that
         // range is exported. The legacy server selected the rows in the same way, and customers

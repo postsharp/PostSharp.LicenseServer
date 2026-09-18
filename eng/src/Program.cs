@@ -29,25 +29,21 @@ var product = new Product( BackstageDependencies.BackstageLicenseServer )
         Components = [new DotNetComponent( dotNetSdkVersion, DotNetComponentKind.Sdk )]
     },
 
-    // The image of the SQL Server test run. It is a Linux image, because Microsoft publishes no SQL Server for a
-    // Windows container after the 2019 version, and it carries the server itself rather than starting a second
-    // container, which a build step running inside a container cannot do without the Docker socket of the agent.
+    // The image of each database test run. Both are Linux images: Microsoft publishes no SQL Server for a Windows
+    // container after the 2019 version, and PostgreSQL is deployed on Linux. Each image carries its server rather
+    // than starting a second container, which a build step running inside a container cannot do without the
+    // Docker socket of the agent.
     AdditionalDockerfiles =
     [
-        new AdditionalDockerfile( SqlServerTests.DockerfileName, [] )
-        {
-            Requirements = new ContainerRequirements( ContainerHostKind.Linux )
-            {
-                OperatingSystem = ContainerOperatingSystem.Linux,
-                Components = [new DotNetComponent( dotNetSdkVersion, DotNetComponentKind.Sdk ), new SqlServerComponent()]
-            }
-        }
+        DatabaseTests.SqlServer.Dockerfile( dotNetSdkVersion ),
+        DatabaseTests.PostgreSql.Dockerfile( dotNetSdkVersion )
     ],
 
-    // The second test run. The build itself runs the suite on SQLite, which needs no server; this configuration
-    // runs the same tests against SQL Server, and it is what proves the lock, the collation and the column types
-    // of the engine that customers use. See eng/TestSqlServer.ps1 and docs in README.md.
-    AdditionalCiBuildConfigurations = [SqlServerTests.Configuration],
+    // The test runs that need a database server. The build itself runs the suite on SQLite, which needs no
+    // server; these configurations run the same tests against the two engines that customers deploy, and they
+    // are what proves the lock, the collation and the column types of each one. See eng/TestDatabase.ps1 and the
+    // section "Running the tests" of README.md.
+    AdditionalCiBuildConfigurations = [DatabaseTests.SqlServer.Configuration, DatabaseTests.PostgreSql.Configuration],
 
     // Built rather than packed: the product ships a deployable archive and no NuGet package, so the Pack
     // target of every project would be a no-op.
@@ -78,22 +74,43 @@ var product = new Product( BackstageDependencies.BackstageLicenseServer )
 return new EngineeringApp( product ).Run( args );
 
 /// <summary>
-/// The continuous integration configuration that runs the test suite against SQL Server, in the image that
-/// carries the server.
+/// The continuous integration configurations that run the test suite against a database server, each one in the
+/// image that carries its server.
 /// </summary>
-internal static class SqlServerTests
+internal static class DatabaseTests
 {
-    /// <summary>
-    /// The name of the additional image. PostSharp.Engineering writes the Dockerfile of its build layer to
-    /// <c>eng/docker/{name}-build.Dockerfile</c>.
-    /// </summary>
-    public const string DockerfileName = "sqlserver";
+    public static DatabaseTestRun SqlServer { get; } = new( "sqlserver", "SqlServer", "SQL Server", new SqlServerComponent() );
 
-    public static PowershellAdditionalCiBuildConfiguration Configuration { get; } =
-        new( "SqlServerTests", "Tests on SQL Server", "./eng/TestSqlServer.ps1", "" )
+    public static DatabaseTestRun PostgreSql { get; } = new( "postgresql", "PostgreSql", "PostgreSQL", new PostgreSqlComponent() );
+}
+
+/// <summary>
+/// One such configuration, with the image it runs in.
+/// </summary>
+/// <param name="name">
+/// The name of the image. PostSharp.Engineering writes the Dockerfile of its build layer to
+/// <c>eng/docker/{name}-build.Dockerfile</c>.
+/// </param>
+/// <param name="engine">The name of the engine, as the parameter of eng/TestDatabase.ps1 spells it.</param>
+/// <param name="displayName">The name of the engine, as a person writes it.</param>
+/// <param name="server">The component that installs the server into the image.</param>
+internal sealed class DatabaseTestRun( string name, string engine, string displayName, ContainerComponent server )
+{
+    public AdditionalDockerfile Dockerfile( string dotNetSdkVersion )
+        => new( name, [] )
+        {
+            Requirements = new ContainerRequirements( ContainerHostKind.Linux )
+            {
+                OperatingSystem = ContainerOperatingSystem.Linux,
+                Components = [new DotNetComponent( dotNetSdkVersion, DotNetComponentKind.Sdk ), server]
+            }
+        };
+
+    public PowershellAdditionalCiBuildConfiguration Configuration
+        => new( $"{engine}Tests", $"Tests on {displayName}", "./eng/TestDatabase.ps1", $"-Engine {engine}" )
         {
             BuildAgentRequirements = LinuxContainerHost,
-            Dockerfile = $"eng/docker/{DockerfileName}-build.Dockerfile",
+            Dockerfile = $"eng/docker/{name}-build.Dockerfile",
             BuildSnapshotDependency = BuildConfiguration.Debug
         };
 

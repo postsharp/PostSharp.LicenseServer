@@ -11,7 +11,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
-    <!-- Offered as an alternative engine, so the server can be evaluated without SQL Server. -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <!-- Offered as an alternative engine, so the server can be evaluated without a database server. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" />
   </ItemGroup>
@@ -21,8 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Shipped so that an administrator can create the database on a new installation. -->
+    <!-- Shipped so that an administrator can create the database on a new installation, one script
+         per engine supported in production. -->
     <Content Include="Database\CreateTables.sql" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Database\CreateTables.PostgreSql.sql" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <!-- The release archive: the public artifact of the product, which is what an administrator unpacks

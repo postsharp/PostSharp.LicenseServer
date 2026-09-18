@@ -136,9 +136,9 @@ app.MapLicenseServerEndpoints();
 app.MapOperationsEndpoints();
 app.MapLegacyUrlRedirects();
 
-// On SQL Server, Database/CreateTables.sql creates the schema. That script defines the schema, and
-// an administrator runs it. A SQLite database is created here, because it is used for evaluation and
-// for tests, where no administrator runs a script.
+// On SQL Server and on PostgreSQL, the script of that engine under Database/ creates the schema. The
+// script defines the schema, and an administrator runs it. A SQLite database is created here, because
+// it is used for evaluation and for tests, where no administrator runs a script.
 if ( string.Equals(
         app.Configuration["LicenseServer:DatabaseProvider"],
         "Sqlite",

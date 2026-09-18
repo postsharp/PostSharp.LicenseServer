@@ -98,8 +98,10 @@ public sealed class OperationsEndpointTests : IDisposable
 
         using ( LicenseServerDbContext db = this.application.CreateDbContext() )
         {
-            await db.Database.ExecuteSqlRawAsync( "DROP TABLE Leases" );
-            await db.Database.ExecuteSqlRawAsync( "DROP TABLE Licenses" );
+            // PostgreSQL folds an identifier that is not quoted to lower case, and the tables of this
+            // schema keep their capitals. The quotation marks are accepted by all three engines.
+            await db.Database.ExecuteSqlRawAsync( "DROP TABLE \"Leases\"" );
+            await db.Database.ExecuteSqlRawAsync( "DROP TABLE \"Licenses\"" );
         }
 
         (HttpStatusCode status, JsonElement body) = await this.GetAsync( "/health" );

@@ -120,7 +120,14 @@ docker run --rm -p 8080:8080 \
 Every setting of [configuration.md](configuration.md) can be given as an environment variable, with a
 double underscore where the name of the setting contains a colon.
 
-For an evaluation without a SQL Server, the server can store its data in a SQLite file, which it
+Against an existing PostgreSQL, name the engine as well, because the connection string is interpreted
+by the engine that `DatabaseProvider` names:
+
+```
+docker run --rm -p 8080:8080   -e LicenseServer__DatabaseProvider=PostgreSql   -e ConnectionStrings__SharpCrafters_LicenseServerConnectionString="Host=db;Port=5432;Database=postsharplicenseserver;Username=licenseserver;Password=..."   -e Authentication__Scheme=None   -v licenseserver-data:/app/App_Data   backstage-licenseserver
+```
+
+For an evaluation without a database server, the server can store its data in a SQLite file, which it
 creates itself:
 
 ```
@@ -131,7 +138,8 @@ docker run --rm -p 8080:8080 \
   backstage-licenseserver
 ```
 
-SQL Server is the engine supported for a real installation.
+SQL Server and PostgreSQL are the engines supported for a real installation. Create the schema before
+the first start, as [configuration.md](configuration.md) describes: the server never creates it.
 
 ## The image
 

@@ -7,8 +7,8 @@ administrator adds to it decide which products it serves.
 The license server is optional. All commercial licenses are floating licenses, and the license server
 reports how many of them a team uses.
 
-The license server is an ASP.NET Core application with a SQL Server database. It runs on Windows
-behind IIS, and on Linux and macOS in its own process or in a container.
+The license server is an ASP.NET Core application with a SQL Server or a PostgreSQL database. It runs
+on Windows behind IIS, and on Linux and macOS in its own process or in a container.
 
 Respecting the license agreement is the responsibility of the customer. This is the reason why we
 publish the source code of the license server. The use of license keys
@@ -64,12 +64,14 @@ you use the container for anything else than an evaluation.
 
 * Windows Server with IIS.
 * The [ASP.NET Core Hosting Bundle](https://dotnet.microsoft.com/download/dotnet/10.0) for .NET 10.
-* SQL Server 2016 or later.
+* SQL Server 2016 or later, or PostgreSQL 14 or later.
 
 ### Instructions
 
 1. Install the ASP.NET Core Hosting Bundle on the web server, then restart IIS with `iisreset`.
-2. Create the database, then run `Database\CreateTables.sql` against it.
+2. Create the database, then run `Database\CreateTables.sql` against it. On PostgreSQL, run
+   `Database\CreateTables.PostgreSql.sql` instead and set `LicenseServer:DatabaseProvider` to
+   `PostgreSql`.
 3. Unpack `SharpCrafters.Backstage.LicenseServer.<version>.zip` into the directory of an IIS
    application.
 4. Edit `appsettings.json`: set the connection string, the addresses for notifications and the SMTP
@@ -171,29 +173,35 @@ the dependency at it, and build that repository first:
 ### Running the tests
 
 `./Build.ps1 test` runs the suite on SQLite, which needs no server and keeps the loop short. Run the
-same tests a second time against SQL Server before you open a pull request. SQL Server is the engine
-that customers use, and the two engines differ in the collation, in the column types and in the lock
-that serializes the lease requests:
+same tests again against each engine that customers deploy before you open a pull request. The
+engines differ in the collation, in the column types and in the lock that serializes the lease
+requests, so a defect can appear on one of them alone:
 
 ```
-$env:MSSQL_SA_PASSWORD = '<a password>'
-docker compose up -d database
-$env:LICENSESERVER_TEST_SQLSERVER = "Server=127.0.0.1,1433;User Id=sa;Password=$env:MSSQL_SA_PASSWORD;TrustServerCertificate=True;Encrypt=False"
+./eng/TestDatabase.ps1 -Engine SqlServer
+./eng/TestDatabase.ps1 -Engine PostgreSql
+```
+
+Each run starts its server in a container, waits for it, and runs `Build.ps1 test` against it. Docker
+is the only prerequisite. To use a server of your own instead, set the connection string and the
+script leaves the server alone:
+
+```
+$env:LICENSESERVER_TEST_SQLSERVER = "Server=127.0.0.1,1433;User Id=sa;Password=<a password>;TrustServerCertificate=True;Encrypt=False"
+$env:LICENSESERVER_TEST_POSTGRESQL = "Host=127.0.0.1;Port=5432;Username=postgres;Password=<a password>"
 dotnet test tests\SharpCrafters.Backstage.LicenseServer.Tests
 ```
 
-The tests read the connection string from `LICENSESERVER_TEST_SQLSERVER`, and they run on SQLite when
-it is not set. The connection string names no database: each test receives a database of its own,
-created from `Database\CreateTables.sql`, so this run also proves that the script and the Entity
-Framework model agree. The databases are named `licenseserver_test_` followed by a hexadecimal
+The tests read those two variables, and they run on SQLite when neither is set. A connection string
+names no database: each test receives a database of its own, created from `Database\CreateTables.sql`
+or from `Database\CreateTables.PostgreSql.sql`, so each run also proves that the script and the
+Entity Framework model agree. The databases are named `licenseserver_test_` followed by a hexadecimal
 number. They are reused during the run, and the next run drops the ones an interrupted run left
-behind. Point the variable at a SQL Server of your own if you prefer, as long as its login may create
-a database.
+behind, so the login needs the permission to create a database.
 
-The continuous integration build runs the same second run in the configuration `Tests on SQL Server`.
-It runs `eng\TestSqlServer.ps1` in an image that carries SQL Server, which `eng\src\Docker\SqlServerComponent.cs`
-describes. The script also serves a developer machine: it starts the database service of
-`docker-compose.yml` when it finds no other server.
+The continuous integration build runs both of them, in the configurations `Tests on SQL Server` and
+`Tests on PostgreSQL`. Each one runs `eng\TestDatabase.ps1` in an image that carries its server,
+described by `eng\src\Docker\SqlServerComponent.cs` and `eng\src\Docker\PostgreSqlComponent.cs`.
 
 ### Running locally
 
@@ -202,8 +210,8 @@ describes. The script also serves a developer machine: it starts the database se
 dotnet run --project src\SharpCrafters.Backstage.LicenseServer.Web
 ```
 
-The development configuration uses a SQLite database, created at the first start, so no SQL Server is
-required. Once the server runs, `/Admin/GenerateDemoData` fills the database with simulated activity.
+The development configuration uses a SQLite database, created at the first start, so no database
+server is required. Once the server runs, `/Admin/GenerateDemoData` fills the database with simulated activity.
 That page exists only in the Development environment.
 
 ### Repository layout
@@ -212,7 +220,7 @@ That page exists only in the Development environment.
 |---|---|
 | `src\SharpCrafters.Backstage.LicenseServer.Core` | The licensing rules, the database model, and the services they depend on. |
 | `src\SharpCrafters.Backstage.LicenseServer.Web` | The web application: the pages, the endpoints and the composition root. |
-| `tests\SharpCrafters.Backstage.LicenseServer.Tests` | The test suite. It runs on SQLite by default, and on SQL Server when the run is given one. |
+| `tests\SharpCrafters.Backstage.LicenseServer.Tests` | The test suite. It runs on SQLite by default, and on SQL Server or PostgreSQL when the run is given one. |
 | `eng` | The product definition and the version files that PostSharp.Engineering builds from. |
 
 To put a server under load, use `LicenseServerLoadSimulator`, in the SharpCrafters.Backstage

@@ -145,11 +145,19 @@ public sealed class SchemaCompatibilityTests
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
 
-        // On SQL Server the column is already there, because CreateTables.sql declares it. On SQLite
-        // the schema comes from the model, which no longer maps it, so the test adds it.
+        // On SQL Server the column is already there, because CreateTables.sql declares it. On the
+        // other two engines the schema does not declare it, so the test adds it. This test modifies
+        // the schema, so the database must not serve another test.
         if ( !TestDatabases.UsesSqlServer )
         {
-            await context.Db.Database.ExecuteSqlRawAsync( "ALTER TABLE Leases ADD COLUMN HMAC varchar(100) NULL" );
+            context.DoNotReuseDatabase();
+
+            // PostgreSQL folds an identifier that is not quoted to lower case, and the tables of this
+            // schema keep their capitals.
+            await context.Db.Database.ExecuteSqlRawAsync(
+                TestDatabases.UsesPostgreSql
+                    ? "ALTER TABLE \"Leases\" ADD COLUMN \"HMAC\" varchar(100) NULL"
+                    : "ALTER TABLE Leases ADD COLUMN HMAC varchar(100) NULL" );
         }
 
         License license = LicenseBuilder.Default().AddTo( context );

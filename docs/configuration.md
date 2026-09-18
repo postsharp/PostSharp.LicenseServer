@@ -50,7 +50,7 @@ The `appsettings.json` of the release package lists most of these settings with 
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `LicenseServer:DatabaseProvider` | `SqlServer` | The database engine: `SqlServer` or `Sqlite`. |
+| `LicenseServer:DatabaseProvider` | `SqlServer` | The database engine: `SqlServer`, `PostgreSql` or `Sqlite`. |
 | `ConnectionStrings:SharpCrafters_LicenseServerConnectionString` | a local SQL Server | The database to connect to. |
 
 The two settings are set together. The connection string is interpreted by the engine named in
@@ -61,6 +61,17 @@ The two settings are set together. The connection string is interpreted by the e
   "LicenseServer": { "DatabaseProvider": "SqlServer" },
   "ConnectionStrings": {
     "SharpCrafters_LicenseServerConnectionString": "Server=db.example.com,1433;Database=PostSharpLicenseServer;Integrated Security=True;Encrypt=False"
+  }
+}
+```
+
+For PostgreSQL:
+
+```json
+{
+  "LicenseServer": { "DatabaseProvider": "PostgreSql" },
+  "ConnectionStrings": {
+    "SharpCrafters_LicenseServerConnectionString": "Host=db.example.com;Port=5432;Database=postsharplicenseserver;Username=licenseserver;Password=..."
   }
 }
 ```
@@ -76,12 +87,19 @@ For SQLite:
 }
 ```
 
-SQL Server is the engine supported in production. Create the schema by running
-`Database\CreateTables.sql`. The server never creates the schema and never modifies it, so an upgrade
-of the server makes no change to the database.
+SQL Server and PostgreSQL are the engines supported in production. Create the schema by running
+`Database\CreateTables.sql` on SQL Server, or `Database\CreateTables.PostgreSql.sql` on PostgreSQL.
+The server never creates the schema and never modifies it, so an upgrade of the server makes no change
+to the database.
+
+The PostgreSQL schema needs PostgreSQL 14 or later, and it creates a collation of its own. The
+comparison of a user name and of a machine name ignores the case on SQL Server, whose default
+collation ignores it, and PostgreSQL offers no such collation, so the script creates one from the
+International Components for Unicode. A server built without them refuses the script.
 
 SQLite is supported for tests and for evaluation. The test suite of this repository runs on SQLite by
-default, and so does the development configuration of the web project. The database file is created at the
+default, and it runs again against SQL Server and against PostgreSQL. The development configuration of
+the web project uses SQLite. The database file is created at the
 first start. A relative path is resolved against the application directory, not against the working
 directory of the process. Do not use SQLite for a server that serves a team: SQLite accepts one
 writer at a time, and every lease request writes.
@@ -221,10 +239,15 @@ The lock is held by the database and not by the process. Several worker processe
 therefore serialized against each other, which covers a web garden of Internet Information Services,
 several containers, and two servers that share one database.
 
-The mechanism depends on the database engine, and there is no setting to choose it. On SQL Server,
-the server calls `sp_getapplock` at the beginning of the request and `sp_releaseapplock` at the end
-of it. The lock belongs to the session, which is the connection of the request. It requires no
-permission beyond the ones the server already needs on its database.
+The mechanism depends on the database engine, and there is no setting to choose it.
+
+On SQL Server, the server calls `sp_getapplock` at the beginning of the request and
+`sp_releaseapplock` at the end of it. The lock belongs to the session, which is the connection of the
+request. It requires no permission beyond the ones the server already needs on its database.
+
+On PostgreSQL, the server takes an advisory lock with `pg_advisory_lock` and releases it with
+`pg_advisory_unlock`. That lock also belongs to the session. The wait is bounded by `lock_timeout`,
+which the server sets on the connection from `MutexTimeout`.
 
 On SQLite, the server opens the transaction of the request with `BEGIN IMMEDIATE`, which takes the
 write lock of the database file at once. SQLite accepts one writer at a time, so the next request

@@ -34,10 +34,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The SQL Server run creates the schema of every test database from this script, which is the
-         script an administrator runs, rather than from the EF Core model. -->
+    <!-- A SQL Server run and a PostgreSQL run create the schema of every test database from these
+         scripts, which are the scripts an administrator runs, rather than from the EF Core model. -->
     <Content Include="../../src/SharpCrafters.Backstage.LicenseServer.Web/Database/CreateTables.sql"
              Link="Database/CreateTables.sql"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../src/SharpCrafters.Backstage.LicenseServer.Web/Database/CreateTables.PostgreSql.sql"
+             Link="Database/CreateTables.PostgreSql.sql"
              CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

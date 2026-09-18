@@ -37,14 +37,14 @@ public interface ITestDatabase : IAsyncDisposable
 /// </summary>
 /// <remarks>
 /// <para>
-/// The engine is a property of the run and not of a test, so the same tests run against both. SQLite
-/// is the default, because it needs no server and keeps the development loop short. The run uses SQL
-/// Server when <c>LICENSESERVER_TEST_SQLSERVER</c> holds a connection string, which is how the
-/// continuous integration build runs the suite a second time against the engine that customers use.
+/// The engine is a property of the run and not of a test, so the same tests run against all three.
+/// SQLite is the default, because it needs no server and keeps the development loop short. The run
+/// uses SQL Server when <c>LICENSESERVER_TEST_SQLSERVER</c> holds a connection string, and PostgreSQL
+/// when <c>LICENSESERVER_TEST_POSTGRESQL</c> holds one. That is how the continuous integration build
+/// runs the suite again against each engine that customers use.
 /// </para>
 /// <para>
-/// Start that server with <c>docker compose up -d database</c>, which is the same service the
-/// container deployment uses.
+/// Start either server with <c>eng\TestDatabase.ps1</c>, which also runs the suite against it.
 /// </para>
 /// </remarks>
 public static class TestDatabases
@@ -56,19 +56,54 @@ public static class TestDatabases
     public const string SqlServerVariable = "LICENSESERVER_TEST_SQLSERVER";
 
     /// <summary>
-    /// Gets the connection string of the SQL Server of the run, or <c>null</c> when the run uses
-    /// SQLite.
+    /// The name of the environment variable that holds the connection string of the PostgreSQL server
+    /// used by the tests. The connection string names no database: each test receives one of its own.
     /// </summary>
-    public static string? SqlServerConnectionString { get; } =
-        Environment.GetEnvironmentVariable( SqlServerVariable ) is { Length: > 0 } value ? value : null;
+    public const string PostgreSqlVariable = "LICENSESERVER_TEST_POSTGRESQL";
+
+    /// <summary>
+    /// Gets the connection string of the SQL Server of the run, or <c>null</c> when the run uses
+    /// another engine.
+    /// </summary>
+    public static string? SqlServerConnectionString { get; } = Read( SqlServerVariable );
+
+    /// <summary>
+    /// Gets the connection string of the PostgreSQL server of the run, or <c>null</c> when the run
+    /// uses another engine.
+    /// </summary>
+    public static string? PostgreSqlConnectionString { get; } = Read( PostgreSqlVariable );
 
     /// <summary>
     /// Gets a value indicating whether this run uses SQL Server.
     /// </summary>
     public static bool UsesSqlServer => SqlServerConnectionString != null;
 
+    /// <summary>
+    /// Gets a value indicating whether this run uses PostgreSQL.
+    /// </summary>
+    public static bool UsesPostgreSql => PostgreSqlConnectionString != null;
+
+    /// <summary>
+    /// Gets a value indicating whether this run uses SQLite, which is the engine of a run that was
+    /// given no other one.
+    /// </summary>
+    public static bool UsesSqlite => !UsesSqlServer && !UsesPostgreSql;
+
     public static async Task<ITestDatabase> CreateAsync()
-        => SqlServerConnectionString == null
-            ? await SqliteTestDatabase.CreateAsync()
-            : await SqlServerTestDatabase.CreateAsync( SqlServerConnectionString );
+    {
+        if ( SqlServerConnectionString != null )
+        {
+            return await SqlServerTestDatabase.CreateAsync( SqlServerConnectionString );
+        }
+
+        if ( PostgreSqlConnectionString != null )
+        {
+            return await PostgreSqlTestDatabase.CreateAsync( PostgreSqlConnectionString );
+        }
+
+        return await SqliteTestDatabase.CreateAsync();
+    }
+
+    private static string? Read( string variable )
+        => Environment.GetEnvironmentVariable( variable ) is { Length: > 0 } value ? value : null;
 }

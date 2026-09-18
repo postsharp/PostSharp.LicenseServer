@@ -19,9 +19,9 @@ public static class DatabaseRegistration
     /// requests of that engine.
     /// </summary>
     /// <remarks>
-    /// SQL Server is the engine supported in production. SQLite is supported so that the server can
-    /// be evaluated and developed against without a server, and so that the test suite can run
-    /// against a database held in memory.
+    /// SQL Server and PostgreSQL are the engines supported in production. SQLite is supported so that
+    /// the server can be evaluated and developed against without a database server, and so that the
+    /// test suite can run against a database held in memory.
     /// </remarks>
     public static IServiceCollection AddLicenseServerDatabase(
         this IServiceCollection services,
@@ -46,6 +46,12 @@ public static class DatabaseRegistration
 
                 break;
 
+            case "postgresql":
+                services.AddDbContext<LicenseServerDbContext>( options => options.UseNpgsql( connectionString ) );
+                services.AddScoped<ILeaseLock, PostgreSqlLeaseLock>();
+
+                break;
+
             case "sqlite":
                 services.AddDbContext<LicenseServerDbContext>(
                     options => options.UseSqlite( ResolveSqliteFile( connectionString, environment ) ) );
@@ -56,7 +62,7 @@ public static class DatabaseRegistration
 
             default:
                 throw new InvalidOperationException(
-                    $"Unknown database provider '{provider}'. Use 'SqlServer' or 'Sqlite'." );
+                    $"Unknown database provider '{provider}'. Use 'SqlServer', 'PostgreSql' or 'Sqlite'." );
         }
 
         return services;
