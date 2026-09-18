@@ -1,6 +1,8 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Locking;
+using SharpCrafters.Backstage.LicenseServer.Web.Locking;
 
 namespace SharpCrafters.Backstage.LicenseServer;
 
@@ -12,12 +14,14 @@ public static class DatabaseRegistration
     public const string ConnectionStringName = "SharpCrafters_LicenseServerConnectionString";
 
     /// <summary>
-    /// Registers the database context against the engine named by <c>LicenseServer:DatabaseProvider</c>.
+    /// Registers the database context against the engine named by
+    /// <c>LicenseServer:DatabaseProvider</c>, together with the lock that serializes the lease
+    /// requests of that engine.
     /// </summary>
     /// <remarks>
     /// SQL Server is the engine supported in production. SQLite is supported so that the server can
-    /// be evaluated, and so that the test suite can run the real application against a database held
-    /// in memory.
+    /// be evaluated and developed against without a server, and so that the test suite can run
+    /// against a database held in memory.
     /// </remarks>
     public static IServiceCollection AddLicenseServerDatabase(
         this IServiceCollection services,
@@ -32,17 +36,30 @@ public static class DatabaseRegistration
             throw new InvalidOperationException( $"The connection string '{ConnectionStringName}' is not configured." );
         }
 
-        return provider.ToLowerInvariant() switch
+        // The lock belongs to the engine and not to the configuration: an administrator cannot select
+        // it, and there is no implementation that serializes one process only.
+        switch ( provider.ToLowerInvariant() )
         {
-            "sqlserver" => services.AddDbContext<LicenseServerDbContext>(
-                options => options.UseSqlServer( connectionString ) ),
+            case "sqlserver":
+                services.AddDbContext<LicenseServerDbContext>( options => options.UseSqlServer( connectionString ) );
+                services.AddScoped<ILeaseLock, SqlServerLeaseLock>();
 
-            "sqlite" => services.AddDbContext<LicenseServerDbContext>(
-                options => options.UseSqlite( ResolveSqliteFile( connectionString, environment ) ) ),
+                break;
 
-            _ => throw new InvalidOperationException(
-                $"Unknown database provider '{provider}'. Use 'SqlServer' or 'Sqlite'." )
-        };
+            case "sqlite":
+                services.AddDbContext<LicenseServerDbContext>(
+                    options => options.UseSqlite( ResolveSqliteFile( connectionString, environment ) ) );
+
+                services.AddScoped<ILeaseLock, SqliteLeaseLock>();
+
+                break;
+
+            default:
+                throw new InvalidOperationException(
+                    $"Unknown database provider '{provider}'. Use 'SqlServer' or 'Sqlite'." );
+        }
+
+        return services;
     }
 
     /// <summary>

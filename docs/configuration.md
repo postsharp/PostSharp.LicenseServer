@@ -80,8 +80,8 @@ SQL Server is the engine supported in production. Create the schema by running
 `Database\CreateTables.sql`. The server never creates the schema and never modifies it, so an upgrade
 of the server makes no change to the database.
 
-SQLite is supported for tests and for evaluation. The test suite of this repository runs on SQLite,
-and so does the development configuration of the web project. The database file is created at the
+SQLite is supported for tests and for evaluation. The test suite of this repository runs on SQLite by
+default, and so does the development configuration of the web project. The database file is created at the
 first start. A relative path is resolved against the application directory, not against the working
 directory of the process. Do not use SQLite for a server that serves a team: SQLite accepts one
 writer at a time, and every lease request writes.
@@ -211,20 +211,24 @@ requests.
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `LicenseServer:LeaseLockMode` | `InProcess` | How the server serializes concurrent lease requests. |
 | `LicenseServer:MutexTimeout` | 30 | How many seconds a request waits for its turn before the server answers 503. |
 
-The server serializes lease requests, so that two concurrent requests cannot both take the last free
-seat. `InProcess` serializes the requests of one worker process. This is correct for the supported
-deployment, which is one worker process per database.
+The server serializes the lease requests, so that two concurrent requests cannot both take the last
+free seat. A request that waits longer than `MutexTimeout` receives the status 503 with the body
+`Service overloaded.`.
 
-Run one worker process. One process is enough: a developer sends about one request per day, and the
-requests are short.
+The lock is held by the database and not by the process. Several worker processes on one database are
+therefore serialized against each other, which covers a web garden of Internet Information Services,
+several containers, and two servers that share one database.
 
-Two deployments run several worker processes against one database: an IIS web garden, and several
-instances of the server. The serialization then covers each process separately, and the server can
-grant more leases than the capacity of the license. If you need such a deployment, open an issue that
-asks for `SqlApplicationLock`, which serializes through the database.
+The mechanism depends on the database engine, and there is no setting to choose it. On SQL Server,
+the server calls `sp_getapplock` at the beginning of the request and `sp_releaseapplock` at the end
+of it. The lock belongs to the session, which is the connection of the request. It requires no
+permission beyond the ones the server already needs on its database.
+
+On SQLite, the server opens the transaction of the request with `BEGIN IMMEDIATE`, which takes the
+write lock of the database file at once. SQLite accepts one writer at a time, so the next request
+waits for the transaction to be committed.
 
 ## Auditing
 

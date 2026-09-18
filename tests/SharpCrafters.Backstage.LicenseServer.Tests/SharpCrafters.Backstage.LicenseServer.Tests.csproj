@@ -33,4 +33,12 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The SQL Server run creates the schema of every test database from this script, which is the
+         script an administrator runs, rather than from the EF Core model. -->
+    <Content Include="../../src/SharpCrafters.Backstage.LicenseServer.Web/Database/CreateTables.sql"
+             Link="Database/CreateTables.sql"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

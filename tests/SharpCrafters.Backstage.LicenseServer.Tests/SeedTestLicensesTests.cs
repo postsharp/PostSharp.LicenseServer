@@ -106,10 +106,17 @@ public sealed class SeedTestLicensesTests : IDisposable
         TestLicenseAuthority authority = this.CreateAuthority();
 
         TestLicenseSeeder.Seed( context.Db, authority, TimeProvider.System, NullLogger.Instance );
-        string[] first = context.Db.Licenses.Select( l => l.LicenseKey ).Order().ToArray();
+
+        // The keys are sorted after they are read. On SQL Server the column has the type text, which
+        // Transact-SQL refuses to sort, and the query would fail. This is the rule that
+        // SchemaCompatibilityTests states for the queries of the server.
+        string[] first = ReadKeys( context );
 
         Assert.Empty( TestLicenseSeeder.Seed( context.Db, authority, TimeProvider.System, NullLogger.Instance ) );
-        Assert.Equal( first, context.Db.Licenses.Select( l => l.LicenseKey ).Order().ToArray() );
+        Assert.Equal( first, ReadKeys( context ) );
+
+        static string[] ReadKeys( LicenseServerTestContext context )
+            => context.Db.Licenses.Select( l => l.LicenseKey ).AsEnumerable().Order().ToArray();
     }
 
     /// <summary>

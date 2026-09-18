@@ -92,11 +92,6 @@ public sealed class LicenseServerOptions
     public bool RequireAuthenticatedLeaseRequests { get; set; }
 
     /// <summary>
-    /// Gets or sets the mechanism that serializes concurrent lease requests.
-    /// </summary>
-    public LeaseLockMode LeaseLockMode { get; set; } = LeaseLockMode.InProcess;
-
-    /// <summary>
     /// Gets or sets the licensing authorities whose license keys this server accepts in addition to
     /// the production authority. This setting exists so that a load simulation can run against
     /// license keys that are not sold. The server refuses to start when this setting is used outside

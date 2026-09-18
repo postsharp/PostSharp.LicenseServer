@@ -3,7 +3,6 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,34 +16,33 @@ using SharpCrafters.Backstage.LicenseServer.Licensing;
 using SharpCrafters.Backstage.LicenseServer.Locking;
 using SharpCrafters.Backstage.LicenseServer.Options;
 using SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
+using SharpCrafters.Common;
 
 namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
 /// <summary>
-/// Hosts the real application in memory. SQLite replaces the SQL Server database, and test doubles
-/// replace the license parser, the clock and the e-mail sender. Everything else is the production
+/// Hosts the real application in memory, over the database of the test, with test doubles for the
+/// license parser, the clock and the e-mail sender. Everything else is the production
 /// pipeline: the routing, the model binding, the authorization and the endpoints.
 /// </summary>
 public sealed class LicenseServerApplication : WebApplicationFactory<Program>
 {
-    private readonly SqliteConnection connection;
+    private readonly ITestDatabase database;
 
-    private readonly string connectionString;
-
+    /// <summary>
+    /// Creates an application over a database of its own, on the engine the run uses. The database is
+    /// created here, and not at the first request, because a test adds licenses before it sends its
+    /// first request, and the first request is what starts the host.
+    /// </summary>
+    /// <remarks>
+    /// Creating the database is asynchronous, and a constructor cannot await. The work runs on the
+    /// thread pool rather than on the synchronization context of the test, where waiting for it would
+    /// deadlock. The alternative is an asynchronous factory, which every test class would have to
+    /// call from <c>InitializeAsync</c>.
+    /// </remarks>
     public LicenseServerApplication()
     {
-        // A database held in memory with a shared cache, so that the application can open its own
-        // connections from the connection string, while the database exists only as long as this
-        // connection stays open.
-        this.connectionString = $"DataSource=licenseserver-{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
-
-        this.connection = new SqliteConnection( this.connectionString );
-        this.connection.Open();
-
-        // The schema is created here, because a test adds licenses before it sends its first
-        // request, and the first request is what starts the host.
-        using LicenseServerDbContext db = this.CreateDbContext();
-        db.Database.EnsureCreated();
+        this.database = Task.Run( TestDatabases.CreateAsync ).GetAwaiter().GetResult();
     }
 
     public FakeLicenseParser LicenseParser { get; } = new();
@@ -52,15 +50,29 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
     public InMemoryEmailSender EmailSender { get; } = new();
 
     /// <summary>
-    /// Gets or sets the lock the lease endpoint uses, so that a test can force the overloaded path.
+    /// Gets or sets a lock that replaces the one of the engine, so that a test can force the path
+    /// that answers "Service overloaded.". When it stays null, the application uses the lock of its
+    /// database engine, as it does in production.
     /// </summary>
-    public ILeaseLock LeaseLock { get; set; } = new InProcessLeaseLock();
+    public ILeaseLock? LeaseLock { get; set; }
+
+    /// <summary>
+    /// Gets the provider of the synchronization points, which lets a test hold a request at a named
+    /// point in the code under test. It is registered in every test and enabled by none.
+    /// </summary>
+    public TestSynchronizationProvider Synchronization { get; } = new();
 
     /// <summary>
     /// Gets the guard that makes the response body refuse a synchronous write, which a test writing
     /// to the response body enables.
     /// </summary>
     public AsyncOnlyResponseBody ResponseBody { get; } = new();
+
+    /// <summary>
+    /// Gets or sets the number of seconds a request waits for the lease lock, which a test that
+    /// exercises the timeout shortens.
+    /// </summary>
+    public int MutexTimeoutSeconds { get; set; } = 5;
 
     protected override void ConfigureWebHost( IWebHostBuilder builder )
     {
@@ -75,9 +87,9 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
             ["LicenseServer:NewLeaseDays"] = "3",
             ["LicenseServer:MinLeaseDays"] = "1",
             ["LicenseServer:BuildServers"] = "buildagent",
-            ["LicenseServer:MutexTimeout"] = "5",
-            ["LicenseServer:DatabaseProvider"] = "Sqlite",
-            [$"ConnectionStrings:{DatabaseRegistration.ConnectionStringName}"] = this.connectionString,
+            ["LicenseServer:MutexTimeout"] = this.MutexTimeoutSeconds.ToString( System.Globalization.CultureInfo.InvariantCulture ),
+            ["LicenseServer:DatabaseProvider"] = this.database.ProviderName,
+            [$"ConnectionStrings:{DatabaseRegistration.ConnectionStringName}"] = this.database.ConnectionString,
             ["Smtp:Enabled"] = "false"
         };
 
@@ -89,16 +101,21 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
         builder.ConfigureServices(
             services =>
             {
-                // The database is not replaced here. The application selects SQLite from the
-                // configuration above, through the code path that a customer uses.
+                // Neither the database nor its lock is replaced here. The application selects both
+                // from the configuration above, through the code path that a customer uses.
                 services.RemoveAll<ILicenseParser>();
                 services.AddSingleton<ILicenseParser>( this.LicenseParser );
 
                 services.RemoveAll<IEmailSender>();
                 services.AddSingleton<IEmailSender>( this.EmailSender );
 
-                services.RemoveAll<ILeaseLock>();
-                services.AddSingleton( _ => this.LeaseLock );
+                if ( this.LeaseLock != null )
+                {
+                    services.RemoveAll<ILeaseLock>();
+                    services.AddSingleton( this.LeaseLock );
+                }
+
+                services.AddSingleton<ITestSynchronizationProvider>( this.Synchronization );
 
                 // Windows authentication cannot be negotiated against an in-memory host.
                 services.AddAuthentication( TestAuthenticationHandler.SchemeName )
@@ -119,11 +136,14 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
             } );
     }
 
-    public LicenseServerDbContext CreateDbContext()
-        => new(
-            new DbContextOptionsBuilder<LicenseServerDbContext>()
-                .UseSqlite( this.connectionString )
-                .Options );
+    public LicenseServerDbContext CreateDbContext() => this.database.CreateContext();
+
+    /// <summary>
+    /// States that the database of this application must not serve another test. A test that modifies
+    /// the schema calls it, because a SQL Server run lends the same databases to one test after
+    /// another.
+    /// </summary>
+    public void DoNotReuseDatabase() => this.database.DoNotReuse();
 
     /// <summary>
     /// Registers a license both in the database and with the fake parser.
@@ -158,7 +178,12 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
 
         if ( disposing )
         {
-            this.connection.Dispose();
+            this.Synchronization.Dispose();
+
+            // The database of a SQL Server run returns to its pool here, and a SQLite database in
+            // memory disappears with its connection. Disposal runs on the thread pool for the same
+            // reason as the creation.
+            Task.Run( async () => await this.database.DisposeAsync() ).GetAwaiter().GetResult();
         }
     }
 }

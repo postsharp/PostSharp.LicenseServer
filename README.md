@@ -168,6 +168,33 @@ the dependency at it, and build that repository first:
 ./Build.ps1 dependencies set local Backstage --path <path to the SharpCrafters.Backstage repository>
 ```
 
+### Running the tests
+
+`./Build.ps1 test` runs the suite on SQLite, which needs no server and keeps the loop short. Run the
+same tests a second time against SQL Server before you open a pull request. SQL Server is the engine
+that customers use, and the two engines differ in the collation, in the column types and in the lock
+that serializes the lease requests:
+
+```
+$env:MSSQL_SA_PASSWORD = '<a password>'
+docker compose up -d database
+$env:LICENSESERVER_TEST_SQLSERVER = "Server=127.0.0.1,1433;User Id=sa;Password=$env:MSSQL_SA_PASSWORD;TrustServerCertificate=True;Encrypt=False"
+dotnet test tests\SharpCrafters.Backstage.LicenseServer.Tests
+```
+
+The tests read the connection string from `LICENSESERVER_TEST_SQLSERVER`, and they run on SQLite when
+it is not set. The connection string names no database: each test receives a database of its own,
+created from `Database\CreateTables.sql`, so this run also proves that the script and the Entity
+Framework model agree. The databases are named `licenseserver_test_` followed by a hexadecimal
+number. They are reused during the run, and the next run drops the ones an interrupted run left
+behind. Point the variable at a SQL Server of your own if you prefer, as long as its login may create
+a database.
+
+The continuous integration build runs the same second run in the configuration `Tests on SQL Server`.
+It runs `eng\TestSqlServer.ps1` in an image that carries SQL Server, which `eng\src\Docker\SqlServerComponent.cs`
+describes. The script also serves a developer machine: it starts the database service of
+`docker-compose.yml` when it finds no other server.
+
 ### Running locally
 
 ```
@@ -185,7 +212,7 @@ That page exists only in the Development environment.
 |---|---|
 | `src\SharpCrafters.Backstage.LicenseServer.Core` | The licensing rules, the database model, and the services they depend on. |
 | `src\SharpCrafters.Backstage.LicenseServer.Web` | The web application: the pages, the endpoints and the composition root. |
-| `tests\SharpCrafters.Backstage.LicenseServer.Tests` | The test suite. It runs on an in-memory database and requires no SQL Server. |
+| `tests\SharpCrafters.Backstage.LicenseServer.Tests` | The test suite. It runs on SQLite by default, and on SQL Server when the run is given one. |
 | `eng` | The product definition and the version files that PostSharp.Engineering builds from. |
 
 To put a server under load, use `LicenseServerLoadSimulator`, in the SharpCrafters.Backstage

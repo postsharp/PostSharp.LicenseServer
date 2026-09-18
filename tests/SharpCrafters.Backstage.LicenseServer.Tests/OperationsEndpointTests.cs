@@ -93,6 +93,9 @@ public sealed class OperationsEndpointTests : IDisposable
     [Fact]
     public async Task Health_DatabaseWithoutSchema_FailsAndSaysNothingMore()
     {
+        // The database keeps no schema after this test, so it must not serve another one.
+        this.application.DoNotReuseDatabase();
+
         using ( LicenseServerDbContext db = this.application.CreateDbContext() )
         {
             await db.Database.ExecuteSqlRawAsync( "DROP TABLE Leases" );

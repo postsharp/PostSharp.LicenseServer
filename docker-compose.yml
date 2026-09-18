@@ -83,9 +83,9 @@ services:
       Authentication__Scheme: None
       Smtp__Enabled: "false"
     volumes:
-      # The audit signing key lives here. It has to outlive the container: losing it does not
-      # invalidate the rows already written, but it does start a new signature chain. Back this
-      # volume up with the database.
+      # The files the server generates live here. With the test override, that is the key pair of
+      # the test licensing authority, which has to outlive the container: the license keys it signed
+      # are in the database and stop verifying when the pair changes.
       - licenseserver-data:/app/App_Data
 
 volumes:

@@ -8,6 +8,7 @@ using SharpCrafters.Backstage.LicenseServer.Licensing;
 using SharpCrafters.Backstage.LicenseServer.Locking;
 using SharpCrafters.Backstage.LicenseServer.Options;
 using SharpCrafters.Backstage.LicenseServer.Services;
+using SharpCrafters.Common;
 
 namespace SharpCrafters.Backstage.LicenseServer.Endpoints;
 
@@ -21,6 +22,11 @@ namespace SharpCrafters.Backstage.LicenseServer.Endpoints;
 /// </remarks>
 public static class LicenseServerEndpoints
 {
+    /// <summary>
+    /// The synchronization point that a lease request reaches while it holds the lease lock.
+    /// </summary>
+    public const string HoldingLeaseLockSyncPoint = "LicenseServerEndpoints.GetLeaseAsync:HoldingLeaseLock";
+
     public static void MapLicenseServerEndpoints( this WebApplication app )
     {
         app.MapGet( "/Lease.ashx", GetLeaseAsync ).RequireAuthorization( AuthorizationPolicies.LeaseRequest );
@@ -104,6 +110,18 @@ public static class LicenseServerEndpoints
         if ( handle == null )
         {
             return Error( 503, "Service overloaded." );
+        }
+
+        // A test holds a request here, while it starts a second one, to prove that the second one
+        // waits for the lock. Two requests that merely run at the same time do not prove it: they
+        // pass whether the lock works or not. The service is absent in production, and the call then
+        // costs a null check. See ITestSynchronizationProvider.
+        ITestSynchronizationProvider? synchronization =
+            context.RequestServices.GetService<ITestSynchronizationProvider>();
+
+        if ( synchronization != null )
+        {
+            await synchronization.SyncPointAsync( HoldingLeaseLockSyncPoint, cancellationToken );
         }
 
         long startTimestamp = timeProvider.GetTimestamp();

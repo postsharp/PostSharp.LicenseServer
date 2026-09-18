@@ -145,7 +145,12 @@ public sealed class SchemaCompatibilityTests
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
 
-        await context.Db.Database.ExecuteSqlRawAsync( "ALTER TABLE Leases ADD COLUMN HMAC varchar(100) NULL" );
+        // On SQL Server the column is already there, because CreateTables.sql declares it. On SQLite
+        // the schema comes from the model, which no longer maps it, so the test adds it.
+        if ( !TestDatabases.UsesSqlServer )
+        {
+            await context.Db.Database.ExecuteSqlRawAsync( "ALTER TABLE Leases ADD COLUMN HMAC varchar(100) NULL" );
+        }
 
         License license = LicenseBuilder.Default().AddTo( context );
         Lease lease = LeaseBuilder.For( license ).AddTo( context );

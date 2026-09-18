@@ -10,20 +10,20 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
 /// <summary>
 /// A license server wired up for a test: a real <see cref="LeaseRepository"/> and
-/// <see cref="Services.LeaseService"/> over a database held in memory, with the license parser, the
+/// <see cref="Services.LeaseService"/> over the database of the test, with the license parser, the
 /// clock and the e-mail sender replaced by test doubles.
 /// </summary>
 public sealed class LicenseServerTestContext : IAsyncDisposable
 {
-    private readonly SqliteDatabaseFixture fixture;
+    private readonly ITestDatabase database;
     private readonly LicenseServerDbContext db;
 
     private LicenseServerTestContext(
-        SqliteDatabaseFixture fixture,
+        ITestDatabase database,
         LicenseServerDbContext db,
         LicenseServerOptions options )
     {
-        this.fixture = fixture;
+        this.database = database;
         this.db = db;
         this.Options = options;
         this.LicenseParser = new FakeLicenseParser();
@@ -59,9 +59,8 @@ public sealed class LicenseServerTestContext : IAsyncDisposable
     public LicenseServerDbContext Db => this.db;
 
     /// <summary>
-    /// Creates a context over a database that belongs to the calling test. Creating a SQLite database
-    /// in memory takes less than a millisecond, so the tests do not share one and no test has to
-    /// reset it.
+    /// Creates a context over a database that belongs to the calling test. See
+    /// <see cref="TestDatabases"/> for the engine the run uses.
     /// </summary>
     public static async Task<LicenseServerTestContext> CreateAsync( Action<LicenseServerOptions>? configure = null )
     {
@@ -77,9 +76,9 @@ public sealed class LicenseServerTestContext : IAsyncDisposable
 
         configure?.Invoke( options );
 
-        SqliteDatabaseFixture fixture = await SqliteDatabaseFixture.CreateAsync();
+        ITestDatabase database = await TestDatabases.CreateAsync();
 
-        return new LicenseServerTestContext( fixture, fixture.CreateContext(), options );
+        return new LicenseServerTestContext( database, database.CreateContext(), options );
     }
 
     /// <summary>
@@ -88,15 +87,21 @@ public sealed class LicenseServerTestContext : IAsyncDisposable
     /// </summary>
     public LeaseRepository CreateFreshRepository()
         => new(
-            this.fixture.CreateContext(),
+            this.database.CreateContext(),
             Microsoft.Extensions.Options.Options.Create( this.Options ),
             this.LicenseParser );
 
-    public LicenseServerDbContext CreateFreshContext() => this.fixture.CreateContext();
+    public LicenseServerDbContext CreateFreshContext() => this.database.CreateContext();
+
+    /// <summary>
+    /// States that the database of this context must not serve another test. A test that modifies the
+    /// schema calls it, because a SQL Server run lends the same databases to one test after another.
+    /// </summary>
+    public void DoNotReuseDatabase() => this.database.DoNotReuse();
 
     public async ValueTask DisposeAsync()
     {
         await this.db.DisposeAsync();
-        await this.fixture.DisposeAsync();
+        await this.database.DisposeAsync();
     }
 }

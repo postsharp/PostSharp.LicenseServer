@@ -6,7 +6,6 @@ using SharpCrafters.Backstage.LicenseServer.Email;
 using SharpCrafters.Backstage.LicenseServer.Endpoints;
 using SharpCrafters.Backstage.LicenseServer.Health;
 using SharpCrafters.Backstage.LicenseServer.Licensing;
-using SharpCrafters.Backstage.LicenseServer.Locking;
 using SharpCrafters.Backstage.LicenseServer.Options;
 using SharpCrafters.Backstage.LicenseServer.Services;
 using SharpCrafters.Backstage.LicenseServer.Time;
@@ -71,22 +70,6 @@ builder.Services.AddSingleton<TimeProvider>(
                 options.TimeAcceleration );
 
         return new AcceleratedTimeProvider( TimeProvider.System, (double) options.TimeAcceleration );
-    } );
-
-builder.Services.AddSingleton<ILeaseLock>(
-    services =>
-    {
-        LicenseServerOptions options = services.GetRequiredService<IOptions<LicenseServerOptions>>().Value;
-
-        return options.LeaseLockMode switch
-        {
-            LeaseLockMode.InProcess => new InProcessLeaseLock(),
-            LeaseLockMode.None => new NullLeaseLock(),
-            LeaseLockMode.SqlApplicationLock => throw new NotSupportedException(
-                "LeaseLockMode.SqlApplicationLock is not implemented yet. Run a single worker process, or open an "
-                + "issue at https://github.com/postsharp/SharpCrafters.Backstage.LicenseServer." ),
-            _ => throw new InvalidOperationException( $"Unknown lease lock mode '{options.LeaseLockMode}'." )
-        };
     } );
 
 string authenticationScheme = builder.Services.AddLicenseServerAuthentication( builder.Configuration );
