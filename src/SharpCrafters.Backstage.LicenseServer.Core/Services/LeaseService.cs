@@ -508,8 +508,3 @@ public sealed partial class LeaseService
         public LicenseInfo ParsedLicense => this.parsedLicense;
     }
 }
-
-/// <summary>
-/// The lease granted to a client: which license key to use, and for how long.
-/// </summary>
-public sealed record GrantedLease( string LicenseKey, DateTime StartTime, DateTime EndTime, DateTime RenewTime );

@@ -188,36 +188,3 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
         }
     }
 }
-
-/// <summary>
-/// Authenticates every request as the same Windows-style identity, so the tests exercise the
-/// authenticated path without a domain controller.
-/// </summary>
-public sealed class TestAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
-{
-    public TestAuthenticationHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger,
-        UrlEncoder encoder ) : base( options, logger, encoder ) { }
-
-    public const string SchemeName = "Test";
-
-    /// <summary>
-    /// The header a test sets to be served anonymously instead.
-    /// </summary>
-    public const string AnonymousHeader = "X-Test-Anonymous";
-
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-    {
-        if ( this.Request.Headers.ContainsKey( AnonymousHeader ) )
-        {
-            return Task.FromResult( AuthenticateResult.NoResult() );
-        }
-
-        ClaimsIdentity identity = new(
-            [new Claim( ClaimTypes.Name, "DOMAIN\\tester" )],
-            SchemeName );
-
-        return Task.FromResult( AuthenticateResult.Success( new AuthenticationTicket( new ClaimsPrincipal( identity ), SchemeName ) ) );
-    }
-}

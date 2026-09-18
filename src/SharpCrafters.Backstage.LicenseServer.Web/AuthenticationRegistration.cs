@@ -106,18 +106,3 @@ public static class AuthenticationRegistration
         return RuntimeInformation.IsOSPlatform( OSPlatform.Windows ) ? Negotiate : None;
     }
 }
-
-/// <summary>
-/// Authenticates no caller, so that the server serves every request anonymously.
-/// </summary>
-public sealed class AnonymousAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
-{
-    public AnonymousAuthenticationHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger,
-        UrlEncoder encoder ) : base( options, logger, encoder ) { }
-
-    public const string SchemeName = "None";
-
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync() => Task.FromResult( AuthenticateResult.NoResult() );
-}

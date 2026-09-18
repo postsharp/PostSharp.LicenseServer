@@ -137,6 +137,24 @@ function Invoke-Docker {
     & $command @arguments
 }
 
+<#
+.SYNOPSIS
+    Holds the distribution of the Windows Subsystem for Linux open, and returns the process that holds
+    it.
+.DESCRIPTION
+    The subsystem stops a distribution a few seconds after its last process ends. The engine of Docker
+    and the containers it runs stop with it, so a suite that runs for minutes loses its server in the
+    middle: the connections are refused and every test that touches the database fails. A process that
+    sleeps for the length of this script keeps the distribution running.
+#>
+function Start-DistributionKeepAlive {
+    if ( $script:dockerCommand[0] -ne 'wsl' ) {
+        return $null
+    }
+
+    return Start-Process -FilePath 'wsl' -ArgumentList '-e', 'sleep', '86400' -PassThru -WindowStyle Hidden
+}
+
 function Wait-ForServer( [scriptblock] $Query, [int] $Timeout ) {
     $deadline = (Get-Date).AddSeconds( $Timeout )
 
@@ -161,6 +179,7 @@ function New-Password {
 
 $serverProcess = $null
 $startedLocalCluster = $false
+$keepAlive = $null
 
 # Docker is called with a relative path, so the script works from the directory of the repository.
 Push-Location $repositoryDirectory
@@ -283,8 +302,17 @@ try {
     if ( $StartOnly ) {
         Write-Host 'The server is running, and no test was run.'
 
+        if ( $script:dockerCommand -and $script:dockerCommand[0] -eq 'wsl' ) {
+            Write-Warning (
+                'Docker runs inside the Windows Subsystem for Linux, which stops a distribution a few seconds ' +
+                'after its last process ends, and the container stops with it. Keep a process of the ' +
+                'distribution running, for instance "wsl -e sleep 86400", for as long as you need the server.' )
+        }
+
         return
     }
+
+    $keepAlive = Start-DistributionKeepAlive
 
     Write-Host "Running the tests against $Engine."
 
@@ -298,6 +326,10 @@ finally {
     if ( $serverProcess ) {
         Write-Host 'Stopping SQL Server.'
         Stop-Process -InputObject $serverProcess -ErrorAction SilentlyContinue
+    }
+
+    if ( $keepAlive ) {
+        Stop-Process -InputObject $keepAlive -ErrorAction SilentlyContinue
     }
 
     if ( $startedLocalCluster -and -not $StartOnly ) {
