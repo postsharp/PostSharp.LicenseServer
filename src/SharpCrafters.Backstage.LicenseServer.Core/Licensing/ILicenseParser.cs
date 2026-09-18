@@ -12,7 +12,8 @@ public interface ILicenseParser
     LicenseInfo? TryParse( string licenseKey );
 
     /// <summary>
-    /// Removes whitespace and formatting from a license key pasted by a human.
+    /// Removes the whitespace and the formatting from a license key that a person pasted into a
+    /// form.
     /// </summary>
     string CleanLicenseString( string licenseKey );
 }

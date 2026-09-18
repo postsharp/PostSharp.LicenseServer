@@ -1,8 +1,8 @@
 namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
-/// Produces the response body of the lease endpoint. This is the wire contract with the PostSharp
-/// client, so it is isolated behind an interface and pinned by tests.
+/// Produces the body of the response of the lease endpoint. This format is the contract with the
+/// PostSharp client, so an interface isolates it and the tests verify it.
 /// </summary>
 public interface ILeaseSerializer
 {

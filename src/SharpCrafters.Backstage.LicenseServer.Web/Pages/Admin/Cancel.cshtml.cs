@@ -6,7 +6,7 @@ using SharpCrafters.Backstage.LicenseServer.Data;
 namespace SharpCrafters.Backstage.LicenseServer.Pages.Admin;
 
 /// <summary>
-/// Ends a lease early, freeing the seat for somebody else.
+/// Ends a lease before its end time, so that another user can take the seat.
 /// </summary>
 public sealed class CancelModel( ILeaseRepository repository, TimeProvider timeProvider ) : PageModel
 {

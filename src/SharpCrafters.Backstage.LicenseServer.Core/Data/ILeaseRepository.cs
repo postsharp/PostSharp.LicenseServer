@@ -1,8 +1,7 @@
 namespace SharpCrafters.Backstage.LicenseServer.Data;
 
 /// <summary>
-/// Reads and writes leases. Replaces the methods that used to hang off the LINQ to SQL
-/// <c>Database</c> class.
+/// Reads and writes leases. Replaces the methods that the LINQ to SQL <c>Database</c> class carried.
 /// </summary>
 public interface ILeaseRepository
 {
@@ -12,7 +11,8 @@ public interface ILeaseRepository
     IQueryable<Lease> OpenLeases { get; }
 
     /// <summary>
-    /// Gets every lease ever recorded, including those since replaced. This is the audit log.
+    /// Gets every lease that was recorded, including the leases that were replaced later. These rows
+    /// are the audit log.
     /// </summary>
     IQueryable<Lease> Leases { get; }
 
@@ -45,13 +45,13 @@ public interface ILeaseRepository
     void CancelLease( Lease lease, string authenticatedUserName, DateTime time );
 
     /// <summary>
-    /// Counts the seats of a license in use at a given moment.
+    /// Counts the seats of a license that are in use at a given instant.
     /// </summary>
     int GetActiveSeats( int licenseId, DateTime dateTime );
 
     /// <summary>
-    /// Returns the usage timeline of a license over a period, as a sequence of lease open and close
-    /// events carrying the running seat count.
+    /// Returns the usage timeline of a license during a period. The timeline is a sequence of events
+    /// that open and close a lease, and each event carries the number of seats in use after it.
     /// </summary>
     IEnumerable<LeaseCountingPoint> GetLeaseCountingPoints( int licenseId, DateTime startTime, DateTime endTime );
 

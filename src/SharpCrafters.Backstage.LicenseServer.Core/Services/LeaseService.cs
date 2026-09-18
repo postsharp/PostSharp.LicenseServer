@@ -14,8 +14,9 @@ namespace SharpCrafters.Backstage.LicenseServer.Services;
 /// Decides which license, if any, satisfies a lease request.
 /// </summary>
 /// <remarks>
-/// Allocation runs in three passes over the candidate licenses: reuse or prolong a lease the user
-/// already holds, then grant a new lease against spare capacity, then fall back on the grace period.
+/// The allocation runs three passes over the candidate licenses. The first pass reuses or prolongs a
+/// lease that the user already holds. The second pass grants a new lease against free capacity. The
+/// third pass grants a lease within the grace period.
 /// </remarks>
 public sealed partial class LeaseService
 {
@@ -126,7 +127,7 @@ public sealed partial class LeaseService
         if ( !(buildDate == null || parsedLicense.SubscriptionEndDate == null
                                  || buildDate <= parsedLicense.SubscriptionEndDate) )
         {
-            // The PostSharp version number was introduced in the license server protocol in v5.
+            // The version number was introduced in the license server protocol in PostSharp 5.
             errors[license.LicenseId] = version.Major >= 5
                 ? string.Format(
                     "The maintenance subscription of license #{0} ends on {1:d} but the requested version {2}.{3}.{4} has been built on {5:d}.",
@@ -165,8 +166,8 @@ public sealed partial class LeaseService
         Dictionary<int, string> errors,
         CancellationToken cancellationToken = default )
     {
-        // A client that names no product is served from any pool, which is what every PostSharp
-        // client relies on: none of them sent the argument.
+        // A client that names no product is served from any pool. Every PostSharp client relies on
+        // this behaviour, because none of them sends the argument.
         IReadOnlyList<string> productCodes = string.IsNullOrEmpty( productCode )
             ? []
             : ProductCodes.Matching( productCode );
@@ -181,8 +182,8 @@ public sealed partial class LeaseService
         {
             Dictionary<int, LicenseState> buildServerStates = [];
 
-            // A build agent is exempt from consuming a seat, not from the rules about which licenses
-            // may be served at all, so the same validation runs as for anybody else.
+            // A build agent is exempt from consuming a seat. It is not exempt from the rules that
+            // decide which licenses may be served, so the same validation runs.
             foreach ( License candidate in licenses )
             {
                 LicenseState? state =
@@ -206,8 +207,8 @@ public sealed partial class LeaseService
                     continue;
                 }
 
-                // A build server's lease is never persisted, so that build agents cannot consume
-                // the seats of the developers they build for.
+                // The server does not store the lease of a build server, so that build agents do not
+                // consume the seats of the developers they build for.
                 return new GrantedLease(
                     candidate.LicenseKey,
                     now,
@@ -215,7 +216,7 @@ public sealed partial class LeaseService
                     endTime.AddDays( -this.settings.MinLeaseDays ) );
             }
 
-            // Otherwise fall through and acquire a lease in the normal way.
+            // No license could be served without a lease. Continue with the normal allocation.
         }
 
         Lease? lease = await this.GetLeaseAsync(
@@ -291,13 +292,13 @@ public sealed partial class LeaseService
 
                 if ( candidateLease.EndTime > now.AddDays( this.settings.MinLeaseDays ) )
                 {
-                    // The lease the user already holds is good enough.
+                    // The lease that the user already holds ends late enough.
                     return candidateLease;
                 }
 
-                // A lease can always be prolonged, because leases are acquired from the present
-                // moment and therefore already account for the current one -- unless the license
-                // period or the grace period ends first.
+                // A lease can always be prolonged, because a lease starts at the current instant and
+                // therefore already covers it. The license period or the grace period can still end
+                // first.
                 Lease? prolonged = this.repository.ProlongLease( candidateLease, authenticatedUserName, now );
 
                 if ( prolonged == null )
@@ -308,8 +309,8 @@ public sealed partial class LeaseService
                 return prolonged;
             }
 
-            // No lease for the requested machine. A further machine for a user who already holds a
-            // seat is free, up to MachinesPerUser.
+            // This user holds no lease on this machine. An additional machine consumes no seat while
+            // the user works on fewer machines than MachinesPerUser.
             if ( machines.Count % this.settings.MachinesPerUser != 0 )
             {
                 Lease? lease = this.repository.CreateLease(
@@ -367,9 +368,9 @@ public sealed partial class LeaseService
 
             if ( !licenseState.Maximum.HasValue )
             {
-                // A license with no seat limit has no capacity to exceed, so there is no grace
-                // period to fall back on. It reaches this pass only when the second one declined to
-                // grant a lease for some other reason, such as the license having expired.
+                // A license with no seat limit has no capacity to exceed, so it has no grace period.
+                // It reaches this pass only when the second pass refused it for another reason, for
+                // example an expired license.
                 continue;
             }
 
@@ -404,8 +405,8 @@ public sealed partial class LeaseService
                         body,
                         cancellationToken );
 
-                    // Recorded whether or not the message was delivered, so that a broken SMTP
-                    // server cannot turn every request into a new warning email.
+                    // The time is recorded whether or not the message was delivered, so that an SMTP
+                    // server that fails does not turn every request into a new warning e-mail.
                     license.GraceLastWarningTime = now;
                 }
 
@@ -470,14 +471,14 @@ public sealed partial class LeaseService
         }
         catch ( Exception e )
         {
-            // A notification that cannot be delivered must never deny a developer their license.
+            // A notification that cannot be sent must never deny a license.
             this.logger.LogError( e, "Cannot send the notification email '{Subject}'.", subject );
         }
     }
 
     /// <summary>
-    /// The capacity and current usage of a license, computed lazily because most requests are served
-    /// by the first pass and never need it.
+    /// The capacity and the current usage of a license. The usage is computed on demand, because the
+    /// first pass serves most requests and does not need it.
     /// </summary>
     private sealed class LicenseState(
         DateTime time,

@@ -8,14 +8,14 @@ using SharpCrafters.Backstage.LicenseServer.Licensing;
 namespace SharpCrafters.Backstage.LicenseServer.Pages;
 
 /// <summary>
-/// The usage history of one license: how many seats were in use on each of the last N days, against
-/// the capacity of the license and its grace allowance.
+/// The usage history of one license. It reports the number of seats in use on each of the last days,
+/// with the capacity of the license and the capacity of its grace period.
 /// </summary>
 /// <remarks>
-/// A seat is one user and the machines that user works on, up to <c>MachinesPerUser</c> of them; see
-/// <see cref="Data.SeatCounter"/>. The chart draws the same quantity the allocator compares to the
-/// capacity, so the line and the two limits above it are in the same unit and the "In use" column of
-/// the license list agrees with the chart.
+/// A seat is one user and the machines that user works on, up to <c>MachinesPerUser</c> machines.
+/// See <see cref="Data.SeatCounter"/>. The chart draws the quantity that the allocator compares to
+/// the capacity, so the line and the two limits above it use the same unit, and the chart agrees
+/// with the column "In use" of the license list.
 /// </remarks>
 public sealed class GraphModel(
     ILeaseRepository repository,
@@ -23,8 +23,8 @@ public sealed class GraphModel(
     TimeProvider timeProvider ) : PageModel
 {
     /// <summary>
-    /// The windows offered by the page. Restricting them keeps an arbitrary value from turning into
-    /// an unbounded query.
+    /// The windows that the page offers. The list is closed, so that an arbitrary value cannot
+    /// produce an unbounded query.
     /// </summary>
     public static readonly int[] AllowedWindows = [30, 90, 180, 365];
 
@@ -65,9 +65,9 @@ public sealed class GraphModel(
         {
             maximum = parsedLicense.UserNumber;
 
-            // The same arithmetic the allocator uses, rounding up. Integer division would floor it,
-            // so a one-seat license with 20% grace would be drawn as allowing one seat while the
-            // server actually grants two.
+            // The arithmetic of the allocator, which rounds up. An integer division would round
+            // down, and a license of one seat with a grace period of 20 per cent would then be drawn
+            // with a limit of one seat, while the server grants two.
             graceMaximum = (int) Math.Ceiling( maximum.Value * (100.0 + parsedLicense.GracePercent) / 100.0 );
             axisMaximum = graceMaximum.Value;
         }
@@ -80,8 +80,8 @@ public sealed class GraphModel(
                     Date = day.Key,
                     Peak = day.Max( point => point.SeatCount ),
 
-                    // The timeline is ordered, and grouping preserves that order within a group, so
-                    // the last point of a day is the count the next day starts from.
+                    // The timeline is ordered, and the grouping preserves that order inside a group,
+                    // so the last point of a day carries the count that the next day starts from.
                     AtEndOfDay = day.Last().SeatCount
                 } )
             .ToList();
@@ -111,7 +111,7 @@ public sealed class GraphModel(
             }
         }
 
-        // Days with no lease activity inherit the count the previous day ended on.
+        // A day without lease activity keeps the count of the end of the previous day.
         int lastValue = 0;
 
         for ( int i = 0; i < this.Days; i++ )
@@ -144,7 +144,7 @@ public sealed class GraphModel(
     }
 
     /// <summary>
-    /// The data handed to the chart script, serialized as JSON.
+    /// The data passed to the chart script, serialized as JSON.
     /// </summary>
     public sealed class UsageChart
     {
@@ -161,7 +161,7 @@ public sealed class GraphModel(
         public int? Maximum { get; init; }
 
         /// <summary>
-        /// Gets the number of seats tolerated during the grace period.
+        /// Gets the number of seats allowed during the grace period.
         /// </summary>
         public int? Grace { get; init; }
 

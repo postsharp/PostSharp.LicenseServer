@@ -27,8 +27,8 @@ public sealed class ProductCodesTests
     }
 
     /// <summary>
-    /// The products that postdate the rename, and any value the server does not recognize, are matched
-    /// by themselves alone.
+    /// The products created after the renaming, and every value that the server does not know, match
+    /// only themselves.
     /// </summary>
     [Theory]
     [InlineData( "MetalamaProfessional" )]
@@ -38,9 +38,9 @@ public sealed class ProductCodesTests
         => Assert.Equal( [productCode], ProductCodes.Matching( productCode ) );
 
     /// <summary>
-    /// A license added by a previous version of this server is served to a client that asks for the
-    /// same product by its Backstage name. Without the mapping the request would be denied although
-    /// the license is there, which is what an upgraded installation would have seen.
+    /// The server serves a license added by an earlier version to a client that asks for the same
+    /// product by its Backstage name. Without the mapping, the server would deny the request while
+    /// the license is present, which is what an upgraded installation would observe.
     /// </summary>
     [Fact]
     public async Task LicenseStoredUnderTheLegacyName_IsServedToAClientAskingForTheBackstageName()
@@ -62,7 +62,8 @@ public sealed class ProductCodesTests
     }
 
     /// <summary>
-    /// The mapping widens what a request matches; it does not make every product match every other.
+    /// The mapping adds the other spelling of a product to a request. It does not make one product
+    /// match another product.
     /// </summary>
     [Fact]
     public async Task LicenseOfAnotherProduct_IsStillNotServed()

@@ -7,8 +7,8 @@ namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 /// this server.
 /// </summary>
 /// <remarks>
-/// The version is read from the assembly rather than written down, so that upgrading the package is
-/// all that is needed to serve a license key that requires a newer one.
+/// The version is read from the assembly and not written in the code, so that an upgrade of the
+/// package is sufficient to serve a license key that requires a newer version.
 /// </remarks>
 public sealed class BackstageServerVersion : ILicenseServerVersion
 {

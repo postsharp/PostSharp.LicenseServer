@@ -15,9 +15,9 @@ namespace SharpCrafters.Backstage.LicenseServer.Endpoints;
 /// The endpoints the PostSharp client talks to.
 /// </summary>
 /// <remarks>
-/// The <c>.ashx</c> paths are part of the contract with clients that are already deployed, so they
-/// are kept literally even though nothing is handled by an ASP.NET handler any more. The status
-/// codes and response bodies are equally part of that contract.
+/// The <c>.ashx</c> paths are part of the contract with the clients that are already deployed, so
+/// the paths are kept although no ASP.NET handler serves them any more. The status codes and the
+/// bodies of the responses are part of the same contract.
 /// </remarks>
 public static class LicenseServerEndpoints
 {
@@ -93,8 +93,8 @@ public static class LicenseServerEndpoints
 
         userName = userName.ToLowerInvariant();
 
-        // An anonymous request has no name at all in ASP.NET Core, where WebForms gave an empty
-        // string. The column does not accept null.
+        // An anonymous request has no name in ASP.NET Core, where WebForms returned an empty string.
+        // The column does not accept null.
         string authenticatedUserName = context.User.Identity?.Name ?? string.Empty;
 
         await using IAsyncDisposable? handle = await leaseLock.TryAcquireAsync(
@@ -132,8 +132,8 @@ public static class LicenseServerEndpoints
 
         if ( elapsed > TimeSpan.FromSeconds( 1 ) )
         {
-            // The user and machine names come from the query string, so they are stripped of
-            // anything that could forge a line in a plain-text log.
+            // The user name and the machine name come from the query string. The server removes the
+            // characters with which they could forge a line in a plain-text log.
             logger.LogWarning(
                 "The lease request for {User} on {Machine} took {Elapsed}.",
                 Sanitize( userName ),
@@ -151,8 +151,8 @@ public static class LicenseServerEndpoints
     }
 
     /// <summary>
-    /// Reports the server's idea of the current time, so that a simulator can synchronize its own
-    /// accelerated clock.
+    /// Reports the current instant of the clock of the server, so that a simulator can synchronize
+    /// its own accelerated clock.
     /// </summary>
     private static IResult GetTime( TimeProvider timeProvider, IOptions<LicenseServerOptions> options )
         => Results.Text(
@@ -173,8 +173,8 @@ public static class LicenseServerEndpoints
         int? tm,
         CancellationToken cancellationToken )
     {
-        // The same range the form offers. Without an upper bound, a year such as 10000 passes the
-        // check and then throws when the date is constructed.
+        // The same range as the form offers. Without an upper bound, a year such as 10000 passes the
+        // check and then raises an exception when the date is constructed.
         const int firstYear = 2010;
         const int lastYear = 2100;
 
@@ -190,10 +190,10 @@ public static class LicenseServerEndpoints
         DateTime fromTime = new( fy.Value, fm.Value, 1 );
         DateTime toTime = new DateTime( ty.Value, tm.Value, 1 ).AddMonths( 1 );
 
-        // The range of months is resolved to a range of lease identifiers, and everything in that
-        // range is exported. The result is therefore a contiguous run of the log rather than a
-        // filtered selection, which is what keeps the signature chain verifiable -- and it is why a
-        // few leases outside the requested months can appear in the file.
+        // The range of months is resolved to a range of lease identifiers, and every lease in that
+        // range is exported. The result is a contiguous section of the log and not a filtered
+        // selection, which keeps the signature chain verifiable. This is also the reason why a few
+        // leases outside the requested months appear in the file.
         var bounds = await repository.Leases
             .Where( l => l.EndTime >= fromTime && l.StartTime <= toTime )
             .GroupBy( _ => 1 )
@@ -213,9 +213,9 @@ public static class LicenseServerEndpoints
         int minLeaseId = bounds.MinLeaseId;
         int maxLeaseId = bounds.MaxLeaseId;
 
-        // Written straight to the response as the rows arrive. An audit log covering years of
-        // activity is far too large to assemble in memory first, and the caller should not wait for
-        // the whole of it before the download starts.
+        // The rows are written to the response as they arrive. An audit log that covers years of
+        // activity is too large to assemble in memory, and the download starts before the server has
+        // read the last row.
         return Results.Stream(
             async stream =>
             {
@@ -230,9 +230,9 @@ public static class LicenseServerEndpoints
                 await foreach ( Lease lease in leases.WithCancellation( cancellationToken ) )
                 {
                     // The line is built in memory and written asynchronously. Writing the fields
-                    // straight to the writer makes it flush synchronously when its buffer fills, and
-                    // Kestrel refuses a synchronous write to a response body. One line is a hundred
-                    // bytes; it is the whole log that must not be assembled in memory.
+                    // directly to the writer makes the writer flush synchronously when its buffer is
+                    // full, and Kestrel refuses a synchronous write to a response body. One line is
+                    // a hundred bytes. The constraint applies to the whole log, not to one line.
                     await writer.WriteLineAsync( lease.ToAuditLine( true ) );
                 }
             },
@@ -243,8 +243,8 @@ public static class LicenseServerEndpoints
         => Results.Text( description, "text/plain", statusCode: statusCode );
 
     /// <summary>
-    /// Removes control characters from a value taken from the request, so that it cannot forge a
-    /// line break in a log, and caps its length.
+    /// Removes the control characters from a value of the request, so that the value cannot forge a
+    /// line break in a log, and limits its length.
     /// </summary>
     private static string Sanitize( string value )
     {

@@ -3,8 +3,8 @@ using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
-/// The usage timeline behind the graph: a sequence of lease open and close events, each carrying the
-/// running seat count.
+/// The usage timeline that the graph draws. It is a sequence of events that open and close a lease,
+/// and each event carries the number of seats in use after it.
 /// </summary>
 public sealed class LeaseCountingPointsTests
 {
@@ -107,9 +107,9 @@ public sealed class LeaseCountingPointsTests
     }
 
     /// <summary>
-    /// When one lease ends at the exact instant another begins, the machine must be released before
-    /// it is claimed again. This is what the numeric values of
-    /// <see cref="LeaseCountingPointKind"/> encode, and it is the reason they must not be renumbered.
+    /// When one lease ends at the instant at which another lease begins, the machine is released
+    /// before it is taken again. The numeric values of <see cref="LeaseCountingPointKind"/> produce
+    /// this order, and this is the reason why they must not change.
     /// </summary>
     [Fact]
     public async Task GetLeaseCountingPoints_CloseIsProcessedBeforeOpenAtTheSameInstant()
@@ -213,12 +213,13 @@ public sealed class LeaseCountingPointsTests
     /// returns to zero once both have ended.
     /// </summary>
     /// <remarks>
-    /// The lease service normally prevents this by reusing or prolonging a lease instead of granting
-    /// a second one, and an earlier version of this test recorded the situation as data the timeline
-    /// was entitled to refuse. It is not: a server whose clock moves backwards -- a restart with
-    /// <c>TimeAcceleration</c> set, a correction from a time server, a restored snapshot -- grants a
-    /// second lease while the first is still open, and a load simulation produced exactly that within
-    /// minutes. The usage page answered with HTTP 500 for as long as the older lease ran.
+    /// The lease service prevents this state: it reuses or prolongs a lease instead of granting a
+    /// second one. An earlier version of this test treated the state as data that the timeline could
+    /// refuse. The timeline cannot refuse it. A server whose clock moves backwards grants a second
+    /// lease while the first one is open, and the clock moves backwards after a restart with
+    /// <c>TimeAcceleration</c>, after a correction from a time server, and after the restore of a
+    /// snapshot. A load simulation produced this state in a few minutes, and the usage page answered
+    /// with the status 500 until the older lease ended.
     /// </remarks>
     [Fact]
     public async Task GetLeaseCountingPoints_TwoOpenLeasesOnOneMachine_CountAsOneSeat()

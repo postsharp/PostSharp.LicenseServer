@@ -4,8 +4,9 @@ using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
-/// Leases are never updated in place: prolonging or cancelling one inserts a replacement that points
-/// back at it. "Open" leases are those nothing points back at.
+/// The server never updates a lease. Prolonging a lease and cancelling a lease both insert a
+/// replacement that references the previous lease. A lease is open when no other lease references
+/// it.
 /// </summary>
 public sealed class OpenLeasesTests
 {
@@ -52,8 +53,8 @@ public sealed class OpenLeasesTests
     }
 
     /// <summary>
-    /// Nothing in the schema prevents two leases from replacing the same lease. The legacy
-    /// left-join query returned such a lease once per replacement; an anti-join returns it once.
+    /// No constraint of the schema prevents two leases from replacing the same lease. The legacy
+    /// query, a left join, returned such a lease once per replacement. An anti-join returns it once.
     /// </summary>
     [Fact]
     public async Task OpenLeases_LeaseReplacedTwice_IsStillListedOnlyOnce()

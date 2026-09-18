@@ -1,7 +1,8 @@
 namespace SharpCrafters.Backstage.LicenseServer.Email;
 
 /// <summary>
-/// Discards notification emails. Used when SMTP is disabled and when generating demo data.
+/// Discards the notification e-mails. The server uses it when SMTP is disabled and when it generates
+/// demonstration data.
 /// </summary>
 public sealed class NullEmailSender : IEmailSender
 {

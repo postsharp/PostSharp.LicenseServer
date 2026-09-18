@@ -6,10 +6,10 @@ namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 /// Accepts the signature of a license key issued by any one of several licensing authorities.
 /// </summary>
 /// <remarks>
-/// The identifiers of the keys have to be distinct across the providers, because the identifier
-/// carried by a signature is what selects the key that verifies it. The constructor rejects a
-/// duplicate rather than letting the first provider win, since which one that is would depend on the
-/// order the providers were passed in.
+/// The identifiers of the keys must be distinct across the providers, because the identifier that a
+/// signature carries selects the key that verifies it. The constructor rejects a duplicate
+/// identifier instead of selecting the first provider, because the first provider depends on the
+/// order in which the providers were passed.
 /// </remarks>
 public sealed class CompositeLicensingAuthorityProvider : ILicensingAuthorityProvider
 {

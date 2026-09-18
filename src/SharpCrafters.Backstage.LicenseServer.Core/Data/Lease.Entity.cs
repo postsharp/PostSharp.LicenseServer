@@ -5,9 +5,9 @@ namespace SharpCrafters.Backstage.LicenseServer;
 /// <c>dbo.Leases</c> table.
 /// </summary>
 /// <remarks>
-/// Leases are never updated in place. Prolonging or cancelling a lease inserts a new row that
-/// overwrites the old one through <see cref="OverwrittenLeaseId"/>, which is what makes the table an
-/// append-only audit log.
+/// The server never updates a lease. Prolonging a lease and cancelling a lease both insert a new row
+/// that overwrites the previous row through <see cref="OverwrittenLeaseId"/>. The table is therefore
+/// an audit log to which the server only appends.
 /// </remarks>
 public partial class Lease
 {
@@ -29,19 +29,19 @@ public partial class Lease
     public string Machine { get; set; } = null!;
 
     /// <summary>
-    /// Gets or sets the authenticated identity that requested the lease, which is not necessarily
-    /// <see cref="UserName"/>.
+    /// Gets or sets the authenticated caller that requested the lease. It can differ from
+    /// <see cref="UserName"/>, which the request declares.
     /// </summary>
     public string AuthenticatedUser { get; set; } = null!;
 
     /// <summary>
-    /// Gets or sets the signature chaining this lease to the previous one in the audit log.
+    /// Gets or sets the signature that chains this lease to the previous lease of the audit log.
     /// </summary>
     public string? HMAC { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether this lease was granted under the grace period, i.e.
-    /// beyond the capacity of the license.
+    /// Gets or sets a value indicating whether the server granted this lease during the grace
+    /// period, that is, above the capacity of the license.
     /// </summary>
     public bool Grace { get; set; }
 

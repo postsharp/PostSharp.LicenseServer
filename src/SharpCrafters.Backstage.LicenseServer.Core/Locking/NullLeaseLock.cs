@@ -1,7 +1,7 @@
 namespace SharpCrafters.Backstage.LicenseServer.Locking;
 
 /// <summary>
-/// Does not serialize anything. Intended for tests that do not exercise concurrency.
+/// Serializes nothing. This implementation exists for the tests that do not exercise concurrency.
 /// </summary>
 public sealed class NullLeaseLock : ILeaseLock
 {

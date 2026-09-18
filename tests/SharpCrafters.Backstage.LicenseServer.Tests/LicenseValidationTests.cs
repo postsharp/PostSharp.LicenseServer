@@ -3,8 +3,8 @@ using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
-/// Why a license may refuse to serve a request. Each reason is reported back to the developer in the
-/// body of the 403 response, so the wording matters.
+/// The reasons why a license does not serve a request. The server reports each reason to the
+/// developer in the body of the response 403, so these tests verify the text.
 /// </summary>
 public sealed class LicenseValidationTests
 {

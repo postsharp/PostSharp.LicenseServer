@@ -6,25 +6,26 @@ using SharpCrafters.Backstage.LicenseServer.Licensing;
 namespace SharpCrafters.Backstage.LicenseServer.Endpoints;
 
 /// <summary>
-/// The endpoints a monitoring system talks to: what state the server is in, and which version of it
-/// is deployed.
+/// The endpoints of a monitoring system. They report the state of the server and the version that is
+/// deployed.
 /// </summary>
 /// <remarks>
-/// They are served anonymously, like <c>Lease.ashx</c> and unlike the administrative pages. A load
-/// balancer or a monitoring agent holds no Windows credentials, so a probe behind authentication
-/// would answer 401 and be read as a server that is down. Nothing here discloses a license key, a
-/// user name or a connection string; the version number is disclosed to whoever can reach the
-/// server, which is the price of a probe that works.
+/// These endpoints require no authentication, as <c>Lease.ashx</c> does not, and unlike the
+/// administrative pages. A load balancer and a monitoring agent have no Windows credentials, so an
+/// endpoint behind authentication would answer 401, and the probe would report the server as
+/// unavailable. The responses contain no license key, no user name and no connection string. The
+/// version number is readable by anyone who can reach the server.
 /// </remarks>
 public static class OperationsEndpoints
 {
     /// <summary>
-    /// The state of the server and of everything it needs: a monitoring probe.
+    /// The path of the monitoring probe. It reports the state of the server and of the resources the
+    /// server needs.
     /// </summary>
     public const string HealthPath = "/health";
 
     /// <summary>
-    /// Whether the process answers at all: a liveness probe.
+    /// The path of the liveness probe. It reports whether the process answers.
     /// </summary>
     public const string LivenessPath = "/health/live";
 
@@ -34,9 +35,9 @@ public static class OperationsEndpoints
     {
         app.MapHealthChecks( HealthPath, new HealthCheckOptions { ResponseWriter = WriteHealthAsync } );
 
-        // No check runs here. The answer is the process itself, which is what a container orchestrator
-        // should restart on: a database that is down and a license that has expired are both states
-        // that restarting the server does not mend.
+        // No check runs here. The response reports the state of the process, which is the state a
+        // container orchestrator restarts on. Restarting the server repairs neither a database that
+        // is down nor a license that has expired.
         app.MapHealthChecks(
             LivenessPath,
             new HealthCheckOptions { Predicate = _ => false, ResponseWriter = WriteHealthAsync } );
@@ -46,7 +47,7 @@ public static class OperationsEndpoints
 
     /// <summary>
     /// Writes the report as JSON. The default writer answers with the single word <c>Healthy</c>,
-    /// which says nothing about which of the checks failed.
+    /// which does not say which check failed.
     /// </summary>
     private static Task WriteHealthAsync( HttpContext context, HealthReport report )
         => context.Response.WriteAsJsonAsync(
@@ -65,8 +66,9 @@ public static class OperationsEndpoints
             } );
 
     /// <summary>
-    /// Reports which build is deployed, and which version of the licensing library it parses license
-    /// keys with. The second answers whether a license key that requires a recent library is served.
+    /// Reports the build that is deployed, and the version of the licensing library that parses the
+    /// license keys. The version of the library says whether the server accepts a license key that
+    /// requires a recent library.
     /// </summary>
     private static IResult GetVersion( ILicenseServerVersion version )
         => Results.Json(

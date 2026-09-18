@@ -1,8 +1,8 @@
 namespace SharpCrafters.Backstage.LicenseServer.Endpoints;
 
 /// <summary>
-/// Redirects the WebForms URLs of previous versions to the pages that replaced them, so that
-/// bookmarks and links in old notification emails keep working.
+/// Redirects the WebForms URLs of the previous versions to the pages that replaced them, so that
+/// bookmarks and the links of old notification e-mails continue to work.
 /// </summary>
 public static class LegacyUrlRedirects
 {
@@ -18,12 +18,13 @@ public static class LegacyUrlRedirects
     ];
 
     /// <summary>
-    /// Works out where a legacy URL should redirect to.
+    /// Returns the target of the redirection of a legacy URL.
     /// </summary>
     /// <remarks>
-    /// The path base matters: installed as an application below an IIS site root, a redirect to
-    /// <c>/Graph</c> would land on the parent site rather than on this one. The query string carries
-    /// the license identifier and the graph window, so it has to survive as well.
+    /// The target contains the path base. When the server is installed as an application below the
+    /// root of an IIS site, a redirection to <c>/Graph</c> would reach the parent site and not this
+    /// application. The target also contains the query string, which carries the identifier of the
+    /// license and the window of the graph.
     /// </remarks>
     public static string BuildRedirectLocation( PathString pathBase, string target, QueryString queryString )
     {
@@ -32,7 +33,7 @@ public static class LegacyUrlRedirects
             return target + queryString;
         }
 
-        // The home page is the path base itself, rather than the path base followed by a slash.
+        // The home page is the path base itself, and not the path base followed by a slash.
         string path = target == "/" ? pathBase.Value! : pathBase.Value + target;
 
         return path + queryString;

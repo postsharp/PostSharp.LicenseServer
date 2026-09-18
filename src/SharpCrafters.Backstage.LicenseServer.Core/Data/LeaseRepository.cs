@@ -26,9 +26,9 @@ public sealed class LeaseRepository(
     /// Signs one lease, chaining it to the signature of the lease before it.
     /// </summary>
     /// <remarks>
-    /// The payload is the previous signature, a semicolon, and the lease's own audit line. Signing
-    /// the line that is actually exported is what lets an auditor recompute the chain from an
-    /// exported file.
+    /// The payload is the previous signature, a semicolon, and the audit line of the lease. The
+    /// signed payload is the line that the export writes, so an auditor can recompute the chain from
+    /// an exported file.
     /// </remarks>
     public string ComputeSignature( string? previousSignature, Lease lease )
         => signer.Sign( (previousSignature ?? string.Empty) + ";" + lease.ToAuditLine( false ) );
@@ -37,11 +37,12 @@ public sealed class LeaseRepository(
     /// Signs the leases that have just been inserted, in the order the database assigned them.
     /// </summary>
     /// <remarks>
-    /// Leases are signed after they are inserted rather than before, because the audit line starts
-    /// with the lease identifier and the database is what assigns it. Signing beforehand would put a
-    /// zero in every payload, so a signature could not be recomputed from an exported line, and
-    /// leases saved together would all chain from the same predecessor instead of from each other --
-    /// which would let one of them be removed without breaking any later signature.
+    /// The leases are signed after they are inserted, and not before, because the audit line starts
+    /// with the identifier of the lease, and the database assigns that identifier. A signature
+    /// computed before the insert would contain a zero in that position, so an auditor could not
+    /// recompute it from an exported line. The leases saved together would also chain to the same
+    /// predecessor instead of chaining to each other, and one of them could then be removed without
+    /// invalidating any later signature.
     /// </remarks>
     private void SignInsertedLeases( IReadOnlyList<Lease> inserted )
     {
@@ -78,8 +79,8 @@ public sealed class LeaseRepository(
         {
             License = license,
 
-            // Assigned alongside the navigation property rather than left to EF Core's fixup, so
-            // that the lease is fully formed before it is tracked.
+            // Assigned next to the navigation property, and not left to the fixup of EF Core, so that
+            // the lease is complete before it is tracked and signed.
             LicenseId = license.LicenseId,
 
             AuthenticatedUser = authenticatedUserName,
@@ -142,17 +143,17 @@ public sealed class LeaseRepository(
             EndTime = time
         };
 
-        // Cancelling deliberately skips the end-time adjustment: the point is to end the lease now,
-        // which the "must end after the current moment" rule would otherwise reject.
+        // A cancellation skips the adjustment of the end time. It ends the lease at the current
+        // instant, and the rule that a lease must end after the current instant would reject that.
         this.FixLease( overwrite, time, false );
 
         db.Leases.Add( overwrite );
     }
 
     /// <summary>
-    /// Clamps the end of a lease to the end of the license and of the grace period, then signs it.
+    /// Limits the end of a lease to the end of the license and to the end of the grace period.
     /// </summary>
-    /// <returns><c>false</c> when there is no time left to grant.</returns>
+    /// <returns><c>false</c> when no time is left to grant.</returns>
     private bool FixLease( Lease lease, DateTime time, bool fixEndTime = true )
     {
         LicenseInfo? parsedLicense = licenseParser.TryParse( lease.License.LicenseKey );
@@ -201,13 +202,13 @@ public sealed class LeaseRepository(
 
     public int GetActiveSeats( int licenseId, DateTime dateTime )
     {
-        // The machines are counted in SQL and the seat arithmetic runs here, so that the query
-        // translates on every provider. The result is one row per user holding a lease on this
+        // The database counts the machines and the seat arithmetic runs here, so that the query
+        // translates on every provider. The query returns one row per user that holds a lease on this
         // license.
         //
-        // The machines are counted as distinct, and not as leases. A user can hold two leases on one
-        // machine -- which is what a server whose clock has moved backwards produces -- and counting
-        // the leases would charge them for a machine they are not working on.
+        // It counts distinct machines and not leases. A user can hold two leases on one machine,
+        // which happens when the clock of the server moves backwards. Counting the leases would
+        // charge that user for a machine they do not work on.
         List<int> machinesPerUser = db.OpenLeases
             .Where( l => l.LicenseId == licenseId && l.StartTime <= dateTime && l.EndTime > dateTime )
             .GroupBy( l => l.UserName )
@@ -227,10 +228,10 @@ public sealed class LeaseRepository(
             .AsNoTracking()
             .ToList();
 
-        // A lease cancelled in the instant it was granted spans no time and belongs on no timeline.
-        // It has to go before the points are built rather than be tolerated afterwards: Close sorts
-        // before Open at the same instant, so its closing point would be processed first and its
-        // opening point would then raise the count for the rest of the window.
+        // A lease cancelled at the instant it was granted covers no time and belongs on no timeline.
+        // It is removed before the points are built. Close sorts before Open at the same instant, so
+        // its closing point would be processed first, and its opening point would then raise the
+        // count for the rest of the window.
         leases.RemoveAll( l => l.EndTime <= l.StartTime );
 
         // Ordering in memory gives a stable sort, so the timeline is reproducible. Close sorts
@@ -245,11 +246,11 @@ public sealed class LeaseRepository(
             .ThenBy( p => p.Lease.LeaseId )
             .ToList();
 
-        // How many open leases each user holds on each machine. The number of distinct machines is
-        // what a seat is counted from, so a user holding two leases on one machine occupies the same
-        // seat as a user holding one. Counting the leases rather than listing the machines is what
-        // makes the closing points balance the opening ones whatever the data: the list form removed
-        // the machine on the first close and then found nothing to remove on the second.
+        // The number of open leases that each user holds on each machine. A seat is counted from the
+        // number of distinct machines, so a user who holds two leases on one machine occupies the
+        // same seat as a user who holds one lease. A count per machine, instead of a list of
+        // machines, makes the closing points balance the opening points for any data. A list removed
+        // the machine at the first close and found nothing to remove at the second.
         Dictionary<string, Dictionary<string, int>> currentUsers = new( StringComparer.OrdinalIgnoreCase );
 
         int seatCount = 0;
@@ -282,11 +283,11 @@ public sealed class LeaseRepository(
                 }
             }
 
-            // A closing point with nothing to close is left alone. Both points are produced for every
-            // lease that remains, and an opening point now always sorts before its own closing point,
-            // so nothing reaches it; it is written this way rather than as a throw because the page
-            // that draws the timeline is a report, and an administrator looking at usage should not
-            // be answered with an error.
+            // A closing point that finds no machine to close is ignored. Both points are produced for
+            // every lease that remains, and an opening point always sorts before its own closing
+            // point, so this case does not occur. It is ignored and not reported as an exception,
+            // because the page that draws the timeline is a report: an administrator who looks at
+            // usage must not receive an error.
 
             int seatsAfter = SeatCounter.CountSeats( [machines.Count], this.settings.MachinesPerUser );
 

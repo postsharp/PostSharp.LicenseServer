@@ -40,8 +40,8 @@ builder.Services.AddSingleton<ILicenseServerVersion, BackstageServerVersion>();
 
 builder.Services.AddScoped<LicenseAvailabilityService>();
 
-// The health checks of the two probes. The liveness probe at /health/live runs none of them; see
-// OperationsEndpoints.
+// The health checks of the monitoring probe. The liveness probe at /health/live runs none of them.
+// See OperationsEndpoints.
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>( "database" )
     .AddCheck<LicenseHealthCheck>( "licenses" );
@@ -65,8 +65,8 @@ builder.Services.AddSingleton<IEmailSender>(
         ? ActivatorUtilities.CreateInstance<SmtpEmailSender>( services )
         : new NullEmailSender() );
 
-// Time acceleration exists so that a multi-day licensing scenario can be replayed in minutes. It is
-// off unless explicitly configured.
+// The acceleration of the clock exists so that a licensing scenario that lasts several days can be
+// replayed in minutes. It is disabled unless the configuration enables it.
 builder.Services.AddSingleton<TimeProvider>(
     services =>
     {
@@ -113,9 +113,9 @@ builder.Services.AddAuthorizationBuilder()
                 .GetSection( $"{LicenseServerOptions.SectionName}:AdminRoles" )
                 .Get<string[]>() ?? [];
 
-            // No roles configured means the administrative pages are open, which is how the legacy
-            // Web.config shipped. Tightening this by default would lock administrators out of their
-            // own server on upgrade. A warning is logged at startup instead.
+            // When no role is configured, the administrative pages are open, as they were in the
+            // legacy Web.config. A restrictive default would lock administrators out of their own
+            // server during an upgrade. The server writes a warning to the log at startup instead.
             if ( roles.Length == 0 )
             {
                 policy.RequireAssertion( _ => true );
@@ -166,9 +166,9 @@ app.MapLicenseServerEndpoints();
 app.MapOperationsEndpoints();
 app.MapLegacyUrlRedirects();
 
-// On SQL Server the schema is created by Database/CreateTables.sql, which is the source of truth and
-// which an administrator runs deliberately. A SQLite database is created on demand, because it is
-// meant for evaluation and has no administrator to run a script.
+// On SQL Server, Database/CreateTables.sql creates the schema. That script defines the schema, and
+// an administrator runs it. A SQLite database is created here, because it is used for evaluation and
+// for tests, where no administrator runs a script.
 if ( string.Equals(
         app.Configuration["LicenseServer:DatabaseProvider"],
         "Sqlite",
@@ -178,9 +178,9 @@ if ( string.Equals(
     scope.ServiceProvider.GetRequiredService<LicenseServerDbContext>().Database.EnsureCreated();
 }
 
-// A development server can issue itself the license keys it serves, so that a trial or a load
-// simulation has something to lease. The registration has already refused to start if this is set
-// outside the Development environment.
+// A development server can issue to itself the license keys it serves, so that an evaluation or a
+// load simulation has a license to lease. The registration has already refused to start when this
+// setting is used outside the Development environment.
 {
     TestLicenseAuthority? testAuthority = app.Services.GetService<TestLicenseAuthority>();
 
@@ -196,8 +196,8 @@ if ( string.Equals(
     }
 }
 
-// The administrative pages are the only way to add or revoke a license, so an open default deserves
-// more than a comment in a configuration file.
+// The administrative pages are the only way to add and to revoke a license. The server writes a
+// warning, because a comment in a configuration file is not enough for an open default.
 {
     LicenseServerOptions options = app.Services.GetRequiredService<IOptions<LicenseServerOptions>>().Value;
 
@@ -210,7 +210,8 @@ if ( string.Equals(
     }
 }
 
-// Which scheme was chosen is worth stating, because leases recorded under "None" carry no user.
+// The server writes the selected scheme to the log, because the leases recorded under the scheme
+// "None" carry no authenticated user.
 app.Logger.LogInformation( "Authenticating with the {Scheme} scheme.", authenticationScheme );
 
 if ( authenticationScheme == AuthenticationRegistration.None )
@@ -241,6 +242,6 @@ public static class AuthorizationPolicies
 }
 
 /// <summary>
-/// Exposed so that integration tests can host the application in memory.
+/// Declared as a public type so that the integration tests can host the application in memory.
 /// </summary>
 public partial class Program;

@@ -60,8 +60,8 @@ public sealed class ExportModel( TimeProvider timeProvider ) : PageModel
             return this.Page();
         }
 
-        // Resolved through Url.Content, so that the link still works when the server is installed as
-        // an application below an IIS site root.
+        // Url.Content resolves the path, so that the link works when the server is installed as an
+        // application below the root of an IIS site.
         return this.Redirect(
             this.Url.Content(
                 $"~/Admin/Export.ashx?fy={this.FromYear}&fm={this.FromMonth}&ty={this.ToYear}&tm={this.ToMonth}" ) );

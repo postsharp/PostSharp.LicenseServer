@@ -113,8 +113,8 @@ public sealed class SeedTestLicensesTests : IDisposable
     }
 
     /// <summary>
-    /// Outside Development the server refuses to start rather than quietly serving license keys it
-    /// issued to itself.
+    /// Outside the Development environment, the server refuses to start instead of serving license
+    /// keys that it issued to itself.
     /// </summary>
     [Theory]
     [InlineData( "Production" )]

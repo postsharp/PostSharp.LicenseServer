@@ -7,11 +7,11 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests;
 /// The schema an existing installation already has, which this version must keep using unchanged.
 /// </summary>
 /// <remarks>
-/// There are deliberately no EF migrations: <c>CreateTables.sql</c> is the source of truth, and the
-/// server never creates or alters a SQL Server schema. These tests are what stands in for a
-/// migration, by holding the model to the column types, key generation and constraint names that
-/// <c>CreateTables.sql</c> produces. A mapping that drifted would otherwise be discovered by a
-/// customer, on their data.
+/// The project contains no EF migration. <c>CreateTables.sql</c> defines the schema, and the server
+/// never creates and never modifies a SQL Server schema. These tests replace a migration: they
+/// verify that the model uses the column types, the generation of the keys and the names of the
+/// constraints that <c>CreateTables.sql</c> produces. Without them, a customer would discover a
+/// mapping that changed, on their own data.
 /// </remarks>
 public sealed class SchemaCompatibilityTests
 {
@@ -39,9 +39,9 @@ public sealed class SchemaCompatibilityTests
     }
 
     /// <summary>
-    /// A <c>text</c> column cannot appear in a comparison, an ORDER BY, a GROUP BY or a DISTINCT in
-    /// T-SQL, and the failure happens at run time. No query may therefore touch the license key
-    /// other than to project it.
+    /// In Transact-SQL, a <c>text</c> column cannot appear in a comparison, in an ORDER BY clause, in
+    /// a GROUP BY clause, or in a DISTINCT clause, and the query fails at run time. A query may
+    /// therefore only read the license key.
     /// </summary>
     [Fact]
     public void Licenses_LicenseKeyIsNeverFilteredOrSorted()
@@ -101,8 +101,9 @@ public sealed class SchemaCompatibilityTests
         => Assert.Contains( expected, CreateScript(), StringComparison.OrdinalIgnoreCase );
 
     /// <summary>
-    /// Timestamps must stay <c>datetime</c>. EF would default them to <c>datetime2</c>, which makes
-    /// SQL Server convert the column on every comparison of a lease's start or end time.
+    /// The timestamps keep the type <c>datetime</c>. The default type of EF is <c>datetime2</c>, and
+    /// SQL Server then converts the column at every comparison of the start time or of the end time
+    /// of a lease.
     /// </summary>
     [Fact]
     public void Timestamps_AreNeverDateTime2()
@@ -128,7 +129,7 @@ public sealed class SchemaCompatibilityTests
     }
 
     /// <summary>
-    /// Deleting a license must not silently cascade through the chain of replaced leases.
+    /// The deletion of a license must not cascade through the chain of replaced leases.
     /// </summary>
     [Fact]
     public void ForeignKeys_DoNotCascade()

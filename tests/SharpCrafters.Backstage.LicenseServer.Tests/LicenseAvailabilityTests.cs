@@ -5,12 +5,12 @@ using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
-/// Whether the server can serve a lease at all, which is what the health check reports.
+/// Whether the server can serve a lease, which is what the health check reports.
 /// </summary>
 /// <remarks>
-/// The last tests here ask the allocator the same question by allocating, because this service
-/// applies the rules of <see cref="LeaseService"/> without allocating and the two must not drift
-/// apart.
+/// The last tests of this class ask the allocator the same question, by allocating a lease. This
+/// service applies the rules of <see cref="LeaseService"/> without allocating, and the two
+/// implementations must give the same answer.
 /// </remarks>
 public sealed class LicenseAvailabilityTests
 {
@@ -93,8 +93,8 @@ public sealed class LicenseAvailabilityTests
     }
 
     /// <summary>
-    /// A license key the server cannot parse counts as invalid, which is what an administrator sees
-    /// on the home page as well.
+    /// A license key that the server cannot parse counts as invalid. The home page reports the same
+    /// state.
     /// </summary>
     [Fact]
     public async Task Availability_UnparsableKey_CannotServe()
@@ -113,7 +113,8 @@ public sealed class LicenseAvailabilityTests
     }
 
     /// <summary>
-    /// Full, but the grace period still has a seat and days left, so the next request is served.
+    /// The license is full, and its grace period still has a free seat and remaining days, so the
+    /// server serves the next request.
     /// </summary>
     [Fact]
     public async Task Availability_FullWithGraceLeft_CanServe()
@@ -161,9 +162,9 @@ public sealed class LicenseAvailabilityTests
     }
 
     /// <summary>
-    /// Reading the availability must not start the grace period of a license. The allocator starts it
-    /// when it falls back on it, and a probe that did the same would run the clock of that period
-    /// against a server nobody is using.
+    /// Reading the availability does not start the grace period of a license. The allocator starts
+    /// that period when it grants a lease within it. A probe that did the same would let the period
+    /// elapse while the server is idle.
     /// </summary>
     [Fact]
     public async Task Availability_FullLicense_DoesNotStartTheGracePeriod()
@@ -178,8 +179,8 @@ public sealed class LicenseAvailabilityTests
     }
 
     /// <summary>
-    /// The health check and the allocator answer the same question, so a server the check calls
-    /// available grants a lease, and one it calls unavailable denies it.
+    /// The health check and the allocator answer the same question. A server that the check reports
+    /// as available grants a lease, and a server that it reports as unavailable denies the request.
     /// </summary>
     [Theory]
     [InlineData( 3, false, true )]

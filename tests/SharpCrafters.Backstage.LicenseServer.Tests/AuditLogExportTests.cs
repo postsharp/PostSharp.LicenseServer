@@ -6,17 +6,16 @@ using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
-/// The audit log export, which streams the rows to the response as they arrive rather than building
-/// the whole file in memory.
+/// The export of the audit log. It writes the rows to the response as it reads them, and it does not
+/// build the whole file in memory.
 /// </summary>
 public sealed class AuditLogExportTests : IDisposable
 {
     /// <summary>
-    /// Enough leases that the writer of the response has to flush before the last one is written. A
-    /// <see cref="StreamWriter"/> buffers about a thousand characters and an audit line is about
-    /// ninety, so a handful of leases are written entirely from the buffer and exercise nothing. The
-    /// export was returning a truncated response in production while passing a test that wrote three
-    /// lines.
+    /// A number of leases large enough that the writer of the response flushes before it writes the
+    /// last one. A <see cref="StreamWriter"/> buffers about a thousand characters, and an audit line
+    /// has about ninety, so a few leases stay in the buffer and exercise nothing. The export returned
+    /// a truncated response in production while it passed a test that wrote three lines.
     /// </summary>
     private const int leaseCount = 60;
 
@@ -81,8 +80,8 @@ public sealed class AuditLogExportTests : IDisposable
     }
 
     /// <summary>
-    /// An empty range is served as an empty body. This is the path every earlier export test took,
-    /// because the database they exported held no lease at all.
+    /// A range that contains no lease is answered with an empty body. The earlier tests of the export
+    /// all followed this path, because the database they exported contained no lease.
     /// </summary>
     [Fact]
     public async Task Export_WithNoLease_IsEmpty()
@@ -97,8 +96,8 @@ public sealed class AuditLogExportTests : IDisposable
     }
 
     /// <summary>
-    /// The leases are written straight to the database rather than requested, so that their number
-    /// does not depend on the capacity of the license or on the rules of the allocator.
+    /// The leases are written directly to the database and not requested, so that their number does
+    /// not depend on the capacity of the license or on the rules of the allocator.
     /// </summary>
     private void SeedLeases( License license, int count )
     {

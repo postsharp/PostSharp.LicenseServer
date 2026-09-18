@@ -5,14 +5,14 @@ using SharpCrafters.Backstage.LicenseServer.Data;
 namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
 /// <summary>
-/// An in-memory SQLite database, created from the EF Core model, that behaves like a real relational
-/// database: foreign keys, transactions, and server-side query translation all apply.
+/// A SQLite database held in memory and created from the EF Core model. It behaves like a relational
+/// database: it enforces the foreign keys, it runs transactions, and it translates the queries.
 /// </summary>
 /// <remarks>
-/// A SQLite in-memory database lives exactly as long as a connection to it is open, so this fixture
-/// holds one connection for its whole lifetime and hands out contexts that share it. Each context is
-/// a separate unit of work with its own change tracker, which is what lets a test tell a pending
-/// lease apart from a committed one.
+/// A SQLite database held in memory exists as long as a connection to it is open, so this fixture
+/// holds one connection during its whole lifetime and returns contexts that share that connection.
+/// Each context is a separate unit of work with its own change tracker, so a test can distinguish a
+/// lease that is pending from a lease that is saved.
 /// </remarks>
 public sealed class SqliteDatabaseFixture : IAsyncDisposable
 {

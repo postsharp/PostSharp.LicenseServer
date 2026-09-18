@@ -24,14 +24,14 @@ public sealed class DetailsModel(
     public int Seats { get; private set; }
 
     /// <summary>
-    /// Gets the number of machines one seat covers, so that the page states the rule with the value
-    /// this server is configured with rather than with the default.
+    /// Gets the number of machines that one seat covers, so that the page states the rule with the
+    /// value configured on this server and not with the default value.
     /// </summary>
     public int MachinesPerSeat => options.Value.MachinesPerUser;
 
     /// <summary>
-    /// Gets <see cref="MachinesPerSeat"/> with its noun, so that a server configured with one machine
-    /// per seat reads as "1 machine" and not as "1 machines".
+    /// Gets <see cref="MachinesPerSeat"/> with its noun, so that a server configured with one
+    /// machine per seat displays "1 machine" and not "1 machines".
     /// </summary>
     public string MachinesPerSeatText
         => this.MachinesPerSeat == 1 ? "1 machine" : $"{this.MachinesPerSeat} machines";
@@ -93,8 +93,8 @@ public sealed class DetailsModel(
 
         await using var transaction = await db.Database.BeginTransactionAsync( cancellationToken );
 
-        // Leases reference each other through the replacement chain, so they have to go before the
-        // license, and the most recent ones before the ones they replaced.
+        // The leases reference each other through the chain of replacements, so they are deleted
+        // before the license, and the most recent ones before the ones they replaced.
         List<Lease> leases = await db.Leases
             .Where( l => l.LicenseId == this.Id )
             .OrderByDescending( l => l.LeaseId )

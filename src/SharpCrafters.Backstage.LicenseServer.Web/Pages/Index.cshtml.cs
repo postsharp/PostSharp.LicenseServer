@@ -6,7 +6,7 @@ using SharpCrafters.Backstage.LicenseServer.Licensing;
 namespace SharpCrafters.Backstage.LicenseServer.Pages;
 
 /// <summary>
-/// The dashboard: every registered license, with how much of it is in use right now.
+/// The home page. It lists every registered license with the part of its capacity that is in use.
 /// </summary>
 public sealed class IndexModel(
     ILeaseRepository repository,
@@ -73,8 +73,8 @@ public sealed class IndexModel(
         public DateTime? MaintenanceEndDate { get; init; }
 
         /// <summary>
-        /// Gets the modifier that colours the status: green for an active license, orange for a key
-        /// that cannot be parsed, amber while the grace period runs.
+        /// Gets the modifier that gives the status its color. An active license is green, a key that
+        /// cannot be parsed is orange, and a license in its grace period is amber.
         /// </summary>
         public string StatusModifier
             => this.LicenseType == "INVALID" ? "invalid"

@@ -1,10 +1,10 @@
-// The management actions of a license: closing the menu when the administrator clicks outside it,
-// and asking for confirmation before an action runs.
+// The management actions of a license. This file closes the menu when the administrator clicks
+// outside it, and it asks for a confirmation before an action runs.
 //
-// Both are enhancements of markup that already works. The menu is a <details> element, which opens
-// and closes on its own, and a form whose submission is not intercepted here submits as any form
-// does. A browser that does not run this file therefore keeps every action, and loses only the
-// confirmation.
+// Both behaviours are additions to markup that already works. The menu is a <details> element, which
+// opens and closes without a script, and a form whose submission this file does not intercept is
+// submitted by the browser. A browser that does not run this file therefore keeps every action, and
+// loses only the confirmation.
 
 (function () {
     "use strict";
@@ -33,7 +33,8 @@
 
     var dialog = document.getElementById( "confirm-dialog" );
 
-    // A browser without <dialog> keeps the direct submission rather than losing the action.
+    // In a browser that does not support <dialog>, the form is submitted directly, so the action is
+    // not lost.
     if ( !dialog || typeof dialog.showModal !== "function" ) {
         return;
     }
@@ -55,8 +56,9 @@
 
             closeMenus( null );
 
-            // Cleared explicitly: a dialog closed with the Escape key keeps the value of the
-            // previous close in some browsers, which would confirm an action nobody confirmed.
+            // The value is cleared explicitly. In some browsers, a dialog closed with the Escape key
+            // keeps the value of the previous close, which would confirm an action that the
+            // administrator did not confirm.
             dialog.returnValue = "";
             dialog.showModal();
         } );

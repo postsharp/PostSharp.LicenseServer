@@ -3,7 +3,7 @@ using SharpCrafters.Backstage.LicenseServer.Locking;
 namespace SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
 /// <summary>
-/// Never grants the lock, so that the "service overloaded" path can be exercised.
+/// Never grants the lock, so that a test can exercise the path that answers "Service overloaded."
 /// </summary>
 public sealed class NeverAcquiringLeaseLock : ILeaseLock
 {

@@ -63,9 +63,9 @@ public sealed class LicenseServerTestContext : IAsyncDisposable
     public LicenseServerDbContext Db => this.db;
 
     /// <summary>
-    /// Creates a context over a database that is private to the calling test. Creating an in-memory
-    /// SQLite database takes well under a millisecond, so there is no reason to share one between
-    /// tests and then have to reset it.
+    /// Creates a context over a database that belongs to the calling test. Creating a SQLite database
+    /// in memory takes less than a millisecond, so the tests do not share one and no test has to
+    /// reset it.
     /// </summary>
     public static async Task<LicenseServerTestContext> CreateAsync( Action<LicenseServerOptions>? configure = null )
     {
@@ -87,8 +87,8 @@ public sealed class LicenseServerTestContext : IAsyncDisposable
     }
 
     /// <summary>
-    /// Returns a repository over a fresh unit of work, sharing the same database. Use this to assert
-    /// on what was actually persisted, rather than on what the change tracker remembers.
+    /// Returns a repository over a new unit of work on the same database. Use it to assert on the
+    /// rows that were saved, and not on the state of the change tracker.
     /// </summary>
     public LeaseRepository CreateFreshRepository()
         => new(

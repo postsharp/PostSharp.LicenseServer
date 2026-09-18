@@ -15,9 +15,9 @@ public static class DatabaseRegistration
     /// Registers the database context against the engine named by <c>LicenseServer:DatabaseProvider</c>.
     /// </summary>
     /// <remarks>
-    /// SQL Server is the supported engine for a production installation. SQLite is offered so that
-    /// the server can be evaluated, and so that the test suite can run the real application against
-    /// a database held in memory.
+    /// SQL Server is the engine supported in production. SQLite is supported so that the server can
+    /// be evaluated, and so that the test suite can run the real application against a database held
+    /// in memory.
     /// </remarks>
     public static IServiceCollection AddLicenseServerDatabase(
         this IServiceCollection services,
@@ -46,14 +46,14 @@ public static class DatabaseRegistration
     }
 
     /// <summary>
-    /// Makes a relative SQLite file path absolute, relative to the application rather than to
-    /// whatever the working directory happens to be when the process is started.
+    /// Resolves a relative path of a SQLite file against the application directory, and not against
+    /// the working directory of the process.
     /// </summary>
     private static string ResolveSqliteFile( string connectionString, IHostEnvironment environment )
     {
         SqliteConnectionStringBuilder builder = new( connectionString );
 
-        // An in-memory database names a shared cache rather than a file.
+        // A database held in memory names a shared cache and not a file.
         if ( builder.Mode == SqliteOpenMode.Memory
              || string.IsNullOrEmpty( builder.DataSource )
              || builder.DataSource == ":memory:"

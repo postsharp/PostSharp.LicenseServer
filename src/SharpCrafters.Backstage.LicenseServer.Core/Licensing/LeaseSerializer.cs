@@ -7,17 +7,18 @@ namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The format is the one PostSharp's <c>LicenseLease.Serialize</c> produced and the one
-/// <c>SharpCrafters.Backstage.Licensing.LicenseServer.LicenseLease.TryDeserialize</c> reads: the
-/// four parts separated by <c>"; "</c>, each named and followed by a colon, with the instants in the
-/// XML round-trip representation of UTC. It is written here rather than called, because the type of
-/// Backstage is internal to that package and has no serializer -- a client only ever reads a lease.
+/// The format is the format that <c>LicenseLease.Serialize</c> of PostSharp produced, and that
+/// <c>SharpCrafters.Backstage.Licensing.LicenseServer.LicenseLease.TryDeserialize</c> reads. It has
+/// four parts separated by <c>"; "</c>. Each part carries a name followed by a colon, and each
+/// instant is written in the XML round-trip representation of UTC. The serializer is written here
+/// and not called, because the type of Backstage is internal to that package and has no serializer.
+/// A client only reads a lease.
 /// </para>
 /// <para>
-/// Every deployed client parses this, so the shape is a contract and is pinned by a test. The
-/// parsing on the client side is lenient -- parts are matched by name without regard to case and an
-/// unknown part is ignored -- so a later version of the server may add a part, but may not rename or
-/// reorder one.
+/// Every deployed client parses this format, so the format is a contract, and a test verifies it.
+/// The client parses it leniently: it matches the parts by name without regard to case, and it
+/// ignores a part it does not know. A later version of the server can therefore add a part, but it
+/// cannot rename one.
 /// </para>
 /// </remarks>
 public sealed class LeaseSerializer : ILeaseSerializer
@@ -29,11 +30,12 @@ public sealed class LeaseSerializer : ILeaseSerializer
            + $"; RenewTime: {ToUtcString( renewTime )}";
 
     /// <remarks>
-    /// <see cref="XmlDateTimeSerializationMode.Utc"/> and not <see cref="XmlDateTimeSerializationMode.RoundtripKind"/>:
-    /// the times come from the database, where a <c>datetime</c> has no time zone, and the mode has
-    /// to be the one that reads an unspecified instant as UTC rather than as local time. The lease
-    /// times this server produces are already tagged as UTC, so the two agree -- but a caller that
-    /// hands over an untagged instant gets the right answer as well.
+    /// The mode is <see cref="XmlDateTimeSerializationMode.Utc"/> and not
+    /// <see cref="XmlDateTimeSerializationMode.RoundtripKind"/>. The instants come from the database,
+    /// where a <c>datetime</c> has no time zone, and this mode reads an unspecified instant as UTC
+    /// and not as a local time. The instants that this server produces already carry the UTC kind,
+    /// so both modes give the same result for them. This mode also gives the correct result for a
+    /// caller that passes an instant without a kind.
     /// </remarks>
     private static string ToUtcString( DateTime value )
         => XmlConvert.ToString( value, XmlDateTimeSerializationMode.Utc );

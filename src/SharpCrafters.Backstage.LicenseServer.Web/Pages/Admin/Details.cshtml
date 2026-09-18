@@ -8,8 +8,9 @@
     <h2>License @Model.Id</h2>
 
     <div class="page-header__actions">
-        @* A <details> element and not a scripted menu: it opens, closes and takes the keyboard on its
-           own, so the actions stay reachable when the script does not load. *@
+        @* A <details> element and not a menu driven by a script. It opens, it closes and it accepts
+           the keyboard without a script, so the actions remain reachable when the script does not
+           load. *@
         <details class="menu" data-menu>
             <summary class="btn btn--small">Manage</summary>
 
@@ -106,8 +107,9 @@ else
     </div>
 }
 
-@* Filled in from the action the administrator chose. Without a script this dialog is never shown and
-   the action runs on the first click, which is how the page behaved before it existed. *@
+@* The script fills this dialog from the action that the administrator selected. Without a script,
+   the dialog is never displayed and the action runs at the first click, which is how the page
+   behaved before this dialog existed. *@
 <dialog id="confirm-dialog" class="dialog" aria-labelledby="confirm-title">
     <form method="dialog">
         <h3 id="confirm-title"></h3>

@@ -6,14 +6,15 @@ using SharpCrafters.Backstage.Licensing;
 namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
-/// Puts license keys in the database of a development server, so that it can serve a lease without
-/// anybody buying a license first.
+/// Adds license keys to the database of a development server, so that the server can serve a lease
+/// before a license is bought.
 /// </summary>
 public static class TestLicenseSeeder
 {
     /// <summary>
-    /// The licenses that are seeded. One per product family, so that a client naming a product
-    /// exercises the matching rather than falling back on "any product".
+    /// The licenses that this class adds. There is one license per product family, so that a client
+    /// that names a product exercises the matching of the product instead of the rule that serves
+    /// any product.
     /// </summary>
     private static readonly (int LicenseId, LicenseProduct Product, short Users)[] licenses =
     [
@@ -22,14 +23,15 @@ public static class TestLicenseSeeder
     ];
 
     /// <summary>
-    /// Adds the license keys that are missing, and leaves the ones that are there alone.
+    /// Adds the license keys that the database does not contain, and keeps the license keys it
+    /// contains.
     /// </summary>
     /// <returns>The identifiers of the licenses that were added.</returns>
     /// <remarks>
-    /// Seeding is skipped for a license that is already present rather than replaced, so that a
-    /// server restarted against the same database keeps the leases it has granted. The keys are
-    /// signed by <see cref="TestLicenseAuthority"/>, whose key pair lives in the same data directory,
-    /// so both survive a restart together or are lost together.
+    /// A license that is already present is kept and not replaced, so that a server restarted against
+    /// the same database keeps the leases it has granted. <see cref="TestLicenseAuthority"/> signs
+    /// the keys, and its key pair is stored in the same data directory, so the keys and the authority
+    /// survive a restart together, or are lost together.
     /// </remarks>
     public static IReadOnlyList<int> Seed(
         LicenseServerDbContext db,

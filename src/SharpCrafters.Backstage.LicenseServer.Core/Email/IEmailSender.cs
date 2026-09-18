@@ -1,8 +1,8 @@
 namespace SharpCrafters.Backstage.LicenseServer.Email;
 
 /// <summary>
-/// Sends notification emails. A failure to send must never fail a lease request, so implementations
-/// are expected to log rather than throw.
+/// Sends notification e-mails. A failure to send must never fail a lease request, so an
+/// implementation writes the failure to the log and raises no exception.
 /// </summary>
 public interface IEmailSender
 {

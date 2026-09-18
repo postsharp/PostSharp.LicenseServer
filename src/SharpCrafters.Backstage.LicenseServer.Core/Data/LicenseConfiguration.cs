@@ -13,11 +13,12 @@ public sealed class LicenseConfiguration : IEntityTypeConfiguration<License>
         builder.ToTable( "Licenses" );
         builder.HasKey( x => x.LicenseId ).HasName( "PK_Licenses" );
 
-        // The identifier comes from the license key, not from the database.
+        // The identifier comes from the license key and not from the database.
         builder.Property( x => x.LicenseId ).ValueGeneratedNever();
 
-        // Mapped to SQL 'text' by LicenseServerDbContext. Never filter, sort, group or apply
-        // DISTINCT on this column: T-SQL forbids 'text' in those positions and fails at run time.
+        // LicenseServerDbContext maps this property to the SQL type 'text'. Never filter, sort,
+        // group, or apply DISTINCT on this column. Transact-SQL forbids the type 'text' in these
+        // positions, and the query fails at run time.
         builder.Property( x => x.LicenseKey ).IsRequired().IsUnicode( false );
 
         builder.Property( x => x.ProductCode ).IsRequired().IsUnicode( false ).HasMaxLength( 50 );

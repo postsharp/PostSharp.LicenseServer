@@ -109,8 +109,8 @@ public sealed class GetActiveSeatsTests
     }
 
     /// <summary>
-    /// SQL Server's default collation is case-insensitive. The in-memory database is configured to
-    /// match, so that a test cannot pass here and fail in production.
+    /// The default collation of SQL Server ignores the case. The database held in memory uses the
+    /// same collation, so that a test cannot pass here and fail in production.
     /// </summary>
     [Fact]
     public async Task GetActiveSeats_UserNameCasingDiffers_CountsAsOneUser()
@@ -138,14 +138,14 @@ public sealed class GetActiveSeatsTests
     }
 
     /// <summary>
-    /// A seat is counted from the machines a user works on, not from the leases they hold. A user can
-    /// hold two leases on one machine, and charging them for a machine they do not have would deny a
-    /// colleague a lease the license has the capacity for.
+    /// A seat is counted from the machines a user works on, and not from the leases that user holds.
+    /// A user can hold two leases on one machine. Counting a second machine for that user would deny
+    /// a lease to a colleague, while the license still has a free seat.
     /// </summary>
     /// <remarks>
-    /// The lease service normally prevents a second lease on one machine by prolonging the first, but
-    /// a server whose clock has moved backwards grants one. A load simulation produced exactly that
-    /// within minutes of a restart.
+    /// The lease service prevents a second lease on one machine: it prolongs the first lease. A
+    /// server whose clock moved backwards grants a second lease. A load simulation produced this
+    /// state a few minutes after a restart.
     /// </remarks>
     [Fact]
     public async Task GetActiveSeats_TwoLeasesOnOneMachine_CountAsOneMachine()

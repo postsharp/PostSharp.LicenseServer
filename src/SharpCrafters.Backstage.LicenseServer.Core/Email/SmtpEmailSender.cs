@@ -8,12 +8,12 @@ using SharpCrafters.Backstage.LicenseServer.Options;
 namespace SharpCrafters.Backstage.LicenseServer.Email;
 
 /// <summary>
-/// Sends notification emails over SMTP.
+/// Sends notification e-mails over SMTP.
 /// </summary>
 /// <remarks>
-/// The legacy implementation called <c>SmtpClient.SendAsync(message, null)</c> and never observed
-/// the result, so every delivery failure was silent. Failures are now logged, but still never
-/// propagate: a broken SMTP server must not deny a developer their license.
+/// The legacy implementation called <c>SmtpClient.SendAsync(message, null)</c> and never read the
+/// result, so every failure was silent. This implementation writes a failure to the log, and it
+/// still raises no exception, because an SMTP server that fails must not deny a license.
 /// </remarks>
 public sealed class SmtpEmailSender(
     IOptions<SmtpOptions> options,

@@ -8,28 +8,27 @@ namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The column holds the name of the licensed product, and a client that names a product in its
-/// request is served only from the licenses that carry that name. The two spellings of a name have to
-/// be treated as one, because PostSharp and SharpCrafters.Backstage do not agree on them: the
-/// enumeration of PostSharp calls the products <c>Ultimate</c> and <c>Framework</c>, while the
-/// enumeration of Backstage calls the same values <c>PostSharpUltimate</c> and
-/// <c>PostSharpFramework</c>.
+/// The column contains the name of the licensed product. A client that names a product in its
+/// request is served only from the licenses that carry that name. The two spellings of a name must
+/// be treated as one name, because PostSharp and SharpCrafters.Backstage use different ones. The
+/// enumeration of PostSharp calls the products <c>Ultimate</c> and <c>Framework</c>. The enumeration
+/// of Backstage calls the same values <c>PostSharpUltimate</c> and <c>PostSharpFramework</c>.
 /// </para>
 /// <para>
-/// A database created by a previous version of this server therefore holds the PostSharp spelling,
-/// while a client of the Backstage generation asks for the Backstage one. Without this mapping, a
-/// request that names a product would find none of the licenses an existing installation holds. New
-/// rows are written with the Backstage spelling, which is the one the clients send, so a database
-/// that has been through the upgrade holds both -- which is why the matching, and not the storage, is
-/// where the two are reconciled.
+/// A database created by an earlier version of this server therefore contains the PostSharp
+/// spelling, and a client of the Backstage generation asks for the Backstage spelling. Without this
+/// mapping, a request that names a product would find none of the licenses of an existing
+/// installation. The server writes new rows with the Backstage spelling, which is the spelling the
+/// clients send, so a database that went through the upgrade contains both. The two spellings are
+/// therefore reconciled when a request is matched, and not when a row is written.
 /// </para>
 /// </remarks>
 public static class ProductCodes
 {
     /// <summary>
-    /// The name each product had in the <c>LicensedProduct</c> enumeration of the PostSharp SDK, for
-    /// the products whose name changed. The values that were never written by a license server, and
-    /// the Metalama products, which postdate the change, are absent.
+    /// The name that each product had in the <c>LicensedProduct</c> enumeration of the PostSharp
+    /// SDK, for the products whose name changed. The table contains neither the values that a
+    /// license server never wrote, nor the Metalama products, which are more recent than the change.
     /// </summary>
     private static readonly ImmutableDictionary<string, string> legacyNames =
         new Dictionary<string, string>( StringComparer.OrdinalIgnoreCase )
@@ -54,8 +53,9 @@ public static class ProductCodes
     public static string ForStorage( LicenseProduct product ) => product.ToString();
 
     /// <summary>
-    /// Gets every value of the <c>ProductCode</c> column that satisfies a request for a product,
-    /// which is the name the client asked for and, when the name changed, the other spelling of it.
+    /// Gets every value of the <c>ProductCode</c> column that satisfies a request for a product.
+    /// These values are the name that the client asked for and, when the name changed, its other
+    /// spelling.
     /// </summary>
     public static IReadOnlyList<string> Matching( string productCode )
     {

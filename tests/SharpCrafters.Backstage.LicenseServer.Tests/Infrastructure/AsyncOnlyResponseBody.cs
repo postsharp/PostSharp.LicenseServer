@@ -7,16 +7,16 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 /// Makes the response body of the test host refuse a synchronous write, as Kestrel does.
 /// </summary>
 /// <remarks>
-/// <see cref="Microsoft.AspNetCore.TestHost.TestServer"/> accepts a synchronous write whatever its
-/// <c>AllowSynchronousIO</c> property says, so an endpoint that writes synchronously passes every
-/// test and then fails against a real server with "Synchronous operations are disallowed". This
-/// filter closes that gap by wrapping the body in a stream that throws the same way.
+/// <see cref="Microsoft.AspNetCore.TestHost.TestServer"/> accepts a synchronous write whatever the
+/// value of its <c>AllowSynchronousIO</c> property. An endpoint that writes synchronously therefore
+/// passes every test, and then fails against a real server with the message "Synchronous operations
+/// are disallowed". This filter wraps the body in a stream that raises the same exception.
 /// </remarks>
 public sealed class AsyncOnlyResponseBody : IStartupFilter
 {
     /// <summary>
-    /// Gets or sets a value indicating whether the guard is active. It is off by default, so that a
-    /// test that does not care about the response body is unaffected.
+    /// Gets or sets a value indicating whether the stream refuses a synchronous write. The value is
+    /// false by default, so that a test that does not read the response body is not affected.
     /// </summary>
     public bool IsEnabled { get; set; }
 
@@ -50,8 +50,8 @@ public sealed class AsyncOnlyResponseBody : IStartupFilter
         };
 
     /// <summary>
-    /// Forwards every asynchronous write and throws on every synchronous one, with the message
-    /// Kestrel uses.
+    /// Forwards every asynchronous write, and raises an exception at every synchronous write, with
+    /// the message that Kestrel uses.
     /// </summary>
     private sealed class AsyncOnlyStream( Stream inner ) : Stream
     {

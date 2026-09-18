@@ -3,8 +3,8 @@ using SharpCrafters.Backstage.LicenseServer.Data;
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
-/// The rounding rule that decides how many seats a set of users consumes. This arithmetic used to
-/// live inside a SQL <c>GROUP BY</c>, where it could not be tested at all.
+/// The rounding rule that decides how many seats a group of users consumes. This arithmetic used to
+/// run inside a SQL <c>GROUP BY</c> clause, where no test could reach it.
 /// </summary>
 public sealed class SeatCountingTests
 {

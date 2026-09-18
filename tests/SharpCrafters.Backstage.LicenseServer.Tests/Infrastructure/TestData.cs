@@ -11,8 +11,9 @@ public static class TestClock
     /// A Monday, at a whole second.
     /// </summary>
     /// <remarks>
-    /// Monday exercises the weekday-label branch of the usage graph. Whole seconds keep the tests
-    /// independent of the 1/300-second rounding of the SQL <c>datetime</c> type.
+    /// Monday exercises the branch of the usage graph that labels the weekdays. Whole seconds keep
+    /// the tests independent of the rounding of the SQL type <c>datetime</c>, which is 1/300 of a
+    /// second.
     /// </remarks>
     public static readonly DateTime Origin = new( 2026, 1, 5, 9, 0, 0, DateTimeKind.Utc );
 
@@ -22,7 +23,7 @@ public static class TestClock
 }
 
 /// <summary>
-/// Builds a license together with the facts the fake parser will report for its key.
+/// Builds a license, and the properties that the fake parser reports for its key.
 /// </summary>
 public sealed class LicenseBuilder
 {
@@ -176,7 +177,7 @@ public sealed class LicenseBuilder
 }
 
 /// <summary>
-/// Builds a lease directly, bypassing the allocation rules, to set up a starting state.
+/// Builds a lease directly, without the allocation rules, to create the initial state of a test.
 /// </summary>
 public sealed class LeaseBuilder
 {
@@ -250,7 +251,7 @@ public sealed class LeaseBuilder
             Grace = this.grace
         };
 
-        // Saved through the repository, so the lease is signed the way a real one is.
+        // The lease is saved through the repository, so that it is signed as a real lease is.
         context.Db.Leases.Add( lease );
         context.Repository.SaveChanges();
 

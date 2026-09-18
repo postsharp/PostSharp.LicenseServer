@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace SharpCrafters.Backstage.LicenseServer;
 
 /// <summary>
-/// Chooses how the license server identifies the person borrowing a license.
+/// Selects how the license server authenticates the caller of a request.
 /// </summary>
 public static class AuthenticationRegistration
 {
@@ -18,14 +18,15 @@ public static class AuthenticationRegistration
     public const string IisIntegrated = "IISIntegrated";
 
     /// <summary>
-    /// Windows authentication handled by the application. Works on Windows out of the box, and on
-    /// other systems once the host is joined to the domain and has a Kerberos keytab.
+    /// Windows authentication performed by the application. It works on Windows without further
+    /// configuration. On another system, it requires a host joined to the domain and a Kerberos
+    /// keytab.
     /// </summary>
     public const string Negotiate = "Negotiate";
 
     /// <summary>
-    /// No authentication. Leases are recorded with an empty authenticated user, exactly as an
-    /// anonymous request is already recorded today.
+    /// No authentication. The server records the leases with an empty authenticated user, as it
+    /// records an anonymous request.
     /// </summary>
     public const string None = "None";
 
@@ -68,13 +69,13 @@ public static class AuthenticationRegistration
     }
 
     /// <summary>
-    /// Works out which scheme to use when the configuration does not say.
+    /// Selects the scheme when the configuration does not name one.
     /// </summary>
     /// <remarks>
-    /// The same package runs behind IIS, on a Windows machine under its own process, and on a Linux
-    /// host that may have no domain at all. Guessing wrong is quiet rather than loud -- the server
-    /// would simply record every lease against an empty user -- so the choice is made from how the
-    /// application is actually being hosted, and is logged at startup.
+    /// The same package runs behind IIS, in its own process on a Windows machine, and on a Linux host
+    /// that can have no domain. A wrong selection is not reported as an error: the server records
+    /// every lease with an empty authenticated user. The selection is therefore made from the way the
+    /// application is hosted, and it is written to the log at startup.
     /// </remarks>
     private static string ResolveScheme( IConfiguration configuration )
     {
@@ -82,7 +83,8 @@ public static class AuthenticationRegistration
 
         if ( !string.IsNullOrWhiteSpace( configured ) )
         {
-            // Accept any casing, so that "negotiate" in a container's environment works.
+            // The comparison ignores the case, so that "negotiate" in the environment of a container
+            // is accepted.
             foreach ( string known in new[] { IisIntegrated, Negotiate, None } )
             {
                 if ( string.Equals( configured, known, StringComparison.OrdinalIgnoreCase ) )
@@ -105,7 +107,7 @@ public static class AuthenticationRegistration
 }
 
 /// <summary>
-/// Authenticates nobody, so that requests are served anonymously.
+/// Authenticates no caller, so that the server serves every request anonymously.
 /// </summary>
 public sealed class AnonymousAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,

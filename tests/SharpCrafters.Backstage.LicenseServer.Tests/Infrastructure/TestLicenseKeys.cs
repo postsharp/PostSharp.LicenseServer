@@ -11,16 +11,16 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The keys are signed by the test licensing authority of SharpCrafters.Backstage, reached through
-/// <see cref="TestLicenseKeyProvider"/>. That authority generates its key pair in the current
-/// process, so a license key signed here is valid in this process and nowhere else -- which is what
-/// lets a public, MIT-licensed repository test the real signature path. What this cannot cover is
-/// the production authority itself, whose public keys are constants of SharpCrafters.Backstage and
-/// are covered by the tests of that package.
+/// The test licensing authority of SharpCrafters.Backstage signs the keys, and
+/// <see cref="TestLicenseKeyProvider"/> gives access to it. That authority generates its key pair in
+/// the current process, so a license key signed here is valid in this process and in no other one.
+/// A public repository under the MIT license can therefore test the real code path of the signature.
+/// These tests do not cover the production authority, whose public keys are constants of
+/// SharpCrafters.Backstage, and which the tests of that package cover.
 /// </para>
 /// <para>
-/// <see cref="Authority"/> holds the same authority object that signs, so the tests verify against
-/// exactly what signed them rather than against a reconstruction of it.
+/// <see cref="Authority"/> holds the authority object that signs the keys, so a test verifies a key
+/// against the authority that signed it, and not against another instance of that authority.
 /// </para>
 /// </remarks>
 public static class TestLicenseKeys
@@ -28,20 +28,21 @@ public static class TestLicenseKeys
     private static readonly TestLicenseKeyProvider provider = new();
 
     /// <summary>
-    /// The identifier of the key of the test authority. It is a constant of SharpCrafters.Backstage
-    /// but an internal one, so it is read back from a license key that the authority has signed.
+    /// The identifier of the key of the test authority. It is a constant of SharpCrafters.Backstage,
+    /// and that constant is internal, so this class reads the identifier from a license key that the
+    /// authority signed.
     /// </summary>
     private static readonly byte authorityKeyId;
 
     /// <summary>
-    /// Gets the authority that verifies the keys this class signs, which is what a parser under test
-    /// is constructed with.
+    /// Gets the authority that verifies the keys this class signs. A test passes it to the parser
+    /// that it exercises.
     /// </summary>
     public static ILicensingAuthorityProvider Authority { get; }
 
     /// <summary>
-    /// Gets the ready-made license keys that SharpCrafters.Backstage issues for its own tests, one
-    /// per product and license type it sells.
+    /// Gets the license keys that SharpCrafters.Backstage creates for its own tests. There is one
+    /// key per product and per type of license.
     /// </summary>
     public static TestLicenseKeyProvider Keys => provider;
 
@@ -57,8 +58,8 @@ public static class TestLicenseKeys
     }
 
     /// <summary>
-    /// Creates a builder for a license key that the license server accepts, which the caller modifies
-    /// before serializing it.
+    /// Creates a builder of a license key that the license server accepts. The caller modifies the
+    /// builder before it serializes the key.
     /// </summary>
     public static LicenseKeyDataBuilder Builder(
         int licenseId = 1,
@@ -80,25 +81,26 @@ public static class TestLicenseKeys
         => builder.SignAndSerialize( provider.Authority );
 
     /// <summary>
-    /// Serializes a license key without signing it. Only the types that require no signature parse
-    /// this way.
+    /// Serializes a license key without signing it. Only the types of license that require no
+    /// signature can be parsed in this form.
     /// </summary>
     public static string Unsigned( this LicenseKeyDataBuilder builder ) => builder.Serialize();
 
     /// <summary>
-    /// Signs a license key with a key of the test authority's identifier that the test authority does
-    /// not hold, which is a forgery: the parser looks the identifier up, finds the real key and the
-    /// signature does not verify against it.
+    /// Signs a license key with another key that carries the identifier of the test authority. The
+    /// result is a forgery: the parser reads the identifier, finds the real key, and the signature
+    /// does not verify against it.
     /// </summary>
     public static string SignWithAForgedKey( this LicenseKeyDataBuilder builder )
         => builder.SignAndSerialize( CreateStandaloneAuthority( authorityKeyId ) );
 
     /// <summary>
-    /// Signs a license key with an authority the parser has never heard of, so that the identifier of
-    /// the signature matches no key it holds.
+    /// Signs a license key with an authority that the parser does not know, so that the identifier of
+    /// the signature matches no key the parser holds.
     /// </summary>
     /// <remarks>
-    /// The identifier is outside the range of the production keys and of the test keys of Backstage.
+    /// The identifier differs from the identifiers of the production keys and from the identifiers of
+    /// the test keys of Backstage.
     /// </remarks>
     public static string SignWithAnUnknownAuthority( this LicenseKeyDataBuilder builder )
         => builder.SignAndSerialize( CreateStandaloneAuthority( 200 ) );
@@ -118,12 +120,13 @@ public static class TestLicenseKeys
     }
 
     /// <summary>
-    /// Answers with the single authority that signed, for the identifier that authority's key carries.
+    /// Returns the authority that signed the keys, for the identifier that the key of that authority
+    /// carries.
     /// </summary>
     /// <remarks>
-    /// <see cref="ExplicitLicensingAuthorityProvider"/> cannot be used for this, because it builds an
-    /// authority from the XML representation of a key and the key of the test authority is generated
-    /// in the process rather than written down.
+    /// <see cref="ExplicitLicensingAuthorityProvider"/> cannot do this, because it builds an
+    /// authority from the XML representation of a key, and the key of the test authority is generated
+    /// in the process instead of being written in the code.
     /// </remarks>
     private sealed class TestAuthorityProvider( LicensingAuthority authority, byte keyId ) : ILicensingAuthorityProvider
     {

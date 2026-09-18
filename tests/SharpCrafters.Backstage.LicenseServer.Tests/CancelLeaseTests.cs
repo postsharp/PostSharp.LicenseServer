@@ -4,8 +4,8 @@ using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
-/// An administrator can end a lease early, which inserts a replacement ending now rather than
-/// deleting anything.
+/// An administrator can end a lease before its end time. The server inserts a replacement that ends
+/// at the current instant, and it deletes nothing.
 /// </summary>
 public sealed class CancelLeaseTests
 {
@@ -60,9 +60,9 @@ public sealed class CancelLeaseTests
     }
 
     /// <summary>
-    /// Cancelling skips the end-time adjustment applied to new leases. Without that, a lease ending
-    /// "now" would be rejected for not extending beyond the current moment, and cancelling would
-    /// silently do nothing.
+    /// A cancellation skips the adjustment of the end time that a new lease receives. With that
+    /// adjustment, a lease that ends at the current instant would be rejected, because it does not
+    /// end after the current instant, and the cancellation would have no effect.
     /// </summary>
     [Fact]
     public async Task CancelLease_IsNotRejectedForEndingImmediately()

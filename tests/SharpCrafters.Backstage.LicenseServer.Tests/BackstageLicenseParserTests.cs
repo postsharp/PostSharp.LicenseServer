@@ -6,9 +6,9 @@ using SharpCrafters.Backstage.Licensing.Licenses;
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
-/// The licensing component, which is SharpCrafters.Backstage. Every other test in this suite works
-/// against <c>FakeLicenseParser</c>, so this is the only place where a real license key is parsed and
-/// the only place that would notice the package changing what it reports.
+/// The licensing component, which is SharpCrafters.Backstage. Every other test of this suite runs
+/// against <c>FakeLicenseParser</c>. These tests are the only ones that parse a real license key,
+/// and therefore the only ones that detect a change in the values the package reports.
 /// </summary>
 public sealed class BackstageLicenseParserTests
 {
@@ -44,9 +44,9 @@ public sealed class BackstageLicenseParserTests
     }
 
     /// <summary>
-    /// A license key that SharpCrafters.Backstage issues for its own tests parses here too. This is
-    /// what shows that the server and the package agree on the whole of the format, and not only on
-    /// the parts a key built in this file happens to use.
+    /// The parser also reads a license key that SharpCrafters.Backstage creates for its own tests.
+    /// The server and the package therefore agree on the whole format, and not only on the fields
+    /// that a key built in this file uses.
     /// </summary>
     [Fact]
     public void KeyIssuedByTheBackstageTestProvider_IsParsed()
@@ -59,17 +59,17 @@ public sealed class BackstageLicenseParserTests
     }
 
     /// <summary>
-    /// The signature is what stops a customer from minting their own licenses, so a key signed with a
-    /// key the authority does not hold must not be served.
+    /// The signature prevents a customer from creating their own licenses, so the server must not
+    /// serve a key signed with a key that the authority does not hold.
     /// </summary>
     [Fact]
     public void KeySignedWithAForgedKey_IsRejected()
         => Assert.Null( parser.TryParse( TestLicenseKeys.Builder().SignWithAForgedKey() ) );
 
     /// <summary>
-    /// A key whose signature names an authority nobody issued is an invalid key, not a crash. The
-    /// provider throws when it is asked for a key it does not hold, and an administrator pastes
-    /// license keys into a web form.
+    /// A key whose signature names an authority that was never issued is an invalid key, and not an
+    /// exception. The provider raises an exception when it is asked for a key it does not hold, and
+    /// an administrator pastes license keys into a web form.
     /// </summary>
     [Fact]
     public void KeySignedByAnUnknownAuthority_IsRejectedWithoutThrowing()
@@ -133,9 +133,10 @@ public sealed class BackstageLicenseParserTests
     }
 
     /// <summary>
-    /// A key that carries no minimal client version is not served to every client regardless: the
-    /// version is derived from the other fields. An eligible key is readable by PostSharp 5.0.22 and
-    /// later, which is the version that introduced the license server.
+    /// A key that carries no minimal version of the client is not served to every client. The
+    /// licensing library derives the version from the other fields. A key that a license server may
+    /// serve is readable by PostSharp 5.0.22 and later, which is the version that introduced the
+    /// license server.
     /// </summary>
     [Fact]
     public void MinPostSharpVersion_IsDerivedWhenTheKeyDoesNotDeclareIt()
@@ -180,8 +181,8 @@ public sealed class BackstageLicenseParserTests
         => Assert.Equal( expected, parser.CleanLicenseString( pasted ) );
 
     /// <summary>
-    /// A key pasted with the whitespace an email adds still parses once it has been cleaned, which is
-    /// the sequence the Add License page performs.
+    /// A key pasted with the whitespace that an e-mail adds is parsed after it is cleaned. The page
+    /// that adds a license performs these two steps in this order.
     /// </summary>
     [Fact]
     public void PastedKey_ParsesAfterCleaning()

@@ -4,16 +4,16 @@ using SharpCrafters.Backstage.LicenseServer.Email;
 namespace SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
 /// <summary>
-/// An <see cref="IEmailSender"/> that keeps the messages in memory instead of sending them, so that
-/// tests can assert on what the license server would have notified the administrator about.
+/// An <see cref="IEmailSender"/> that stores the messages in memory instead of sending them, so that
+/// a test can assert on the notifications that the license server produces.
 /// </summary>
 public sealed class InMemoryEmailSender : IEmailSender
 {
     private readonly ConcurrentQueue<EmailMessage> sent = new();
 
     /// <summary>
-    /// Gets or sets an exception to throw instead of recording the message, to verify that a broken
-    /// SMTP server never denies a developer their license.
+    /// Gets or sets an exception that this sender raises instead of recording the message, so that a
+    /// test can verify that an SMTP server that fails never denies a license.
     /// </summary>
     public Exception? ThrowOnSend { get; set; }
 

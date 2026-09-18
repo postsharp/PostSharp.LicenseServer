@@ -1,7 +1,7 @@
 namespace SharpCrafters.Backstage.LicenseServer.Options;
 
 /// <summary>
-/// Settings of the SMTP server used to send notification emails. Replaces the
+/// Settings of the SMTP server that sends the notification e-mails. Replaces the
 /// <c>system.net/mailSettings</c> section of the legacy <c>Web.config</c>.
 /// </summary>
 public sealed class SmtpOptions
@@ -9,7 +9,7 @@ public sealed class SmtpOptions
     public const string SectionName = "Smtp";
 
     /// <summary>
-    /// Gets or sets a value indicating whether notification emails are sent at all.
+    /// Gets or sets a value indicating whether the server sends notification e-mails.
     /// </summary>
     public bool Enabled { get; set; } = true;
 
@@ -20,7 +20,8 @@ public sealed class SmtpOptions
     public bool EnableSsl { get; set; }
 
     /// <summary>
-    /// Gets or sets the sender address. Previously hard-coded to <c>sales@postsharp.net</c>.
+    /// Gets or sets the address of the sender. The legacy implementation used the fixed address
+    /// <c>sales@postsharp.net</c>.
     /// </summary>
     public string FromAddress { get; set; } = "sales@postsharp.net";
 

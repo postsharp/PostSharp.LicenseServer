@@ -8,9 +8,9 @@ namespace SharpCrafters.Backstage.LicenseServer.Data;
 /// production, SQLite in tests.
 /// </summary>
 /// <remarks>
-/// The model maps onto the schema created by <c>CreateTables.sql</c> exactly, so that an existing
-/// deployment upgrades without any database work. There are deliberately no EF migrations; schema
-/// compatibility is guaranteed by <c>SchemaCompatibilityTests</c> instead.
+/// The model maps exactly onto the schema that <c>CreateTables.sql</c> creates, so that an existing
+/// deployment is upgraded without any work on the database. The project contains no EF migration.
+/// <c>SchemaCompatibilityTests</c> verifies the compatibility of the model with the schema.
 /// </remarks>
 public class LicenseServerDbContext( DbContextOptions<LicenseServerDbContext> options ) : DbContext( options )
 {
@@ -19,13 +19,13 @@ public class LicenseServerDbContext( DbContextOptions<LicenseServerDbContext> op
     public DbSet<Lease> Leases => this.Set<Lease>();
 
     /// <summary>
-    /// Gets the leases that have not been replaced by a later lease, i.e. the leases that are
-    /// currently in effect. This is the only place where <see cref="Lease.OverwrittenLeaseId"/> is
-    /// interpreted.
+    /// Gets the leases that no later lease has replaced, that is, the leases that are in effect.
+    /// This query is the only place that interprets <see cref="Lease.OverwrittenLeaseId"/>.
     /// </summary>
     /// <remarks>
-    /// Expressed as an anti-join rather than the legacy left-join-where-null, which yielded a lease
-    /// twice if it had ever been overwritten twice. There is no unique constraint preventing that.
+    /// The query is an anti-join. The legacy query was a left join with a test for null, and it
+    /// returned a lease twice when two leases had overwritten it. No unique constraint prevents
+    /// that.
     /// </remarks>
     public IQueryable<Lease> OpenLeases
         => this.Leases.Where( l => !this.Leases.Any( o => o.OverwrittenLeaseId == l.LeaseId ) );
@@ -36,9 +36,9 @@ public class LicenseServerDbContext( DbContextOptions<LicenseServerDbContext> op
 
         bool isSqlServer = this.Database.ProviderName == "Microsoft.EntityFrameworkCore.SqlServer";
 
-        // SQL Server returns DateTimeKind.Unspecified. Lease.Write serializes timestamps as UTC, and
-        // XmlConvert treats an Unspecified value as *local* time, which shifted every exported
-        // timestamp by the server's UTC offset. Tagging the kind on materialization fixes that.
+        // SQL Server returns DateTimeKind.Unspecified. Lease.Write serializes the timestamps as UTC,
+        // and XmlConvert treats an Unspecified value as a local time, which shifted every exported
+        // timestamp by the offset of the server. The converter sets the kind when a row is read.
         ValueConverter<DateTime, DateTime> toUtc =
             new( v => v, v => DateTime.SpecifyKind( v, DateTimeKind.Utc ) );
 
@@ -62,8 +62,9 @@ public class LicenseServerDbContext( DbContextOptions<LicenseServerDbContext> op
 
             if ( isSqlServer )
             {
-                // The existing columns are 'datetime'. Letting EF default to 'datetime2' would force
-                // SQL Server to convert the column on every StartTime/EndTime comparison.
+                // The existing columns have the type 'datetime'. With the default type of EF,
+                // 'datetime2', SQL Server would convert the column at every comparison of StartTime
+                // and EndTime.
                 property.SetColumnType( "datetime" );
             }
         }
@@ -74,8 +75,9 @@ public class LicenseServerDbContext( DbContextOptions<LicenseServerDbContext> op
         }
         else
         {
-            // SQL Server's default collation is case-insensitive and SQLite's is not. Without this,
-            // grouping leases by user name would behave differently in tests than in production.
+            // The default collation of SQL Server ignores the case, and the default collation of
+            // SQLite does not. Without this collation, grouping the leases by user name would behave
+            // differently in the tests and in production.
             modelBuilder.Entity<Lease>().Property( x => x.UserName ).UseCollation( "NOCASE" );
             modelBuilder.Entity<Lease>().Property( x => x.Machine ).UseCollation( "NOCASE" );
         }

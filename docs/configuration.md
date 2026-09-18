@@ -1,116 +1,190 @@
 # Configuring the license server
 
-All settings live in `appsettings.json`, next to the application. Any of them can also be supplied
-as an environment variable, where a colon becomes a double underscore: the connection string, for
-instance, is `ConnectionStrings__SharpCrafters_LicenseServerConnectionString`. That is the usual way
-to keep a password out of a file.
+The server reads its settings from `appsettings.json`, in the application directory. Every setting
+can also be given as an environment variable. In the name of the variable, a colon becomes a double
+underscore: the connection string is `ConnectionStrings__SharpCrafters_LicenseServerConnectionString`.
+Use an environment variable for a password, so that the password is not written in a file.
 
-The server validates its settings when it starts and refuses to start on an invalid combination,
-rather than failing later on a lease request.
+Every setting has a default value. A setting that is absent from the file keeps its default, so the
+file needs to contain only the settings you change.
+
+The server validates the settings when it starts. It refuses to start when a setting is invalid or
+when two settings contradict each other, instead of failing later on a lease request.
+
+## An example
+
+The following `appsettings.json` configures a server that stores its data in SQL Server, restricts
+the administrative pages to one Windows group, and sends notifications.
+
+```json
+{
+  "ConnectionStrings": {
+    "SharpCrafters_LicenseServerConnectionString": "Server=db.example.com,1433;Database=PostSharpLicenseServer;Integrated Security=True;Encrypt=False"
+  },
+  "Authentication": {
+    "Scheme": "IISIntegrated"
+  },
+  "LicenseServer": {
+    "DatabaseProvider": "SqlServer",
+    "MachinesPerUser": 2,
+    "NewLeaseDays": 3,
+    "MinLeaseDays": 1,
+    "BuildServers": "buildagent-1;buildagent-2",
+    "AdminRoles": [ "DOMAIN\\PostSharp Administrators" ],
+    "GracePeriodWarningEmailTo": "licenses@example.com",
+    "DeniedRequestEmailTo": "licenses@example.com"
+  },
+  "Smtp": {
+    "Enabled": true,
+    "Host": "smtp.example.com",
+    "Port": 587,
+    "EnableSsl": true,
+    "FromAddress": "licenses@example.com"
+  }
+}
+```
+
+The `appsettings.json` of the release package lists most of these settings with their default values.
 
 ## Database
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `ConnectionStrings:SharpCrafters_LicenseServerConnectionString` | a local SQL Server | The database. |
-| `LicenseServer:DatabaseProvider` | `SqlServer` | `SqlServer` or `Sqlite`. |
+| `LicenseServer:DatabaseProvider` | `SqlServer` | The database engine: `SqlServer` or `Sqlite`. |
+| `ConnectionStrings:SharpCrafters_LicenseServerConnectionString` | a local SQL Server | The database to connect to. |
 
-SQL Server is the supported engine for a production installation. Create its schema by running
-`Database\CreateTables.sql`; the server never creates or alters it, so an upgrade cannot surprise you.
+The two settings are set together. The connection string is interpreted by the engine named in
+`DatabaseProvider`, so the two must agree. For SQL Server:
 
-SQLite is offered for evaluation, and is what the test suite uses. Its database is created on first
-start. A relative path is resolved against the application directory, not against whatever the
-working directory happens to be.
+```json
+{
+  "LicenseServer": { "DatabaseProvider": "SqlServer" },
+  "ConnectionStrings": {
+    "SharpCrafters_LicenseServerConnectionString": "Server=db.example.com,1433;Database=PostSharpLicenseServer;Integrated Security=True;Encrypt=False"
+  }
+}
+```
 
-Note that the modern SQL client encrypts connections by default. Against a server whose certificate
-the web server does not trust, add `Encrypt=False` to the connection string, or
-`TrustServerCertificate=True` to keep the encryption and skip only the certificate check.
+For SQLite:
 
-The default connection string uses `Integrated Security=True`, which authenticates as the Windows
-account the application runs under. That does not work on a host which is not joined to the domain,
-so off Windows use a SQL Server login:
+```json
+{
+  "LicenseServer": { "DatabaseProvider": "Sqlite" },
+  "ConnectionStrings": {
+    "SharpCrafters_LicenseServerConnectionString": "DataSource=licenseserver.db"
+  }
+}
+```
+
+SQL Server is the engine supported in production. Create the schema by running
+`Database\CreateTables.sql`. The server never creates the schema and never modifies it, so an upgrade
+of the server makes no change to the database.
+
+SQLite is supported for tests and for evaluation. The test suite of this repository runs on SQLite,
+and so does the development configuration of the web project. The database file is created at the
+first start. A relative path is resolved against the application directory, not against the working
+directory of the process. Do not use SQLite for a server that serves a team: SQLite accepts one
+writer at a time, and every lease request writes.
+
+`Microsoft.Data.SqlClient`, the SQL Server client, encrypts the connection by default. The connection
+fails when the web server does not trust the certificate of the SQL Server. Add `Encrypt=False` to
+the connection string to connect without encryption, or `TrustServerCertificate=True` to keep the
+encryption and skip the verification of the certificate.
+
+The default connection string contains `Integrated Security=True`. The application then authenticates
+to SQL Server as the Windows account it runs under. This requires a host that is joined to the
+domain. On another host, and on Linux and macOS, use a SQL Server login:
 
 ```
 Server=db.example.com,1433;Database=PostSharpLicenseServer;User Id=licenseserver;Password=...;TrustServerCertificate=True
 ```
 
-Supply that as the environment variable
-`ConnectionStrings__SharpCrafters_LicenseServerConnectionString` rather than writing the password
-into `appsettings.json`.
+Give this connection string in the environment variable
+`ConnectionStrings__SharpCrafters_LicenseServerConnectionString`, so that the password is not written
+in `appsettings.json`.
 
 ## Licensing rules
 
 A seat is one user working on up to `MachinesPerUser` machines. A user working on more machines takes
-more than one seat: the number of machines divided by `MachinesPerUser`, rounded up. At the default of
-two, one or two machines are one seat and three or four are two.
+more than one seat. The number of seats is the number of machines divided by `MachinesPerUser`,
+rounded up. With the default value of two, one or two machines are one seat, and three or four
+machines are two seats.
 
-The capacity of a license key is a number of seats, and the seat is the only unit the server counts
-in. The license agreement states the same rule the other way round, as a number of authorized users
-each entitled to a number of devices.
+The capacity of a license key is a number of seats. The seat is the only unit the server counts. The
+license agreement expresses the same rule in the opposite direction: it grants a number of authorized
+users, and each user may work on a number of devices.
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `LicenseServer:MachinesPerUser` | 2 | How many machines one seat covers. Check your license agreement before changing it. |
+| `LicenseServer:MachinesPerUser` | 2 | How many machines one seat covers. Read your license agreement before you change it. |
 | `LicenseServer:NewLeaseDays` | 3 | How long a new lease lasts. |
-| `LicenseServer:MinLeaseDays` | 1 | How long before the end of a lease a client starts renewing it. If your developers work offline for weeks at a time, raise this above the number of days they are away. Must be smaller than `NewLeaseDays`. |
-| `LicenseServer:BuildServers` | empty | The machine names of build agents, separated by semicolons, commas or spaces. A build agent is served a license but is not given a lease, so that it does not consume a developer's seat. A trailing hexadecimal identifier is ignored, so `buildagent-1f2e` matches `buildagent`. |
+| `LicenseServer:MinLeaseDays` | 1 | How long before the end of a lease the client renews it. Raise this value above the number of days your developers work offline. Must be smaller than `NewLeaseDays`. |
+| `LicenseServer:BuildServers` | empty | The machine names of the build agents, separated by semicolons, commas or spaces. A build agent receives a license but no lease, so that it does not consume the seat of a developer. A trailing hexadecimal identifier is ignored, so `buildagent-1f2e` matches `buildagent`. |
 
 ## Notifications
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `LicenseServer:GracePeriodWarningEmailTo` | empty | Who is told that the license is over capacity. |
-| `LicenseServer:GracePeriodWarningEmailCC` | empty | Who else is told. |
-| `LicenseServer:DeniedRequestEmailTo` | empty | Who is told that a request was denied. |
-| `LicenseServer:GracePeriodWarningDays` | 1 | How many days to wait before repeating a warning. |
-| `Smtp:Enabled` | `false` | Whether notifications are sent at all. |
+| `LicenseServer:GracePeriodWarningEmailTo` | empty | Who is informed that the license is over capacity. |
+| `LicenseServer:GracePeriodWarningEmailCC` | empty | Who else is informed. |
+| `LicenseServer:DeniedRequestEmailTo` | empty | Who is informed that a request was denied. |
+| `LicenseServer:GracePeriodWarningDays` | 1 | How many days the server waits before it repeats a warning. |
+| `Smtp:Enabled` | `false` | Whether notifications are sent. |
 | `Smtp:Host`, `Smtp:Port`, `Smtp:EnableSsl` | `localhost`, 25, `false` | The SMTP server. |
 | `Smtp:FromAddress` | `sales@postsharp.net` | The sender. |
-| `Smtp:UserName`, `Smtp:Password` | empty | Credentials, if the SMTP server needs them. Supply the password as an environment variable. |
+| `Smtp:UserName`, `Smtp:Password` | empty | The credentials of the SMTP server, when it requires them. Give the password in an environment variable. |
 
-An address left empty suppresses that notification. A notification that cannot be delivered is
-logged and never denies a developer their license.
+An address left empty disables that notification. A notification that cannot be sent is written to
+the log. A failure to send a notification never denies a license.
 
 ## Access
 
 | Setting | Default | Meaning |
 |---|---|---|
 | `Authentication:Scheme` | detected | `IISIntegrated`, `Negotiate` or `None`. See below. |
-| `LicenseServer:AdminRoles` | empty | The Windows groups allowed to reach the administrative pages, for example `["DOMAIN\\PostSharp Administrators"]`. |
+| `LicenseServer:AdminRoles` | empty | The Windows groups allowed to open the administrative pages, for example `["DOMAIN\\PostSharp Administrators"]`. |
 | `LicenseServer:RequireAuthenticatedLeaseRequests` | `false` | Whether a lease request must be authenticated. |
 
-The authentication scheme decides how the server learns who is borrowing a license, which is what it
-records in the `AuthenticatedUser` column of the audit log.
+A lease request carries the user name and the machine name in its query string. The server trusts
+these two values and records them in the `UserName` and `Machine` columns, and it counts seats from
+them. Authentication does not provide them.
+
+Authentication has two other purposes. It records the caller in the `AuthenticatedUser` column of the
+audit log, next to the user name that the request declared. It also restricts access:
+`RequireAuthenticatedLeaseRequests` requires the caller of `Lease.ashx` to be authenticated, and
+`AdminRoles` restricts the administrative pages to the members of the groups it names.
 
 | Scheme | Use it when |
 |---|---|
 | `IISIntegrated` | The application is hosted by IIS. Windows authentication must also be enabled on the site in IIS Manager. |
-| `Negotiate` | The application runs under its own process on a host joined to your domain. On anything other than Windows this needs Kerberos and a keytab. |
-| `None` | There is no domain to authenticate against, as in a container. Requests are served anonymously and leases record an empty user. The server warns at startup that it is doing this. |
+| `Negotiate` | The application runs in its own process, on a host joined to your domain. On a system other than Windows, this requires Kerberos and a keytab. |
+| `None` | There is no domain to authenticate against, for example in a container. Requests are served anonymously and the `AuthenticatedUser` column stays empty. The server writes a warning to the log at every start. |
 
-Left unset, the server picks `IISIntegrated` when it finds itself hosted by IIS, `Negotiate` on
-Windows, and `None` elsewhere, and logs which one it chose. Set the value explicitly on anything you
-care about: guessing wrong is quiet rather than loud, because a server that authenticates nobody
-still serves leases perfectly well — it just cannot say who took them.
+When `Authentication:Scheme` is absent, the server selects `IISIntegrated` when IIS hosts it,
+`Negotiate` on Windows, and `None` on another system, and writes the selected scheme to the log. Set
+the scheme explicitly. A wrong selection is not reported as an error, because a server that
+authenticates no caller still serves leases. The consequence is that the `AuthenticatedUser` column
+stays empty.
 
 ### Securing the administrative pages
 
-Securing the administrative pages is the administrator's responsibility. The server does not do it on
-its own: `AdminRoles` and `RequireAuthenticatedLeaseRequests` both default to open, which is how the
-license server has always shipped, so that an upgrade cannot lock an administrator out of their own
-server. The server writes a warning to its log at every start until `AdminRoles` is set.
+Restricting the administrative pages is the responsibility of the administrator. The server does not
+restrict them on its own. `AdminRoles` and `RequireAuthenticatedLeaseRequests` are both empty in the
+released configuration, as the corresponding sections were commented out in the `Web.config` of
+earlier versions. A restrictive default would lock an administrator out of their own server during an
+upgrade. The server writes a warning to the log at every start while `AdminRoles` is empty.
 
-Closing them is worth doing. The administrative pages are the only way to add or revoke a license,
-and the export at `/Admin/Export.ashx` hands over the whole audit log. There are two ways to close
-them, and they can be combined.
+Restrict these pages. They are the only way to add and to revoke a license, and the export endpoint
+at `/Admin/Export.ashx` returns the whole audit log. There are two mechanisms, and you can combine
+them.
 
-The first is `LicenseServer:AdminRoles`. The check covers every page under `/Admin` and the export
-endpoint. It needs an authentication scheme that supplies the Windows groups, so it works with
-`IISIntegrated` and with `Negotiate`, and not with `None`.
+The first mechanism is `LicenseServer:AdminRoles`. It covers every page under `/Admin` and the export
+endpoint. It requires an authentication scheme that reports the Windows groups of the caller, so it
+works with `IISIntegrated` and with `Negotiate`, and not with `None`.
 
-The second is to restrict the path at the web server, which works whatever the scheme. Under IIS,
-enable Windows authentication on the site and add a URL authorization rule for the `Admin` path to
-the `web.config` of the application, which is in the published output:
+The second mechanism is a restriction on the path, configured in the web server. It works with any
+scheme. Under IIS, enable Windows authentication on the site, then add a URL authorization rule for
+the `Admin` path to the `web.config` of the application, which is in the published output:
 
 ```xml
 <location path="Admin">
@@ -125,24 +199,25 @@ the `web.config` of the application, which is in the published output:
 </location>
 ```
 
-This needs the URL Authorization role service of IIS, which is not installed by default. Behind any
-other web server, and in a container, restrict the path in whatever sits in front of the application.
+This rule requires the URL Authorization role service of IIS, which is not installed by default.
+Behind another web server, and in a container, restrict the path in the component that receives the
+requests.
 
 ## Concurrency
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `LicenseServer:LeaseLockMode` | `InProcess` | How concurrent lease requests are serialized. |
+| `LicenseServer:LeaseLockMode` | `InProcess` | How the server serializes concurrent lease requests. |
 | `LicenseServer:MutexTimeout` | 30 | How many seconds a request waits for its turn before the server answers 503. |
 
-Lease requests are serialized so that two of them cannot both conclude that the last free seat is
-theirs. `InProcess` serializes them within one worker process, which is correct for the supported
-deployment of a single process per database.
+The server serializes lease requests, so that two concurrent requests cannot both take the last free
+seat. `InProcess` serializes the requests of one worker process. This is correct for the supported
+deployment, which is one worker process per database.
 
-If you run the license server as an IIS web garden, behind a load balancer, or as several
-containers, that guarantee no longer holds and the server can over-allocate. Either run a single
-worker process, or open an issue asking for `SqlApplicationLock`, which serializes through the
-database and is reserved for exactly this case.
+An IIS web garden, a load balancer, or several containers run several worker processes against one
+database. The serialization then covers each process separately, and the server can grant more leases
+than the capacity of the license. Run a single worker process. If you need several, open an issue
+that asks for `SqlApplicationLock`, which serializes through the database.
 
 ## Auditing
 
@@ -150,26 +225,27 @@ database and is reserved for exactly this case.
 |---|---|---|
 | `LicenseServer:AuditHmacKey` | empty | The base64 key that signs the audit log. |
 
-Each lease in the audit log is signed together with the signature of the previous one, so that a
-removed or altered row breaks every signature after it. When no key is configured, one is generated
-on first start and written to `App_Data\audit-signing.key`.
+The server signs each lease of the audit log. The signature covers the lease and the signature of the
+previous lease, so a removed or modified row invalidates the signature of every row after it. When
+`AuditHmacKey` is empty, the server generates a key at the first start and writes it to
+`App_Data\audit-signing.key`.
 
-Include that file in your backups and preserve it across upgrades. Losing it does not invalidate the
-rows already written, but it does start a new chain.
+Include this file in your backups and keep it across upgrades. The loss of the key does not
+invalidate the rows already written, but it starts a new signature chain.
 
 ## Storage
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `LicenseServer:DataDirectory` | `App_Data` | Where the server keeps the files it generates and must not lose. |
+| `LicenseServer:DataDirectory` | `App_Data` | Where the server stores the files it generates. |
 
-The directory holds the audit signing key, and the test licensing authority when there is one. A
-relative path is resolved against the application, so the default works wherever the archive is
-unpacked. Set an absolute path to put the directory on storage of its own.
+The directory contains the audit signing key, and the test licensing authority when the server has
+one. A relative path is resolved against the application directory, so the default value works
+wherever you unpack the release package. Set an absolute path to store these files on another volume.
 
-In a container this directory has to be a volume. The image declares one at `/app/App_Data`, so the
-files survive the container being replaced even when no mount is given; name the volume in a real
-deployment and back it up with the database. See [docker.md](docker.md).
+In a container, this directory must be a volume. The image declares a volume at `/app/App_Data`, so
+the files survive the replacement of the container even when no volume is named. Name the volume in a
+real deployment, and back it up together with the database. See [docker.md](docker.md).
 
 ## Monitoring
 
@@ -177,15 +253,14 @@ deployment and back it up with the database. See [docker.md](docker.md).
 |---|---|
 | `/health/live` | Whether the process answers. It runs no check. |
 | `/health` | Whether the process answers, the database can be queried, and a license can serve a lease. |
-| `/version` | Which build is deployed, and which version of the licensing library it parses license keys with. |
+| `/version` | Which build is deployed, and which version of the licensing library it uses to parse license keys. |
 
-The three are served anonymously, like `Lease.ashx` and unlike the administrative pages, because a
-load balancer or a monitoring agent holds no Windows credentials and a probe answered with 401 reads
-as a server that is down. None of them discloses a license key, a user name or a connection string.
-The version number is disclosed to whoever can reach the server, which is the price of a probe that
-works.
+The server serves these three endpoints without authentication, as it serves `Lease.ashx`. A load
+balancer and a monitoring agent have no Windows credentials, and a probe that receives 401 reports
+the server as unavailable. The responses contain no license key, no user name and no connection
+string. The version number is readable by anyone who can reach the server.
 
-`/health` names each check in its body, and has three states:
+`/health` reports the result of each check in its body. It has three states:
 
 | Status | Code | Means |
 |---|---|---|
@@ -203,58 +278,59 @@ works.
 }
 ```
 
-The database check queries the license table rather than opening a connection, because the server
-never creates its own schema on SQL Server: a database that accepts connections but was never given
-`Database\CreateTables.sql` is the deployment mistake it catches.
+The database check runs a query on the license table instead of opening a connection. The server
+never creates its schema on SQL Server, so a database that accepts connections but has no schema is a
+deployment error. The query detects it; opening a connection does not.
 
-The license check reports whether any license can serve a lease now. It warns when every license is
-expired, disabled, unparsable, or full with its grace period over, and on a server that has no
-license at all. This is what distinguishes a server that is running from a server that is working: a
-server with nothing left to serve answers every lease request with 403 and looks perfectly well from
-the outside.
+The license check reports whether a license can serve a lease at this moment. It warns when the
+server has no license, and when every license is expired, disabled, unparsable, or full with its
+grace period over. A server in that state answers every lease request with 403 while its process and
+its database are healthy.
 
-It warns rather than fails, which is why a license that has expired leaves the endpoint answering
-200. Nothing that watches a probe can add a license: restarting the server, failing over to another
-one, or taking this one out of a load balancer all leave the problem exactly where it was, and the
-server goes on serving the leases it has already granted. Only the process and the database fail the
-probe.
+The license check warns and never fails. An expired license is a problem for an administrator, and
+not for a load balancer: restarting the server and failing over to another server do not add a
+license, and the server continues to serve the leases it has already granted. Only the process and
+the database can fail the probe.
 
-A monitoring system should therefore alert on the status in the body and not only on the status code.
-The server also writes a warning to its own log at every degraded check, naming the reason:
+Configure your monitoring system to report the status in the body, and not only the status code. The
+server also writes a warning to its log at each degraded check:
 
 ```
 warn: Microsoft.Extensions.Diagnostics.HealthChecks.DefaultHealthCheckService[103]
       Health check licenses with status Degraded completed after 33.8303ms with message 'No license is registered.'
 ```
 
-The license check asks a weaker question than a lease request does. A request names a product, a
-version and a build date, and a license can be refused on any of the three, so a server that reports
-itself healthy can still deny an individual request. See
+The license check answers a weaker question than a lease request. A lease request names a product, a
+version and a build date, and a license can be refused because of any of the three. A server that
+reports `Healthy` can therefore still deny an individual request. See
 [the protocol](protocol.md#what-decides-a-grant).
 
 ## Testing
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `LicenseServer:TimeAcceleration` | 1 | How much faster than real time the server's clock runs. |
-| `LicenseServer:SeedTestLicenses` | `false` | Whether the server issues itself the license keys it serves. |
-| `LicenseServer:TestLicensingAuthorities` | empty | Licensing authorities whose license keys a development server accepts besides the production one. |
+| `LicenseServer:TimeAcceleration` | 1 | How much faster than real time the clock of the server runs. |
+| `LicenseServer:SeedTestLicenses` | `false` | Whether the server issues to itself the license keys it serves. |
+| `LicenseServer:TestLicensingAuthorities` | empty | The licensing authorities whose license keys a development server accepts, in addition to the production authority. |
 
-The server refuses to start with either of the last two set outside the Development environment.
+The server refuses to start when one of the last two settings is set outside the Development
+environment.
 
-Leave `TimeAcceleration` at 1. Any other value exists so that a multi-day licensing scenario can be
-replayed in minutes against a test server, and the server warns at startup when it is set.
+Keep `TimeAcceleration` at 1. Another value exists so that a licensing scenario that lasts several
+days can be replayed against a test server in a few minutes. The server writes a warning to the log
+when the value is not 1.
 
-`SeedTestLicenses` exists so that a trial or a load simulation has something to lease without anybody
-buying a license first. The server generates a licensing authority of its own into
-[`DataDirectory`](#storage), trusts it, and adds one license key per product family if the database
-has none. No other server accepts those keys. The authority has to survive a restart, because the
-license keys it signed are in the database and stop verifying when the key pair changes; in a
-container that means the data directory has to be a volume.
+`SeedTestLicenses` exists so that an evaluation or a load simulation has a license to lease before
+anyone buys one. The server generates a licensing authority of its own in
+[`DataDirectory`](#storage), accepts the license keys of that authority, and adds one license key per
+product family when the database contains none. No other server accepts these license keys. The
+authority must survive a restart, because the license keys it signed are stored in the database and
+stop being valid when the key pair changes. In a container, this means that the data directory must
+be a volume.
 
-`TestLicensingAuthorities` exists so that a load simulation can be run against license keys that
-nobody sells. Each entry carries the identifier that the signature of a license key names and the
-public half of the key pair, in the XML representation that SharpCrafters.Backstage reads:
+`TestLicensingAuthorities` exists so that a load simulation can run against license keys that are not
+sold. Each entry contains the identifier of the key that signs a license key, and the public half of
+that key, in the XML representation that SharpCrafters.Backstage reads:
 
 ```json
 {
@@ -269,8 +345,8 @@ public half of the key pair, in the XML representation that SharpCrafters.Backst
 }
 ```
 
-The identifier must differ from the identifiers of the production keys, which are 0, 1 and 2, and
-the server refuses to start on a duplicate. It also refuses to start with this setting outside the
-Development environment: whoever holds the private half of the pair can mint license keys that a
-server configured this way honours. Keep the private half out of source control, and configure the
-public half through user secrets rather than through `appsettings.json`.
+The identifier must differ from the identifiers of the production keys, which are 0, 1 and 2. The
+server refuses to start on a duplicate identifier. It also refuses to start when this setting is used
+outside the Development environment, because whoever holds the private half of the key pair can
+create license keys that such a server accepts. Keep the private half out of source control, and
+configure the public half in user secrets instead of `appsettings.json`.

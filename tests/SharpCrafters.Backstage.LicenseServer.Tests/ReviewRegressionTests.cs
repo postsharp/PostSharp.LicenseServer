@@ -7,8 +7,8 @@ using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
-/// Defects found while reviewing the migration. Each of these passed unnoticed because the legacy
-/// implementation behaved the same way.
+/// The defects found during the review of the migration. Each of them passed unnoticed, because the
+/// legacy implementation behaved in the same way.
 /// </summary>
 public sealed class ReviewRegressionTests : IDisposable
 {
@@ -17,8 +17,8 @@ public sealed class ReviewRegressionTests : IDisposable
     public void Dispose() => this.application.Dispose();
 
     /// <summary>
-    /// A build agent is exempt from consuming a seat, not from the rules about which licenses may be
-    /// served. The legacy code only checked that the key parsed.
+    /// A build agent is exempt from consuming a seat. It is not exempt from the rules that decide
+    /// which licenses may be served. The legacy code verified only that the key parsed.
     /// </summary>
     [Fact]
     public async Task BuildAgent_IneligibleLicense_IsNotServed()
@@ -51,7 +51,8 @@ public sealed class ReviewRegressionTests : IDisposable
     }
 
     /// <summary>
-    /// An expired license must not be handed to a build agent with three more days on it.
+    /// The server must not give an expired license to a build agent with three more days of
+    /// validity.
     /// </summary>
     [Fact]
     public async Task BuildAgent_ExpiredLicense_IsNotServed()
@@ -83,9 +84,9 @@ public sealed class ReviewRegressionTests : IDisposable
     }
 
     /// <summary>
-    /// A license with no seat limit has no capacity to exceed, so there is no grace period. Reaching
-    /// the grace pass with one used to dereference a null maximum and answer 500 instead of denying
-    /// the request.
+    /// A license with no seat limit has no capacity to exceed, so it has no grace period. When such
+    /// a license reached the grace pass, the code read a maximum that was null and the server
+    /// answered with the status 500 instead of denying the request.
     /// </summary>
     [Fact]
     public async Task UnlimitedButExpiredLicense_IsDeniedRatherThanFailing()
@@ -104,8 +105,8 @@ public sealed class ReviewRegressionTests : IDisposable
     }
 
     /// <summary>
-    /// A year outside the range of a date used to pass validation and then throw while the date was
-    /// being constructed.
+    /// A year outside the range of a date passed the validation, and the construction of the date
+    /// then raised an exception.
     /// </summary>
     [Theory]
     [InlineData( "fy=10000&fm=1&ty=10000&tm=2" )]
@@ -132,8 +133,8 @@ public sealed class ReviewRegressionTests : IDisposable
     }
 
     /// <summary>
-    /// Installed below a site root, a redirect has to keep the path base or it lands on the parent
-    /// site.
+    /// When the server is installed below the root of a site, a redirection must contain the path
+    /// base. Otherwise it reaches the parent site.
     /// </summary>
     [Theory]
     [InlineData( "/LicenseServer", "/Graph", "?id=5", "/LicenseServer/Graph?id=5" )]

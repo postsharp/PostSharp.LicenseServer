@@ -26,8 +26,8 @@ public sealed class ConfigurationTests
     public void Defaults_AreValid() => Assert.True( Validate( _ => { } ).Succeeded );
 
     /// <summary>
-    /// A renewal time that is not before the end of the lease makes the client renew on every single
-    /// request. The legacy configuration documented this constraint but never enforced it.
+    /// When the renewal time is not before the end of the lease, the client renews the lease at
+    /// every request. The legacy configuration documented this constraint and never enforced it.
     /// </summary>
     [Theory]
     [InlineData( 3, 3 )]
@@ -114,8 +114,8 @@ public sealed class ConfigurationTests
     }
 
     /// <summary>
-    /// The legacy cache returned before storing a failure, so an invalid key was re-parsed on every
-    /// request and on every render of the dashboard.
+    /// The legacy cache returned before it stored a failure, so it parsed an invalid key at every
+    /// request and at every display of the home page.
     /// </summary>
     [Fact]
     public void CachingLicenseParser_RemembersThatAKeyIsInvalid()

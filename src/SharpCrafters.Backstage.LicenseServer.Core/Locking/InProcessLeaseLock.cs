@@ -1,12 +1,13 @@
 namespace SharpCrafters.Backstage.LicenseServer.Locking;
 
 /// <summary>
-/// Serializes lease requests within the current process. This is the default, and is correct for
-/// the supported deployment of a single worker process per database.
+/// Serializes the lease requests of the current process. This is the default implementation, and it
+/// is correct for the supported deployment, which is one worker process per database.
 /// </summary>
 /// <remarks>
-/// Unlike the named <c>Mutex</c> it replaces, waiting here does not block a thread pool thread, so
-/// queued requests are far cheaper and the timeout fires much less often.
+/// A request that waits here does not block a thread of the thread pool, and the named <c>Mutex</c>
+/// that this class replaces did block one. A queued request therefore costs less, and the timeout
+/// elapses less often.
 /// </remarks>
 public sealed class InProcessLeaseLock : ILeaseLock, IDisposable
 {

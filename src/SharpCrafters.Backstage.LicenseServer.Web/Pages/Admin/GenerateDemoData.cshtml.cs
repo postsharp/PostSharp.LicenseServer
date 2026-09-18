@@ -7,12 +7,12 @@ using SharpCrafters.Backstage.LicenseServer.Services;
 namespace SharpCrafters.Backstage.LicenseServer.Pages.Admin;
 
 /// <summary>
-/// Fills the database with a plausible history of lease activity, so that the dashboard and the
-/// usage graph can be looked at without waiting for real traffic.
+/// Fills the database with a realistic history of lease activity, so that the home page and the
+/// usage graph can be examined without waiting for real requests.
 /// </summary>
 /// <remarks>
-/// Only available in the Development environment. The legacy version of this page was reachable in
-/// production, on a deployment whose administrative pages were unrestricted by default.
+/// This page exists only in the Development environment. The legacy version of this page was
+/// reachable in production, on a deployment whose administrative pages were open by default.
 /// </remarks>
 public sealed class GenerateDemoDataModel(
     ILeaseRepository repository,
@@ -69,7 +69,7 @@ public sealed class GenerateDemoDataModel(
             return this.Page();
         }
 
-        // Deterministic, so that re-running the generator produces a comparable history.
+        // A fixed seed, so that a second run of the generator produces a comparable history.
         Random random = new( 20260105 );
 
         (string User, string[] Machines)[] users = Enumerable.Range( 0, this.UserCount )
@@ -99,7 +99,8 @@ public sealed class GenerateDemoDataModel(
 
             foreach ( (string user, string[] machines) in users )
             {
-                // Most people do not work at the weekend, and not everybody builds every day.
+                // Most developers do not work at the weekend, and a developer does not build every
+                // day.
                 if ( random.NextDouble() > (isWeekend ? 0.1 : 0.85) )
                 {
                     continue;
@@ -125,8 +126,9 @@ public sealed class GenerateDemoDataModel(
                 }
             }
 
-            // Saved once per simulated day rather than once per lease: the change tracker would
-            // otherwise grow for the whole run and make each save slower than the last.
+            // The generator saves once per simulated day, and not once per lease. Otherwise the
+            // change tracker would grow during the whole run, and each save would be slower than the
+            // previous one.
             await db.SaveChangesAsync( cancellationToken );
         }
 

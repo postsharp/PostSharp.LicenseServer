@@ -22,9 +22,9 @@ using SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
 /// <summary>
-/// Hosts the real application in memory, with the SQL Server database swapped for SQLite and the
-/// license parser, clock and email sender swapped for test doubles. Everything else -- routing,
-/// model binding, authorization, the endpoints themselves -- is the production pipeline.
+/// Hosts the real application in memory. SQLite replaces the SQL Server database, and test doubles
+/// replace the license parser, the clock and the e-mail sender. Everything else is the production
+/// pipeline: the routing, the model binding, the authorization and the endpoints.
 /// </summary>
 public sealed class LicenseServerApplication : WebApplicationFactory<Program>
 {
@@ -34,15 +34,16 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
 
     public LicenseServerApplication()
     {
-        // A shared-cache in-memory database, so that the application can open its own connections by
-        // connection string while the database itself lives only as long as this one stays open.
+        // A database held in memory with a shared cache, so that the application can open its own
+        // connections from the connection string, while the database exists only as long as this
+        // connection stays open.
         this.connectionString = $"DataSource=licenseserver-{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
 
         this.connection = new SqliteConnection( this.connectionString );
         this.connection.Open();
 
-        // Created up front, because a test seeds licenses before it issues its first request, which
-        // is what actually starts the host.
+        // The schema is created here, because a test adds licenses before it sends its first
+        // request, and the first request is what starts the host.
         using LicenseServerDbContext db = this.CreateDbContext();
         db.Database.EnsureCreated();
     }
@@ -66,9 +67,9 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
     {
         builder.UseEnvironment( "Testing" );
 
-        // UseSetting rather than ConfigureAppConfiguration: with the minimal hosting model the
-        // application reads its configuration while Program.cs runs, which is before the
-        // ConfigureAppConfiguration callbacks are applied.
+        // The settings are passed with UseSetting and not with ConfigureAppConfiguration. With the
+        // minimal hosting model, the application reads its configuration while Program.cs runs,
+        // which is before the callbacks of ConfigureAppConfiguration are applied.
         Dictionary<string, string?> settings = new()
         {
             ["LicenseServer:MachinesPerUser"] = "2",
@@ -89,8 +90,8 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
         builder.ConfigureServices(
             services =>
             {
-                // The database itself is not swapped here: the application selects SQLite from the
-                // configuration above, through the same code path a customer would use.
+                // The database is not replaced here. The application selects SQLite from the
+                // configuration above, through the code path that a customer uses.
                 services.RemoveAll<ILicenseParser>();
                 services.AddSingleton<ILicenseParser>( this.LicenseParser );
 

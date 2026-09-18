@@ -6,12 +6,12 @@ using SharpCrafters.Backstage.LicenseServer.Options;
 namespace SharpCrafters.Backstage.LicenseServer.Security;
 
 /// <summary>
-/// Supplies the audit signing key, taking it from configuration when set, and otherwise generating
-/// one on first use and storing it next to the application.
+/// Supplies the audit signing key. It reads the key from the configuration when the configuration
+/// contains one. Otherwise it generates a key at the first use and stores it in the data directory.
 /// </summary>
 /// <remarks>
-/// The key file must be preserved across redeployments and included in backups. Losing it does not
-/// invalidate existing rows, but it does start a new signature chain.
+/// The key file must be kept across deployments and included in the backups. Its loss does not
+/// invalidate the existing rows, but it starts a new signature chain.
 /// </remarks>
 public sealed class FileAuditKeyProvider : IAuditKeyProvider
 {

@@ -9,8 +9,8 @@ using SharpCrafters.Backstage.Licensing.Licenses;
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
-/// The licensing authorities a development server accepts license keys from besides the production
-/// one, which is what lets a load simulation run against license keys that nobody sells.
+/// The licensing authorities whose license keys a development server accepts, in addition to the
+/// production authority. They let a load simulation run against license keys that are not sold.
 /// </summary>
 public sealed class TestLicensingAuthorityTests
 {
@@ -46,9 +46,9 @@ public sealed class TestLicensingAuthorityTests
     }
 
     /// <summary>
-    /// Outside Development the server refuses to start rather than ignoring the setting. An
-    /// administrator who set it is told, and nobody holding the private key gets a server that
-    /// honours what they sign.
+    /// Outside the Development environment, the server refuses to start instead of ignoring the
+    /// setting. The administrator who set it is informed, and no server accepts the license keys of
+    /// whoever holds the private key.
     /// </summary>
     [Theory]
     [InlineData( "Production" )]

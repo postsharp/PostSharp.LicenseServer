@@ -5,8 +5,8 @@ using SharpCrafters.Backstage.LicenseServer.Security;
 namespace SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
 /// <summary>
-/// Signs deterministically and keeps every payload it was asked to sign, so that tests can assert on
-/// what exactly goes into the audit signature chain.
+/// Produces a signature that depends only on the payload, and stores every payload it signed, so
+/// that a test can assert on the content of the audit signature chain.
 /// </summary>
 public sealed class RecordingLeaseSigner : ILeaseSigner
 {

@@ -1,8 +1,8 @@
 namespace SharpCrafters.Backstage.LicenseServer;
 
 /// <summary>
-/// A point on the usage timeline of a license: the moment a lease starts or ends, together with the
-/// number of seats in use just after that moment.
+/// A point of the usage timeline of a license. It is the instant at which a lease starts or ends,
+/// with the number of seats in use immediately after that instant.
 /// </summary>
 public sealed class LeaseCountingPoint
 {
@@ -16,10 +16,10 @@ public sealed class LeaseCountingPoint
     /// Gets the number of seats in use immediately after this point.
     /// </summary>
     /// <remarks>
-    /// A seat is one user and the machines that user works on, up to <c>MachinesPerUser</c> of them;
-    /// see <see cref="Data.SeatCounter"/>. This is the quantity the allocator compares to the
-    /// capacity of the license when it decides whether to grant a lease, so it is also what the usage
-    /// chart draws against the capacity.
+    /// A seat is one user and the machines that user works on, up to <c>MachinesPerUser</c>
+    /// machines. See <see cref="Data.SeatCounter"/>. The allocator compares this quantity to the
+    /// capacity of the license when it decides whether to grant a lease, and the usage chart draws
+    /// the same quantity against the capacity.
     /// </remarks>
     public int SeatCount { get; set; }
 }

@@ -16,8 +16,9 @@ public static class LicensingRegistration
     /// itself test license keys.
     /// </summary>
     /// <returns>
-    /// The identifiers of the test licensing authorities that were added to the production one, for
-    /// logging. Empty on a server configured the way a customer runs it.
+    /// The identifiers of the test licensing authorities that were added to the production
+    /// authority, so that the caller can write them to the log. The list is empty on a server
+    /// configured as a customer runs it.
     /// </returns>
     /// <exception cref="InvalidOperationException">
     /// A test licensing authority is configured, or test license keys are asked for, outside the
@@ -35,9 +36,9 @@ public static class LicensingRegistration
 
         bool seedTestLicenses = section.GetValue( "SeedTestLicenses", false );
 
-        // Refusing to start is deliberate. Ignoring either setting would leave an administrator
-        // believing the server accepts those license keys, and honouring it would let whoever holds
-        // the private key mint licenses this server serves.
+        // The server refuses to start instead of ignoring the setting or applying it. Ignoring it
+        // would let an administrator believe that the server accepts those license keys. Applying it
+        // would let whoever holds the private key create licenses that this server serves.
         if ( !environment.IsDevelopment() )
         {
             Refuse( testAuthorities.Length > 0, "TestLicensingAuthorities is set" );
@@ -52,9 +53,8 @@ public static class LicensingRegistration
             var explicitAuthorities = new ExplicitLicensingAuthorityProvider(
                 testAuthorities.Select( a => ((int) a.KeyId, a.PublicKey) ).ToArray() );
 
-            // The key is parsed when it is first used, which would otherwise be in the middle of a
-            // lease request. Asking for each authority here turns a malformed key into a startup
-            // failure.
+            // A key is parsed at its first use, which would be during a lease request. Requesting
+            // each authority here turns a malformed key into a failure at startup.
             foreach ( TestLicensingAuthority authority in testAuthorities )
             {
                 explicitAuthorities.GetAuthority( authority.KeyId );
@@ -94,8 +94,9 @@ public static class LicensingRegistration
     }
 
     /// <summary>
-    /// Gets the directory holding the files the server generates and must not lose. A relative path
-    /// is resolved against the application, so that the default works wherever it is unpacked.
+    /// Gets the directory that contains the files the server generates. A relative path is resolved
+    /// against the application directory, so that the default value works wherever the release
+    /// package is unpacked.
     /// </summary>
     public static string ResolveDataDirectory( IConfigurationSection section, IHostEnvironment environment )
     {

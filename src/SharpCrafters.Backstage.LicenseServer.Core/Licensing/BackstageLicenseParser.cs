@@ -5,19 +5,21 @@ using SharpCrafters.Backstage.Licensing.Registration;
 namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
-/// Parses and validates license keys with SharpCrafters.Backstage. This is the only class that
-/// touches the licensing types of that package; everything else works with <see cref="LicenseInfo"/>.
+/// Parses and validates license keys with SharpCrafters.Backstage. This class is the only one that
+/// uses the licensing types of that package. The rest of the application uses
+/// <see cref="LicenseInfo"/>.
 /// </summary>
 /// <param name="authorities">
-/// The authority of the keys whose signature is accepted. Production keys by default; a test signs
-/// with an authority of its own.
+/// The authorities whose signature the parser accepts. The default authorities are the production
+/// ones. A test signs with an authority of its own.
 /// </param>
 public sealed class BackstageLicenseParser( ILicensingAuthorityProvider? authorities = null ) : ILicenseParser
 {
     /// <summary>
-    /// The percentage of additional seats tolerated during the grace period, when the license key
-    /// does not carry one. Backstage leaves the field null, so the default is applied here; it is the
-    /// one PostSharp applied, so a license key that was served before is served the same way.
+    /// The percentage of additional seats allowed during the grace period, when the license key
+    /// contains no percentage. Backstage leaves the field null, so this class applies a default
+    /// value. The value is the one PostSharp applied, so a license key served by an earlier version
+    /// of this server is served in the same way.
     /// </summary>
     private const int defaultGracePercent = 30;
 
@@ -36,20 +38,20 @@ public sealed class BackstageLicenseParser( ILicensingAuthorityProvider? authori
             return null;
         }
 
-        // The fields are checked before the signature, as the consumption path of a client does: a
-        // key that carries a must-understand field this version does not know cannot be served,
-        // whether or not the signature is valid.
+        // The fields are validated before the signature, as a client validates them. A key that
+        // contains a required field that this version does not know cannot be served, whether or not
+        // its signature is valid.
         if ( !data.ValidateFields( out _ ) )
         {
             return null;
         }
 
-        // Verification asks the authority provider for the key the signature was created with, and a
-        // provider throws when it holds no key of that identifier. A license key is pasted into a web
-        // form by an administrator, so one naming an identifier nobody ever issued has to be reported
-        // as an invalid key rather than escape as an unhandled exception. This works around
-        // postsharp-ops/SharpCrafters.Backstage#2 and can go once TryVerifySignature returns false
-        // for an unknown identifier.
+        // The verification asks the authority provider for the key that created the signature, and
+        // the provider raises an exception when it holds no key of that identifier. An administrator
+        // pastes a license key into a web form, so a key that names an identifier that was never
+        // issued must be reported as an invalid key and not as an unhandled exception. This code
+        // works around postsharp-ops/SharpCrafters.Backstage#2. It can be removed when
+        // TryVerifySignature returns false for an unknown identifier.
         if ( data.RequiresSignature()
              && (data.SignatureKeyId == null || !this.authorities.KeyIds.Contains( data.SignatureKeyId.Value )) )
         {
@@ -61,10 +63,11 @@ public sealed class BackstageLicenseParser( ILicensingAuthorityProvider? authori
             return null;
         }
 
-        // The registration properties are where the rules that derive a value from several fields
-        // live -- the eligibility of a key that predates the LicenseServerEligible field, the
-        // minimal PostSharp version of a key that predates MinPostSharpVersion, the normalization of
-        // the products that were renamed. Reading the fields directly would reimplement them.
+        // The registration properties contain the rules that derive a value from several fields: the
+        // eligibility of a key that is older than the LicenseServerEligible field, the minimal
+        // PostSharp version of a key that is older than MinPostSharpVersion, and the normalization
+        // of the products that were renamed. Reading the fields directly would duplicate these
+        // rules.
         LicenseRegistrationProperties properties = data.ToLicenseRegistrationProperties(
             LicenseServerProductCatalog.Instance,
             licenseKey );
@@ -87,13 +90,13 @@ public sealed class BackstageLicenseParser( ILicensingAuthorityProvider? authori
     }
 
     /// <summary>
-    /// Removes the whitespace that a license key picks up when it is pasted out of an email.
+    /// Removes the whitespace that a license key receives when it is copied from an e-mail.
     /// </summary>
     /// <remarks>
-    /// A license key is Base32 after its identifier and a hyphen, so no character it can legitimately
-    /// contain is whitespace. Backstage has no equivalent method: it trims a license string and
-    /// nothing more, because its keys arrive from a command line or a configuration file rather than
-    /// from a web form.
+    /// After its identifier and a hyphen, a license key contains only Base32 characters, so it
+    /// contains no whitespace. Backstage has no equivalent method. It trims a license string and
+    /// does nothing else, because its keys come from a command line or from a configuration file,
+    /// and not from a web form.
     /// </remarks>
     public string CleanLicenseString( string licenseKey )
         => new( licenseKey.Where( c => !char.IsWhiteSpace( c ) ).ToArray() );

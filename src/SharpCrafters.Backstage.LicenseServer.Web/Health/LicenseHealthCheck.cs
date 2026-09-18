@@ -8,16 +8,15 @@ namespace SharpCrafters.Backstage.LicenseServer.Health;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A server whose licenses have all expired, or are all full with their grace period over, answers
-/// every request with 403 while looking perfectly well from the outside. That is the state this
-/// check exists to make visible.
+/// A server whose licenses are all expired, or all full with their grace period ended, answers every
+/// lease request with 403 while its process and its database work. This check reports that state.
 /// </para>
 /// <para>
-/// It warns and never fails: the result is <see cref="HealthStatus.Degraded"/>, which leaves the
-/// endpoint answering 200 while the body and the log of the server name the problem. A license that
-/// has expired is a state an administrator must act on, and it is not a state that restarting the
-/// server, failing over to another one, or taking this one out of a load balancer improves. Only the
-/// process and the database can make the probe fail.
+/// It warns and never fails. The result is <see cref="HealthStatus.Degraded"/>, so the endpoint
+/// answers 200, and the body of the response and the log of the server name the problem. An expired
+/// license requires an action from an administrator. Restarting the server, failing over to another
+/// server, and removing this server from a load balancer do not improve that state. Only the process
+/// and the database can make the probe fail.
 /// </para>
 /// </remarks>
 public sealed class LicenseHealthCheck(
@@ -38,10 +37,10 @@ public sealed class LicenseHealthCheck(
         catch ( Exception e ) when ( e is not OperationCanceledException )
         {
             // Reading the license state reads the database, so this check fails whenever the database
-            // check does, and that check is the one that fails the probe. It is caught here as well
-            // because an exception left to the health check middleware becomes the description of the
-            // failure, and the message of a database exception is not something an anonymous endpoint
-            // should return.
+            // check fails, and the database check is the one that fails the probe. The exception is
+            // caught here as well, because the health check middleware uses the message of an
+            // uncaught exception as the description of the failure, and an anonymous endpoint must
+            // not return the message of a database exception.
             return HealthCheckResult.Degraded(
                 HealthDescriptions.ForException( "The license state cannot be read.", e, environment ),
                 e );

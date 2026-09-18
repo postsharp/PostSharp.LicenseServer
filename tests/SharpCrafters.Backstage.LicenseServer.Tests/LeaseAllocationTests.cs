@@ -4,8 +4,9 @@ using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
-/// The rules that decide whether a developer gets a license: reuse what they hold, grant spare
-/// capacity, or fall back on the grace period before denying the request.
+/// The rules that decide whether a developer receives a license. The server reuses the lease the
+/// developer holds, then grants a free seat, then grants a seat of the grace period, and denies the
+/// request when none of the three applies.
 /// </summary>
 public sealed class LeaseAllocationTests
 {
@@ -252,8 +253,8 @@ public sealed class LeaseAllocationTests
     }
 
     /// <summary>
-    /// A warning is recorded even when it could not be delivered, so a broken SMTP server cannot
-    /// turn every subsequent request into another attempt.
+    /// The server records a warning even when it could not send it, so that an SMTP server that
+    /// fails does not turn every later request into another attempt.
     /// </summary>
     [Fact]
     public async Task GetLease_WarningEmailFails_StillRecordsThatItWasAttempted()

@@ -8,16 +8,17 @@ namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A <see cref="LicenseProductCatalog"/> answers two kinds of question: what a product is called,
-/// and how a license key of that product is registered on a developer's machine. Only the first
-/// kind has a meaning here, because a license server serves the license keys its administrator
-/// added and never registers one. The base class already answers it for every product of both
-/// families, so this class only has to state that the server is not a product family of its own.
+/// A <see cref="LicenseProductCatalog"/> answers two kinds of question. The first kind is the name
+/// of a product. The second kind is how a license key of that product is registered on the machine
+/// of a developer. Only the first kind applies here, because a license server serves the license
+/// keys that its administrator added and registers none. The base class answers the first kind for
+/// every product of both families, so this class only declares that the server is not a product
+/// family of its own.
 /// </para>
 /// <para>
-/// The members of the second kind exist so that a client can decide which edition to offer, which
-/// license key to keep when another is registered, and where to store it. A server has no such
-/// decisions to make, so they throw rather than return a value that would quietly be wrong.
+/// The members of the second kind let a client decide which edition to offer, which license key to
+/// keep when another one is registered, and where to store it. A server makes none of these
+/// decisions, so these members raise an exception instead of returning a value that would be wrong.
 /// </para>
 /// </remarks>
 public sealed class LicenseServerProductCatalog : LicenseProductCatalog
@@ -34,8 +35,8 @@ public sealed class LicenseServerProductCatalog : LicenseProductCatalog
     private LicenseServerProductCatalog() { }
 
     /// <summary>
-    /// A server pools the license keys of whatever products its administrator added, including the
-    /// products of both families side by side.
+    /// A server holds the license keys of the products that its administrator added, and it can hold
+    /// the products of both families at the same time.
     /// </summary>
     public override bool IsProductOfFamily( LicenseProduct product ) => true;
 
@@ -44,8 +45,8 @@ public sealed class LicenseServerProductCatalog : LicenseProductCatalog
         => product is LicenseProduct.MetalamaCommunity or LicenseProduct.PostSharpEssentials;
 
     /// <summary>
-    /// The server stores every license key in the same table, and the version-specific registration
-    /// of a client has no equivalent.
+    /// The server stores every license key in the same table. The registration of a client, which
+    /// depends on the version, has no equivalent here.
     /// </summary>
     public override bool RequiresVersionSpecificRegistration( LicenseProduct product ) => false;
 

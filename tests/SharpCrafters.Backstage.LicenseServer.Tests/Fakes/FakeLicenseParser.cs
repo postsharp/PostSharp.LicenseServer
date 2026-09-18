@@ -3,19 +3,20 @@ using SharpCrafters.Backstage.LicenseServer.Licensing;
 namespace SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
 /// <summary>
-/// Resolves synthetic license keys to the facts a test wants them to carry.
+/// Maps the synthetic license keys of a test to the properties that the test gives them.
 /// </summary>
 /// <remarks>
-/// Real PostSharp license keys are signed and are not present in this repository, so almost every
-/// test works against this parser. <c>PostSharpLicenseParser</c> is covered separately, by an opt-in
-/// test that needs a real key.
+/// A real PostSharp license key is signed, and this repository contains none, so almost every test
+/// uses this parser. <c>BackstageLicenseParserTests</c> covers the real parser with the license keys
+/// of the test authority.
 /// </remarks>
 public sealed class FakeLicenseParser : ILicenseParser
 {
     private readonly Dictionary<string, LicenseInfo> licenses = new( StringComparer.Ordinal );
 
     /// <summary>
-    /// Gets the number of times <see cref="TryParse"/> actually did work, to verify caching.
+    /// Gets the number of calls to <see cref="TryParse"/> that did the work, so that a test can
+    /// verify the cache.
     /// </summary>
     public int ParseCount { get; private set; }
 
@@ -29,7 +30,7 @@ public sealed class FakeLicenseParser : ILicenseParser
     }
 
     /// <summary>
-    /// Mimics the real implementation, which strips whitespace from a pasted key.
+    /// Reproduces the real implementation, which removes the whitespace of a pasted key.
     /// </summary>
     public string CleanLicenseString( string licenseKey )
         => new( licenseKey.Where( c => !char.IsWhiteSpace( c ) ).ToArray() );

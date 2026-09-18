@@ -8,8 +8,8 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests;
 /// it, so removing or altering a row breaks every signature after it.
 /// </summary>
 /// <remarks>
-/// These assertions encode behaviour that is documented nowhere and that is invisible in a code
-/// review of the migration diff, which is why they are pinned explicitly.
+/// These assertions describe behaviour that no document describes, and that a review of the
+/// migration diff does not show. This is the reason why the tests state it explicitly.
 /// </remarks>
 public sealed class LeaseSignatureTests
 {
@@ -49,8 +49,9 @@ public sealed class LeaseSignatureTests
     }
 
     /// <summary>
-    /// Leases saved together must chain to each other, not all to the same predecessor. Were they
-    /// siblings, any one of them could be removed without breaking a later signature.
+    /// The leases saved together chain to each other, and not all to the same predecessor. If they
+    /// chained to the same predecessor, one of them could be removed without invalidating a later
+    /// signature.
     /// </summary>
     [Fact]
     public async Task Signature_LeasesSavedTogether_ChainToEachOther()
@@ -78,8 +79,9 @@ public sealed class LeaseSignatureTests
     }
 
     /// <summary>
-    /// The signature covers the lease identifier the database assigned, so an auditor can recompute
-    /// the chain from an exported file. Signing before the insert would put a zero there.
+    /// The signature covers the identifier that the database assigned to the lease, so an auditor can
+    /// recompute the chain from an exported file. A signature computed before the insert would
+    /// contain a zero in that position.
     /// </summary>
     [Fact]
     public async Task Signature_CoversTheAssignedLeaseId()
@@ -96,8 +98,8 @@ public sealed class LeaseSignatureTests
     }
 
     /// <summary>
-    /// The whole point of the chain: an exported line plus the previous signature reproduce the
-    /// signature, so a tampered row is detectable.
+    /// An exported line and the previous signature reproduce the signature of that line, so a
+    /// modified row can be detected. This property is the purpose of the chain.
     /// </summary>
     [Fact]
     public async Task Signature_CanBeRecomputedFromTheExportedLine()
@@ -197,7 +199,7 @@ public sealed class LeaseSignatureTests
     }
 
     /// <summary>
-    /// A lease must never be readable without its signature, so the insert and the signature share a
+    /// A lease is never readable without its signature, so the insert and the signature run in one
     /// transaction.
     /// </summary>
     [Fact]

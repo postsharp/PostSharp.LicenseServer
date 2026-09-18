@@ -7,8 +7,8 @@ using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
-/// The endpoints a monitoring system talks to. What matters to a probe is the status code, so each
-/// test asserts it together with the body.
+/// The endpoints of a monitoring system. A probe reads the status code, so each test asserts the
+/// status code together with the body.
 /// </summary>
 public sealed class OperationsEndpointTests : IDisposable
 {
@@ -49,9 +49,9 @@ public sealed class OperationsEndpointTests : IDisposable
     }
 
     /// <summary>
-    /// A server with no license answers every lease request with 403 while looking perfectly well
-    /// from the outside, which is the state the check exists to make visible. It warns rather than
-    /// fails: the probe stays green, because nothing that watches a probe can add a license.
+    /// A server without a license answers every lease request with 403 while its process and its
+    /// database work. The check reports that state. It warns and does not fail, so the probe still
+    /// succeeds, because no system that reads a probe can add a license.
     /// </summary>
     [Fact]
     public async Task Health_NoLicense_WarnsAndStaysServed()
@@ -81,14 +81,14 @@ public sealed class OperationsEndpointTests : IDisposable
     }
 
     /// <summary>
-    /// A database without the schema is the deployment mistake the check exists for: the server never
-    /// runs CreateTables.sql itself. The database is what fails the probe; the license check can only
-    /// warn, and here it warns because it cannot read the state at all.
+    /// A database without the schema is the deployment error that this check detects, because the
+    /// server never runs CreateTables.sql itself. The database check fails the probe. The license
+    /// check only warns, and here it warns because it cannot read the state.
     /// </summary>
     /// <remarks>
-    /// Neither check may answer with the message of the exception, because a database exception
-    /// carries the name of the server and sometimes the whole connection string, and this endpoint is
-    /// anonymous.
+    /// Neither check returns the message of the exception. A database exception contains the name of
+    /// the server, and sometimes the whole connection string, and this endpoint requires no
+    /// authentication.
     /// </remarks>
     [Fact]
     public async Task Health_DatabaseWithoutSchema_FailsAndSaysNothingMore()
@@ -115,8 +115,8 @@ public sealed class OperationsEndpointTests : IDisposable
     }
 
     /// <summary>
-    /// The liveness probe answers on the state of the process alone. A license that has expired is
-    /// not a reason to restart the server, and an orchestrator that restarted it would do so for ever.
+    /// The liveness probe reports the state of the process only. An expired license is not a reason
+    /// to restart the server, and an orchestrator that restarted it would restart it indefinitely.
     /// </summary>
     [Fact]
     public async Task Liveness_NoLicense_IsHealthy()
@@ -146,8 +146,8 @@ public sealed class OperationsEndpointTests : IDisposable
     }
 
     /// <summary>
-    /// Both endpoints are served anonymously: a load balancer holds no Windows credentials, and a
-    /// probe answered with 401 reads as a server that is down.
+    /// Both endpoints require no authentication. A load balancer has no Windows credentials, and a
+    /// probe that receives 401 reports the server as unavailable.
     /// </summary>
     [Theory]
     [InlineData( "/health/live" )]

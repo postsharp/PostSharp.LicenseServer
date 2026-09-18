@@ -1,10 +1,10 @@
 namespace SharpCrafters.Backstage.LicenseServer.Time;
 
 /// <summary>
-/// A <see cref="TimeProvider"/> that makes time pass faster than it really does, so that a
-/// multi-day licensing scenario can be simulated in minutes. Replaces the legacy
-/// <c>VirtualDateTime</c> class, whose acceleration was compiled out of RELEASE builds and was
-/// therefore unusable by any test harness.
+/// A <see cref="TimeProvider"/> whose clock runs faster than real time, so that a licensing scenario
+/// that lasts several days can be simulated in minutes. Replaces the legacy <c>VirtualDateTime</c>
+/// class, whose acceleration was removed from a release build by the compiler, and which no test
+/// harness could therefore use.
 /// </summary>
 public sealed class AcceleratedTimeProvider : TimeProvider
 {

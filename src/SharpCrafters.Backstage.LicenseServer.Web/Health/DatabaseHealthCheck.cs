@@ -8,9 +8,9 @@ namespace SharpCrafters.Backstage.LicenseServer.Health;
 /// Reports whether the database answers a query.
 /// </summary>
 /// <remarks>
-/// The check reads the license table rather than opening a connection, because the server never
-/// creates its own schema on SQL Server: a database that accepts connections but was never given
-/// <c>CreateTables.sql</c> is the deployment mistake this catches.
+/// The check reads the license table instead of opening a connection. The server never creates its
+/// own schema on SQL Server, so a database that accepts connections but has no schema is a
+/// deployment error. A query detects it; opening a connection does not.
 /// </remarks>
 public sealed class DatabaseHealthCheck( LicenseServerDbContext db, IHostEnvironment environment ) : IHealthCheck
 {

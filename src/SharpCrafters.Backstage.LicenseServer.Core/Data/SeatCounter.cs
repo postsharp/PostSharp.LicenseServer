@@ -7,13 +7,14 @@ namespace SharpCrafters.Backstage.LicenseServer.Data;
 /// <para>
 /// A seat is one user working on up to <c>MachinesPerUser</c> machines. A user working on more
 /// machines takes more than one seat: the number of machines divided by <c>MachinesPerUser</c>,
-/// rounded up. At the default of two, one or two machines are one seat and three or four are two.
+/// rounded up. With the default value of two, one or two machines are one seat, and three or four
+/// machines are two seats.
 /// </para>
 /// <para>
-/// The seat is the unit the capacity of a license key is expressed in, and the only place where the
-/// number of machines enters the licensing rules. The licence agreement puts it the other way round,
-/// as a number of authorized users each entitled to a number of devices; the two say the same thing,
-/// and this is the form the server counts in.
+/// The capacity of a license key is expressed in seats, and this is the only rule in which the
+/// number of machines appears. The license agreement expresses the same rule in the opposite
+/// direction, as a number of authorized users that each may work on a number of devices. The server
+/// counts in seats.
 /// </para>
 /// </remarks>
 public static class SeatCounter
@@ -24,10 +25,10 @@ public static class SeatCounter
     /// <param name="machinesPerUser">The number of distinct machines each user is working on.</param>
     /// <param name="machinesPerUserLimit">The number of machines one seat covers.</param>
     /// <remarks>
-    /// This arithmetic used to run inside the SQL <c>GROUP BY</c>, which no provider other than SQL
-    /// Server can translate. Doing it here keeps the query portable and makes the rounding
-    /// boundaries directly testable. The number of rows is bounded by the number of distinct users
-    /// on one license.
+    /// This arithmetic used to run inside the SQL <c>GROUP BY</c> clause, which only the SQL Server
+    /// provider translates. Running it here keeps the query portable, and it makes the rounding
+    /// boundaries testable without a database. The number of rows is limited by the number of
+    /// distinct users of one license.
     /// </remarks>
     public static int CountSeats( IEnumerable<int> machinesPerUser, int machinesPerUserLimit )
     {

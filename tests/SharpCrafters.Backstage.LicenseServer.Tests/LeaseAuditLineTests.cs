@@ -6,9 +6,9 @@ using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
 /// <summary>
-/// The audit-log line is a serialization contract: exported files are archived by customers and
-/// compared across years, so the format is pinned here against literal expected strings rather than
-/// against a re-implementation of the same logic.
+/// The line of the audit log is a serialization contract. Customers archive the exported files and
+/// compare them across years. These tests therefore compare the format to literal strings, and not
+/// to a second implementation of the same logic.
 /// </summary>
 public sealed class LeaseAuditLineTests
 {
@@ -70,10 +70,10 @@ public sealed class LeaseAuditLineTests
     /// Timestamps must be absolute, whatever time zone the server keeps.
     /// </summary>
     /// <remarks>
-    /// The legacy implementation serialized values whose <see cref="DateTimeKind"/> was
-    /// <see cref="DateTimeKind.Unspecified"/> -- which is what SQL Server returns -- in a mode that
-    /// treated them as local time and shifted them, so the exported file depended on the machine
-    /// that produced it.
+    /// SQL Server returns values whose <see cref="DateTimeKind"/> is
+    /// <see cref="DateTimeKind.Unspecified"/>. The legacy implementation serialized them in a mode
+    /// that treated them as local times and shifted them, so the exported file depended on the
+    /// machine that produced it.
     /// </remarks>
     [Fact]
     public void Write_EmitsAbsoluteTimestamps()
@@ -85,8 +85,8 @@ public sealed class LeaseAuditLineTests
     }
 
     /// <summary>
-    /// A lease that has been through the database must still serialize as UTC. This is the half of
-    /// the guarantee that lives in the model rather than in <c>Lease.Write</c>.
+    /// A lease read from the database is also serialized as UTC. The value converter of the model
+    /// provides this part of the guarantee, and <c>Lease.Write</c> provides the other part.
     /// </summary>
     [Fact]
     public async Task Write_AfterReload_StillEmitsUtc()

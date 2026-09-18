@@ -6,8 +6,8 @@ namespace SharpCrafters.Backstage.LicenseServer.Options;
 public enum LeaseLockMode
 {
     /// <summary>
-    /// A semaphore shared by all requests served by the current process. This is the default and is
-    /// correct when a single process serves the database, which is the supported deployment.
+    /// A semaphore shared by every request that the current process serves. This is the default
+    /// value. It is correct when one process serves the database, which is the supported deployment.
     /// </summary>
     InProcess,
 
@@ -19,7 +19,7 @@ public enum LeaseLockMode
     SqlApplicationLock,
 
     /// <summary>
-    /// No locking at all. Intended for tests.
+    /// No lock. This value exists for the tests.
     /// </summary>
     None
 }

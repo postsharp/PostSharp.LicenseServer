@@ -1,8 +1,8 @@
 namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
-/// The version of the licensing library embedded in this license server. A license key that declares
-/// a higher minimal version cannot be served until the server itself is upgraded.
+/// The version of the licensing library contained in this license server. The server cannot serve a
+/// license key that requires a higher version until the server is upgraded.
 /// </summary>
 public interface ILicenseServerVersion
 {

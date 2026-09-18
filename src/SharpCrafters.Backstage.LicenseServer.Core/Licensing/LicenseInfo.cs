@@ -1,9 +1,9 @@
 namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 
 /// <summary>
-/// The facts the license server needs about a license key, projected out of the PostSharp SDK so
-/// that the rest of the application does not depend on the SDK and can be tested without a real
-/// license key.
+/// The properties of a license key that the license server needs. The licensing library provides
+/// them, and the rest of the application uses this type, so that it does not depend on that library
+/// and can be tested without a real license key.
 /// </summary>
 public sealed record LicenseInfo
 {
@@ -17,7 +17,8 @@ public sealed record LicenseInfo
     public required string LicenseType { get; init; }
 
     /// <summary>
-    /// Gets the number of concurrent users allowed by the license, or null when unlimited.
+    /// Gets the number of concurrent users that the license allows, or null when the license sets no
+    /// limit.
     /// </summary>
     public int? UserNumber { get; init; }
 
@@ -33,12 +34,13 @@ public sealed record LicenseInfo
     public DateTime? SubscriptionEndDate { get; init; }
 
     /// <summary>
-    /// Gets the lowest version of PostSharp that understands this license.
+    /// Gets the lowest version of PostSharp that can read this license.
     /// </summary>
     public required Version MinPostSharpVersion { get; init; }
 
     /// <summary>
-    /// Gets the number of days during which the license may be over-used before requests are denied.
+    /// Gets the number of days during which the license may be used above its capacity before the
+    /// server denies a request.
     /// </summary>
     public required int GraceDays { get; init; }
 
@@ -48,7 +50,7 @@ public sealed record LicenseInfo
     public required int GracePercent { get; init; }
 
     /// <summary>
-    /// Gets a value indicating whether this kind of license may be served by a license server at all.
+    /// Gets a value indicating whether a license server may serve this kind of license.
     /// </summary>
     public required bool IsLicenseServerEligible { get; init; }
 

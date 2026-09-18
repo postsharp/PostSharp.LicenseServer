@@ -31,7 +31,7 @@
     <canvas id="usage-chart"></canvas>
 </div>
 
-@* The data travels as JSON in its own element rather than interpolated into a script body, where a
+@* The data is written as JSON in an element of its own, and not inside the body of a script, where a
    closing script tag inside a string would end the block. Razor encodes the content. *@
 <script id="usage-chart-data" type="application/json">@Json.Serialize( Model.Chart )</script>
 

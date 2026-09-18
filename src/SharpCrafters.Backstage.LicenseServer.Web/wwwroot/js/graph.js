@@ -1,5 +1,6 @@
-// Renders the licence usage history. The data is produced by GraphModel and embedded in the page as
-// JSON; nothing is fetched at run time, so the page works on an isolated network.
+// Draws the usage history of a license. GraphModel produces the data, and the page contains it as
+// JSON. The page downloads nothing at run time, so it works on a network without access to the
+// Internet.
 (function () {
     "use strict";
 
@@ -12,8 +13,8 @@
 
     var chart = JSON.parse(dataElement.textContent);
 
-    // Take the axis and gridline colours from the design tokens, so the chart stays part of the
-    // page rather than a white box dropped onto it.
+    // The colors of the axes and of the grid lines come from the design tokens, so that the chart
+    // belongs to the page instead of appearing as a white rectangle on it.
     var styles = getComputedStyle(document.documentElement);
     Chart.defaults.color = styles.getPropertyValue("--text-muted").trim() || "#a0a0a0";
     Chart.defaults.borderColor = styles.getPropertyValue("--doc-table-line").trim() || "#2c1a4f";
@@ -30,7 +31,7 @@
         pointHitRadius: 8
     }];
 
-    // The capacity and grace lines are absent for an unlimited licence.
+    // A license without a seat limit has no capacity line and no grace line.
     if (chart.maximum !== null && chart.maximum !== undefined) {
         datasets.push({
             label: "Authorized",
@@ -70,8 +71,8 @@
                         autoSkip: false,
                         maxRotation: 45,
                         minRotation: 45,
-                        // The original chart labelled Mondays only, which keeps a year-long window
-                        // readable.
+                        // The original chart labelled only the Mondays, which keeps a window of one
+                        // year readable.
                         callback: function (value, index) {
                             var label = chart.labels[index];
                             return new Date(label + "T00:00:00Z").getUTCDay() === 1 ? label : "";
@@ -83,11 +84,11 @@
                 legend: {
                     position: "bottom",
 
-                    // Each series is a line, so the legend samples it as a line rather than as the
-                    // filled rectangle Chart.js draws by default. The dash pattern and the width
-                    // have to be carried over from the dataset, because the generated legend item
-                    // does not take them, and without them the three samples differ only by colour
-                    // while the lines on the chart are solid, dashed and dotted.
+                    // Each series is a line, so the legend draws a line and not the filled rectangle
+                    // that Chart.js draws by default. The dash pattern and the width are copied from
+                    // the dataset, because the generated legend item does not contain them. Without
+                    // them, the three samples of the legend would differ only by their color, while
+                    // the lines of the chart are solid, dashed and dotted.
                     labels: {
                         usePointStyle: true,
                         pointStyle: "line",

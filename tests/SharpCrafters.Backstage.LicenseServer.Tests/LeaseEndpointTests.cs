@@ -194,8 +194,8 @@ public sealed class LeaseEndpointTests : IDisposable
     }
 
     /// <summary>
-    /// A build agent gets a licence key but never a stored lease, so that build machines cannot
-    /// consume the seats of the developers they build for.
+    /// A build agent receives a license key, and the server stores no lease for it, so that build
+    /// machines do not consume the seats of the developers they build for.
     /// </summary>
     [Fact]
     public async Task Lease_BuildAgent_IsServedWithoutConsumingASeat()

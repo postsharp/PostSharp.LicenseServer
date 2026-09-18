@@ -3,8 +3,8 @@ using Microsoft.Extensions.Options;
 namespace SharpCrafters.Backstage.LicenseServer.Options;
 
 /// <summary>
-/// Validates the relationships between settings that data annotations cannot express. The legacy
-/// <c>Web.config</c> documented these constraints but nothing enforced them.
+/// Validates the relations between settings that a data annotation cannot express. The legacy
+/// <c>Web.config</c> documented these constraints, and no code enforced them.
 /// </summary>
 public sealed class LicenseServerOptionsValidator : IValidateOptions<LicenseServerOptions>
 {
@@ -12,8 +12,8 @@ public sealed class LicenseServerOptionsValidator : IValidateOptions<LicenseServ
     {
         List<string> failures = [];
 
-        // A lease whose renewal time is not before its end time makes the client renew on every
-        // single request.
+        // When the renewal time of a lease is not before its end time, the client renews the lease at
+        // every request.
         if ( options.MinLeaseDays >= options.NewLeaseDays )
         {
             failures.Add(
