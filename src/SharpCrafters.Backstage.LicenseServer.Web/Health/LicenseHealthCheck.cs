@@ -14,9 +14,8 @@ namespace SharpCrafters.Backstage.LicenseServer.Health;
 /// <para>
 /// It warns and never fails. The result is <see cref="HealthStatus.Degraded"/>, so the endpoint
 /// answers 200, and the body of the response and the log of the server name the problem. An expired
-/// license requires an action from an administrator. Restarting the server, failing over to another
-/// server, and removing this server from a load balancer do not improve that state. Only the process
-/// and the database can make the probe fail.
+/// license requires an action from an administrator, and restarting the server does not add a
+/// license. Only the process and the database can make the probe fail.
 /// </para>
 /// </remarks>
 public sealed class LicenseHealthCheck(

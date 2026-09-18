@@ -13,8 +13,8 @@ public enum LeaseLockMode
 
     /// <summary>
     /// A SQL Server application lock, shared by every process connected to the same database.
-    /// Required when the license server runs in a web garden, behind a load balancer, or in several
-    /// containers.
+    /// Required when several worker processes serve one database, which happens in an IIS web garden
+    /// and with several instances of the server.
     /// </summary>
     SqlApplicationLock,
 

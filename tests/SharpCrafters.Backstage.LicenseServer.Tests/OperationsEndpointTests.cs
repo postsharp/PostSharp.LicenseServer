@@ -146,8 +146,8 @@ public sealed class OperationsEndpointTests : IDisposable
     }
 
     /// <summary>
-    /// Both endpoints require no authentication. A load balancer has no Windows credentials, and a
-    /// probe that receives 401 reports the server as unavailable.
+    /// Both endpoints require no authentication. A monitoring agent has no Windows credentials, and
+    /// a probe that receives 401 reports the server as unavailable.
     /// </summary>
     [Theory]
     [InlineData( "/health/live" )]

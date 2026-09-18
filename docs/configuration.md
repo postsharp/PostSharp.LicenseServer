@@ -178,13 +178,17 @@ Restrict these pages. They are the only way to add and to revoke a license, and 
 at `/Admin/Export.ashx` returns the whole audit log. There are two mechanisms, and you can combine
 them.
 
-The first mechanism is `LicenseServer:AdminRoles`. It covers every page under `/Admin` and the export
-endpoint. It requires an authentication scheme that reports the Windows groups of the caller, so it
-works with `IISIntegrated` and with `Negotiate`, and not with `None`.
+#### The AdminRoles setting
 
-The second mechanism is a restriction on the path, configured in the web server. It works with any
-scheme. Under IIS, enable Windows authentication on the site, then add a URL authorization rule for
-the `Admin` path to the `web.config` of the application, which is in the published output:
+`LicenseServer:AdminRoles` covers every page under `/Admin` and the export endpoint. It requires an
+authentication scheme that reports the Windows groups of the caller, so it works with
+`IISIntegrated` and with `Negotiate`, and not with `None`.
+
+#### A restriction on the path, in the web server
+
+A restriction configured in the web server works with any authentication scheme. Under IIS, enable
+Windows authentication on the site, then add a URL authorization rule for the `Admin` path to the
+`web.config` of the application, which is in the published output:
 
 ```xml
 <location path="Admin">
@@ -214,10 +218,13 @@ The server serializes lease requests, so that two concurrent requests cannot bot
 seat. `InProcess` serializes the requests of one worker process. This is correct for the supported
 deployment, which is one worker process per database.
 
-An IIS web garden, a load balancer, or several containers run several worker processes against one
-database. The serialization then covers each process separately, and the server can grant more leases
-than the capacity of the license. Run a single worker process. If you need several, open an issue
-that asks for `SqlApplicationLock`, which serializes through the database.
+Run one worker process. One process is enough: a developer sends about one request per day, and the
+requests are short.
+
+Two deployments run several worker processes against one database: an IIS web garden, and several
+instances of the server. The serialization then covers each process separately, and the server can
+grant more leases than the capacity of the license. If you need such a deployment, open an issue that
+asks for `SqlApplicationLock`, which serializes through the database.
 
 ## Auditing
 
@@ -252,10 +259,15 @@ even when no volume is named. See [docker.md](docker.md).
 | `/health` | Whether the process answers, the database can be queried, and a license can serve a lease. |
 | `/version` | Which build is deployed, and which version of the licensing library it uses to parse license keys. |
 
-The server serves these three endpoints without authentication, as it serves `Lease.ashx`. A load
-balancer and a monitoring agent have no Windows credentials, and a probe that receives 401 reports
-the server as unavailable. The responses contain no license key, no user name and no connection
-string. The version number is readable by anyone who can reach the server.
+The server serves these three endpoints without authentication, as it serves `Lease.ashx`. A
+monitoring agent has no Windows credentials, and a probe that receives 401 reports the server as
+unavailable. The responses contain no license key, no user name and no connection string. The
+version number is readable by anyone who can reach the server.
+
+The operating requirements of this server are low. One developer sends about one request per day,
+because the client stores its lease and renews it after `NewLeaseDays` minus `MinLeaseDays` days. A
+client that cannot reach the server keeps the lease it holds, so an interruption of a few hours
+affects nobody. Monitor the server to learn that it needs attention, and not to fail over.
 
 `/health` reports the result of each check in its body. It has three states:
 
@@ -284,10 +296,9 @@ server has no license, and when every license is expired, disabled, unparsable, 
 grace period over. A server in that state answers every lease request with 403 while its process and
 its database are healthy.
 
-The license check warns and never fails. An expired license is a problem for an administrator, and
-not for a load balancer: restarting the server and failing over to another server do not add a
-license, and the server continues to serve the leases it has already granted. Only the process and
-the database can fail the probe.
+The license check warns and never fails. An expired license needs an administrator, and restarting
+the server does not add a license, so the state is reported and the probe still succeeds. Only the
+process and the database can fail the probe.
 
 Configure your monitoring system to report the status in the body, and not only the status code. The
 server also writes a warning to its log at each degraded check:

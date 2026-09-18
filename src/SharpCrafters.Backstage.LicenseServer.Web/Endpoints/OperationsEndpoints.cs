@@ -11,10 +11,10 @@ namespace SharpCrafters.Backstage.LicenseServer.Endpoints;
 /// </summary>
 /// <remarks>
 /// These endpoints require no authentication, as <c>Lease.ashx</c> does not, and unlike the
-/// administrative pages. A load balancer and a monitoring agent have no Windows credentials, so an
-/// endpoint behind authentication would answer 401, and the probe would report the server as
-/// unavailable. The responses contain no license key, no user name and no connection string. The
-/// version number is readable by anyone who can reach the server.
+/// administrative pages. A monitoring agent has no Windows credentials, so an endpoint behind
+/// authentication would answer 401, and the probe would report the server as unavailable. The
+/// responses contain no license key, no user name and no connection string. The version number is
+/// readable by anyone who can reach the server.
 /// </remarks>
 public static class OperationsEndpoints
 {
