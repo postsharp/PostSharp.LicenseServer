@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Logging;
@@ -46,9 +48,9 @@ public sealed class SmtpEmailSender : IEmailSender
 
             if ( !string.IsNullOrEmpty( message.Cc ) )
             {
-                foreach ( string address in message.Cc.Split( [',', ';', ' '], StringSplitOptions.RemoveEmptyEntries ) )
+                foreach ( var address in message.Cc.Split( [',', ';', ' '], StringSplitOptions.RemoveEmptyEntries ) )
                 {
-                    string trimmed = address.Trim( ' ', '\n', '\r', '\t' );
+                    var trimmed = address.Trim( ' ', '\n', '\r', '\t' );
 
                     if ( trimmed.Length > 0 )
                     {
@@ -82,5 +84,4 @@ public sealed class SmtpEmailSender : IEmailSender
             this.logger.LogError( e, "Cannot send the notification email '{Subject}' to {To}.", message.Subject, message.To );
         }
     }
-
 }

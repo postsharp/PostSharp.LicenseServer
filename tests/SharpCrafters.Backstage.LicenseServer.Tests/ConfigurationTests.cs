@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -34,20 +36,18 @@ public sealed class ConfigurationTests
     [InlineData( 5, 3 )]
     public void MinLeaseDaysNotBelowNewLeaseDays_IsRejected( int minLeaseDays, int newLeaseDays )
     {
-        ValidateOptionsResult result = Validate(
-            o =>
-            {
-                o.MinLeaseDays = minLeaseDays;
-                o.NewLeaseDays = newLeaseDays;
-            } );
+        var result = Validate( o =>
+        {
+            o.MinLeaseDays = minLeaseDays;
+            o.NewLeaseDays = newLeaseDays;
+        } );
 
         Assert.True( result.Failed );
         Assert.Contains( result.Failures!, f => f.Contains( "MinLeaseDays", StringComparison.Ordinal ) );
     }
 
     [Fact]
-    public void NegativeTimeAcceleration_IsRejected()
-        => Assert.True( Validate( o => o.TimeAcceleration = -1 ).Failed );
+    public void NegativeTimeAcceleration_IsRejected() => Assert.True( Validate( o => o.TimeAcceleration = -1 ).Failed );
 
     [Theory]
     [InlineData( 0 )]
@@ -57,8 +57,7 @@ public sealed class ConfigurationTests
         LicenseServerOptions options = new() { MachinesPerUser = value };
         List<ValidationResult> results = [];
 
-        Assert.False(
-            Validator.TryValidateObject( options, new ValidationContext( options ), results, true ) );
+        Assert.False( Validator.TryValidateObject( options, new ValidationContext( options ), results, true ) );
     }
 
     [Fact]
@@ -89,8 +88,7 @@ public sealed class ConfigurationTests
     [InlineData( 0 )]
     [InlineData( -2 )]
     public void AcceleratedTimeProvider_RejectsNonPositiveAcceleration( double acceleration )
-        => Assert.Throws<ArgumentOutOfRangeException>(
-            () => new AcceleratedTimeProvider( TimeProvider.System, acceleration ) );
+        => Assert.Throws<ArgumentOutOfRangeException>( () => new AcceleratedTimeProvider( TimeProvider.System, acceleration ) );
 
     [Fact]
     public void CachingLicenseParser_ParsesEachKeyOnlyOnce()

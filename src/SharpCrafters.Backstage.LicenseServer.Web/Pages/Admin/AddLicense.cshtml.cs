@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -43,7 +45,7 @@ public sealed class AddLicenseModel : PageModel
             return this.Page();
         }
 
-        LicenseInfo? parsedLicense = this.licenseParser.TryParse( this.LicenseKey );
+        var parsedLicense = this.licenseParser.TryParse( this.LicenseKey );
 
         if ( parsedLicense == null )
         {

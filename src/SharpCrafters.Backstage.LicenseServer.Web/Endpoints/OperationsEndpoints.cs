@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Reflection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -55,13 +57,7 @@ public static class OperationsEndpoints
             {
                 status = report.Status.ToString(),
                 checks = report.Entries
-                    .Select(
-                        entry => new
-                        {
-                            name = entry.Key,
-                            status = entry.Value.Status.ToString(),
-                            description = entry.Value.Description
-                        } )
+                    .Select( entry => new { name = entry.Key, status = entry.Value.Status.ToString(), description = entry.Value.Description } )
                     .ToArray()
             } );
 
@@ -71,13 +67,7 @@ public static class OperationsEndpoints
     /// requires a recent library.
     /// </summary>
     private static IResult GetVersion( ILicenseServerVersion version )
-        => Results.Json(
-            new
-            {
-                product = ProductName,
-                version = ProductVersion,
-                licensingLibrary = version.LicensingLibraryVersion.ToString()
-            } );
+        => Results.Json( new { product = ProductName, version = ProductVersion, licensingLibrary = version.LicensingLibraryVersion.ToString() } );
 
     private static string ProductName { get; } =
         typeof(OperationsEndpoints).Assembly.GetName().Name ?? "SharpCrafters.Backstage.LicenseServer";
@@ -90,10 +80,11 @@ public static class OperationsEndpoints
 
     private static string ReadProductVersion()
     {
-        Assembly assembly = typeof(OperationsEndpoints).Assembly;
+        var assembly = typeof(OperationsEndpoints).Assembly;
 
-        string? informationalVersion = assembly
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+        var informationalVersion = assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?
             .InformationalVersion;
 
         if ( string.IsNullOrEmpty( informationalVersion ) )
@@ -101,7 +92,7 @@ public static class OperationsEndpoints
             return assembly.GetName().Version?.ToString() ?? "unknown";
         }
 
-        int metadata = informationalVersion.IndexOf( '+', StringComparison.Ordinal );
+        var metadata = informationalVersion.IndexOf( '+', StringComparison.Ordinal );
 
         return metadata < 0 ? informationalVersion : informationalVersion[..metadata];
     }

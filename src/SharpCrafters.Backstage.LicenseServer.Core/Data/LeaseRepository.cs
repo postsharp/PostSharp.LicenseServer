@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SharpCrafters.Backstage.LicenseServer.Licensing;
@@ -43,7 +45,6 @@ public sealed class LeaseRepository : ILeaseRepository
             // Assigned next to the navigation property, and not left to the fixup of EF Core, so that
             // the lease is complete before it is tracked and signed.
             LicenseId = license.LicenseId,
-
             AuthenticatedUser = authenticatedUserName,
             EndTime = time.AddDays( this.settings.NewLeaseDays ),
             Machine = machine,
@@ -117,7 +118,7 @@ public sealed class LeaseRepository : ILeaseRepository
     /// <returns><c>false</c> when no time is left to grant.</returns>
     private bool FixLease( Lease lease, DateTime time, bool fixEndTime = true )
     {
-        LicenseInfo? parsedLicense = this.licenseParser.TryParse( lease.License.LicenseKey );
+        var parsedLicense = this.licenseParser.TryParse( lease.License.LicenseKey );
 
         if ( parsedLicense == null )
         {
@@ -138,7 +139,7 @@ public sealed class LeaseRepository : ILeaseRepository
 
             if ( lease.Grace )
             {
-                DateTime graceEnd = lease.License.GraceStartTime!.Value.AddDays( parsedLicense.GraceDays );
+                var graceEnd = lease.License.GraceStartTime!.Value.AddDays( parsedLicense.GraceDays );
 
                 if ( lease.EndTime > graceEnd )
                 {
@@ -170,7 +171,7 @@ public sealed class LeaseRepository : ILeaseRepository
         // It counts distinct machines and not leases. A user can hold two leases on one machine,
         // which happens when the clock of the server moves backwards. Counting the leases would
         // charge that user for a machine they do not work on.
-        List<int> machinesPerUser = this.db.OpenLeases
+        var machinesPerUser = this.db.OpenLeases
             .Where( l => l.LicenseId == licenseId && l.StartTime <= dateTime && l.EndTime > dateTime )
             .GroupBy( l => l.UserName )
             .Select( g => g.Select( l => l.Machine ).Distinct().Count() )
@@ -184,7 +185,7 @@ public sealed class LeaseRepository : ILeaseRepository
         DateTime startTime,
         DateTime endTime )
     {
-        List<Lease> leases = this.db.OpenLeases
+        var leases = this.db.OpenLeases
             .Where( l => l.LicenseId == licenseId && l.StartTime <= endTime && l.EndTime > startTime )
             .AsNoTracking()
             .ToList();
@@ -197,11 +198,9 @@ public sealed class LeaseRepository : ILeaseRepository
 
         // Ordering in memory gives a stable sort, so the timeline is reproducible. Close sorts
         // before Open at the same instant; see LeaseCountingPointKind.
-        List<LeaseCountingPoint> allRecords = leases
+        var allRecords = leases
             .Select( l => new LeaseCountingPoint { Time = l.StartTime, Kind = LeaseCountingPointKind.Open, Lease = l } )
-            .Concat(
-                leases.Select(
-                    l => new LeaseCountingPoint { Time = l.EndTime, Kind = LeaseCountingPointKind.Close, Lease = l } ) )
+            .Concat( leases.Select( l => new LeaseCountingPoint { Time = l.EndTime, Kind = LeaseCountingPointKind.Close, Lease = l } ) )
             .OrderBy( p => p.Time )
             .ThenBy( p => p.Kind )
             .ThenBy( p => p.Lease.LeaseId )
@@ -214,24 +213,24 @@ public sealed class LeaseRepository : ILeaseRepository
         // the machine at the first close and found nothing to remove at the second.
         Dictionary<string, Dictionary<string, int>> currentUsers = new( StringComparer.OrdinalIgnoreCase );
 
-        int seatCount = 0;
+        var seatCount = 0;
 
-        foreach ( LeaseCountingPoint record in allRecords )
+        foreach ( var record in allRecords )
         {
-            if ( !currentUsers.TryGetValue( record.Lease.UserName, out Dictionary<string, int>? machines ) )
+            if ( !currentUsers.TryGetValue( record.Lease.UserName, out var machines ) )
             {
                 machines = new Dictionary<string, int>( StringComparer.OrdinalIgnoreCase );
                 currentUsers.Add( record.Lease.UserName, machines );
             }
 
-            int seatsBefore = SeatCounter.CountSeats( [machines.Count], this.settings.MachinesPerUser );
-            string machine = record.Lease.Machine;
+            var seatsBefore = SeatCounter.CountSeats( [machines.Count], this.settings.MachinesPerUser );
+            var machine = record.Lease.Machine;
 
             if ( record.Kind == LeaseCountingPointKind.Open )
             {
                 machines[machine] = machines.GetValueOrDefault( machine ) + 1;
             }
-            else if ( machines.TryGetValue( machine, out int openLeases ) )
+            else if ( machines.TryGetValue( machine, out var openLeases ) )
             {
                 // The machine leaves the list when its last lease closes.
                 if ( openLeases > 1 )
@@ -250,7 +249,7 @@ public sealed class LeaseRepository : ILeaseRepository
             // because the page that draws the timeline is a report: an administrator who looks at
             // usage must not receive an error.
 
-            int seatsAfter = SeatCounter.CountSeats( [machines.Count], this.settings.MachinesPerUser );
+            var seatsAfter = SeatCounter.CountSeats( [machines.Count], this.settings.MachinesPerUser );
 
             seatCount += seatsAfter - seatsBefore;
             record.SeatCount = seatCount;
@@ -262,8 +261,7 @@ public sealed class LeaseRepository : ILeaseRepository
     /// <summary>
     /// Saves the unit of work.
     /// </summary>
-    public Task<int> SaveChangesAsync( CancellationToken cancellationToken = default )
-        => this.db.SaveChangesAsync( cancellationToken );
+    public Task<int> SaveChangesAsync( CancellationToken cancellationToken = default ) => this.db.SaveChangesAsync( cancellationToken );
 
     public int SaveChanges() => this.db.SaveChanges();
 }

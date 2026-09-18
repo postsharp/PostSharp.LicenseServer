@@ -8,7 +8,7 @@
     <h2>Licenses</h2>
 </div>
 
-@if ( Model.Licenses.Count == 0 )
+@if (Model.Licenses.Count == 0)
 {
     <div class="callout">
         <p>
@@ -21,41 +21,41 @@ else
 {
     <div class="table-scroll">
         <table>
-        <thead>
-        <tr>
-            <th>License</th>
-            <th>Type</th>
-            <th>Product</th>
-            <th>Seats</th>
-            <th>In use</th>
-            <th>Grace started</th>
-            <th>Maintenance ends</th>
-            <th>Status</th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach ( var license in Model.Licenses )
-        {
+            <thead>
             <tr>
-                <td>@license.LicenseId</td>
-                <td>@license.LicenseType</td>
-                <td>@license.ProductCode</td>
-                <td>@(license.MaxUsers?.ToString() ?? "Unlimited")</td>
-                <td>@license.CurrentUsers</td>
-                <td>@license.GraceStartTime?.ToString( "d" )</td>
-                <td>@license.MaintenanceEndDate?.ToString( "d" )</td>
-                <td>
-                    <span class="status status--@(license.StatusModifier)">@license.Status</span>
-                </td>
-                <td>
-                    <a asp-page="/Admin/Details" asp-route-id="@license.LicenseId">Details</a>
-                    &middot;
-                    <a asp-page="/Graph" asp-route-id="@license.LicenseId">Usage</a>
-                </td>
+                <th>License</th>
+                <th>Type</th>
+                <th>Product</th>
+                <th>Seats</th>
+                <th>In use</th>
+                <th>Grace started</th>
+                <th>Maintenance ends</th>
+                <th>Status</th>
+                <th></th>
             </tr>
-        }
-        </tbody>
+            </thead>
+            <tbody>
+            @foreach (var license in Model.Licenses)
+            {
+                <tr>
+                    <td>@license.LicenseId</td>
+                    <td>@license.LicenseType</td>
+                    <td>@license.ProductCode</td>
+                    <td>@( license.MaxUsers?.ToString() ?? "Unlimited" )</td>
+                    <td>@license.CurrentUsers</td>
+                    <td>@license.GraceStartTime?.ToString( "d" )</td>
+                    <td>@license.MaintenanceEndDate?.ToString( "d" )</td>
+                    <td>
+                        <span class="status status--@( license.StatusModifier )">@license.Status</span>
+                    </td>
+                    <td>
+                        <a asp-page="/Admin/Details" asp-route-id="@license.LicenseId">Details</a>
+                        &middot;
+                        <a asp-page="/Graph" asp-route-id="@license.LicenseId">Usage</a>
+                    </td>
+                </tr>
+            }
+            </tbody>
         </table>
     </div>
 }

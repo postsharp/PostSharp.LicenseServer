@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 namespace SharpCrafters.Backstage.LicenseServer.Services;
 
 /// <summary>
@@ -10,6 +12,5 @@ public static class LicenseCapacity
     /// Returns the number of seats a license covers while its grace period runs, which is its
     /// capacity raised by the percentage the license key carries and rounded up.
     /// </summary>
-    public static int GetGraceLimit( int maximum, int gracePercent )
-        => (int) Math.Ceiling( maximum * (100.0 + gracePercent) / 100.0 );
+    public static int GetGraceLimit( int maximum, int gracePercent ) => (int) Math.Ceiling( maximum * ( 100.0 + gracePercent ) / 100.0 );
 }

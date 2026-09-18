@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.EntityFrameworkCore;
 using SharpCrafters.Backstage.LicenseServer.Data;
 using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
@@ -21,7 +23,7 @@ public sealed class SchemaCompatibilityTests
     /// </summary>
     private static string CreateScript()
     {
-        DbContextOptions<LicenseServerDbContext> options =
+        var options =
             new DbContextOptionsBuilder<LicenseServerDbContext>()
                 .UseSqlServer( "Server=none;Database=none;" )
                 .Options;
@@ -47,14 +49,14 @@ public sealed class SchemaCompatibilityTests
     [Fact]
     public void Licenses_LicenseKeyIsNeverFilteredOrSorted()
     {
-        DbContextOptions<LicenseServerDbContext> options =
+        var options =
             new DbContextOptionsBuilder<LicenseServerDbContext>()
                 .UseSqlServer( "Server=none;Database=none;" )
                 .Options;
 
         using LicenseServerDbContext db = new( options );
 
-        string sql = db.Licenses.OrderBy( l => l.Priority ).ThenByDescending( l => l.LicenseId ).ToQueryString();
+        var sql = db.Licenses.OrderBy( l => l.Priority ).ThenByDescending( l => l.LicenseId ).ToQueryString();
 
         Assert.Contains( "[LicenseKey]", sql, StringComparison.OrdinalIgnoreCase );
         Assert.DoesNotContain( "ORDER BY [l].[LicenseKey]", sql, StringComparison.OrdinalIgnoreCase );
@@ -65,12 +67,12 @@ public sealed class SchemaCompatibilityTests
     {
         // The identifier comes from the license key. Making it an identity column would both break
         // an existing database and lose the link between the row and the key.
-        string script = CreateScript();
-        int licensesTable = script.IndexOf( "CREATE TABLE [Licenses]", StringComparison.OrdinalIgnoreCase );
+        var script = CreateScript();
+        var licensesTable = script.IndexOf( "CREATE TABLE [Licenses]", StringComparison.OrdinalIgnoreCase );
 
         Assert.True( licensesTable >= 0 );
 
-        string licenses = script[licensesTable..script.IndexOf( ");", licensesTable, StringComparison.Ordinal )];
+        var licenses = script[licensesTable..script.IndexOf( ");", licensesTable, StringComparison.Ordinal )];
 
         Assert.Contains( "[LicenseId] int NOT NULL", licenses, StringComparison.OrdinalIgnoreCase );
         Assert.DoesNotContain( "IDENTITY", licenses, StringComparison.OrdinalIgnoreCase );
@@ -83,6 +85,7 @@ public sealed class SchemaCompatibilityTests
     }
 
     [Theory]
+
     // Types as declared by CreateTables.sql.
     [InlineData( "[ProductCode] varchar(50) NOT NULL" )]
     [InlineData( "[Priority] int NOT NULL" )]
@@ -97,8 +100,7 @@ public sealed class SchemaCompatibilityTests
     [InlineData( "[Grace] bit NOT NULL" )]
     [InlineData( "[OverwrittenLeaseId] int NULL" )]
     [InlineData( "[LicenseId] int NOT NULL" )]
-    public void Column_KeepsItsType( string expected )
-        => Assert.Contains( expected, CreateScript(), StringComparison.OrdinalIgnoreCase );
+    public void Column_KeepsItsType( string expected ) => Assert.Contains( expected, CreateScript(), StringComparison.OrdinalIgnoreCase );
 
     /// <summary>
     /// The timestamps keep the type <c>datetime</c>. The default type of EF is <c>datetime2</c>, and
@@ -106,8 +108,7 @@ public sealed class SchemaCompatibilityTests
     /// of a lease.
     /// </summary>
     [Fact]
-    public void Timestamps_AreNeverDateTime2()
-        => Assert.DoesNotContain( "datetime2", CreateScript(), StringComparison.OrdinalIgnoreCase );
+    public void Timestamps_AreNeverDateTime2() => Assert.DoesNotContain( "datetime2", CreateScript(), StringComparison.OrdinalIgnoreCase );
 
     [Theory]
     [InlineData( "PK_Licenses" )]
@@ -116,13 +117,12 @@ public sealed class SchemaCompatibilityTests
     [InlineData( "FK_Leases_Leases" )]
     [InlineData( "IX_Leases_EndTime" )]
     [InlineData( "IX_Leases_OverwrittenLeaseId" )]
-    public void Constraint_KeepsItsName( string expected )
-        => Assert.Contains( expected, CreateScript(), StringComparison.Ordinal );
+    public void Constraint_KeepsItsName( string expected ) => Assert.Contains( expected, CreateScript(), StringComparison.Ordinal );
 
     [Fact]
     public void Tables_KeepTheirNames()
     {
-        string script = CreateScript();
+        var script = CreateScript();
 
         Assert.Contains( "CREATE TABLE [Licenses]", script, StringComparison.OrdinalIgnoreCase );
         Assert.Contains( "CREATE TABLE [Leases]", script, StringComparison.OrdinalIgnoreCase );
@@ -132,8 +132,7 @@ public sealed class SchemaCompatibilityTests
     /// The deletion of a license must not cascade through the chain of replaced leases.
     /// </summary>
     [Fact]
-    public void ForeignKeys_DoNotCascade()
-        => Assert.DoesNotContain( "ON DELETE CASCADE", CreateScript(), StringComparison.OrdinalIgnoreCase );
+    public void ForeignKeys_DoNotCascade() => Assert.DoesNotContain( "ON DELETE CASCADE", CreateScript(), StringComparison.OrdinalIgnoreCase );
 
     /// <summary>
     /// The database of an existing installation contains the column <c>HMAC</c>, which held the
@@ -143,7 +142,7 @@ public sealed class SchemaCompatibilityTests
     [Fact]
     public async Task LegacyHmacColumn_IsIgnored()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
         // On SQL Server the column is already there, because CreateTables.sql declares it. On the
         // other two engines the schema does not declare it, so the test adds it. This test modifies
@@ -160,8 +159,8 @@ public sealed class SchemaCompatibilityTests
                     : "ALTER TABLE Leases ADD COLUMN HMAC varchar(100) NULL" );
         }
 
-        License license = LicenseBuilder.Default().AddTo( context );
-        Lease lease = LeaseBuilder.For( license ).AddTo( context );
+        var license = LicenseBuilder.Default().AddTo( context );
+        var lease = LeaseBuilder.For( license ).AddTo( context );
 
         Assert.Equal( 1, await context.Db.Leases.CountAsync( l => l.LeaseId == lease.LeaseId ) );
     }
@@ -169,7 +168,7 @@ public sealed class SchemaCompatibilityTests
     [Fact]
     public void Model_HasExactlyTheTwoExpectedTables()
     {
-        DbContextOptions<LicenseServerDbContext> options =
+        var options =
             new DbContextOptionsBuilder<LicenseServerDbContext>()
                 .UseSqlServer( "Server=none;Database=none;" )
                 .Options;

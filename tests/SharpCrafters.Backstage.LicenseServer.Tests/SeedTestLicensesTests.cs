@@ -1,5 +1,8 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using SharpCrafters.Backstage.LicenseServer.Data;
@@ -32,8 +35,7 @@ public sealed class SeedTestLicensesTests : IDisposable
 
     private string KeyFile => Path.Combine( this.dataDirectory, "test-authority.key" );
 
-    private TestLicenseAuthority CreateAuthority()
-        => TestLicenseAuthority.LoadOrCreate( this.KeyFile, NullLogger.Instance );
+    private TestLicenseAuthority CreateAuthority() => TestLicenseAuthority.LoadOrCreate( this.KeyFile, NullLogger.Instance );
 
     /// <summary>
     /// The key pair has to outlive the process, because the license keys it signed are in the
@@ -43,7 +45,7 @@ public sealed class SeedTestLicensesTests : IDisposable
     [Fact]
     public void Authority_IsReusedAcrossProcesses()
     {
-        string licenseKey = this.CreateAuthority()
+        var licenseKey = this.CreateAuthority()
             .CreateLicenseKey( 900001, LicenseProduct.MetalamaProfessional, LicenseType.Business, 25, 5, 20, DateTime.UtcNow.AddYears( 1 ) );
 
         Assert.True( File.Exists( this.KeyFile ) );
@@ -58,12 +60,12 @@ public sealed class SeedTestLicensesTests : IDisposable
     [Fact]
     public void Authority_OfAnotherServer_IsNotAccepted()
     {
-        string licenseKey = this.CreateAuthority()
+        var licenseKey = this.CreateAuthority()
             .CreateLicenseKey( 900001, LicenseProduct.MetalamaProfessional, LicenseType.Business, 25, 5, 20, DateTime.UtcNow.AddYears( 1 ) );
 
-        string otherDirectory = Path.Combine( this.dataDirectory, "other" );
+        var otherDirectory = Path.Combine( this.dataDirectory, "other" );
 
-        TestLicenseAuthority other =
+        var other =
             TestLicenseAuthority.LoadOrCreate( Path.Combine( otherDirectory, "test-authority.key" ), NullLogger.Instance );
 
         Assert.Null( new BackstageLicenseParser( other.Authority ).TryParse( licenseKey ) );
@@ -72,10 +74,10 @@ public sealed class SeedTestLicensesTests : IDisposable
     [Fact]
     public async Task Seed_EmptyDatabase_AddsLicensesThisServerAccepts()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        TestLicenseAuthority authority = this.CreateAuthority();
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var authority = this.CreateAuthority();
 
-        IReadOnlyList<int> added = TestLicenseSeeder.Seed(
+        var added = TestLicenseSeeder.Seed(
             context.Db,
             authority,
             TimeProvider.System,
@@ -85,9 +87,9 @@ public sealed class SeedTestLicensesTests : IDisposable
 
         BackstageLicenseParser parser = new( authority.Authority );
 
-        foreach ( License license in context.Db.Licenses )
+        foreach ( var license in context.Db.Licenses )
         {
-            LicenseInfo? parsed = parser.TryParse( license.LicenseKey );
+            var parsed = parser.TryParse( license.LicenseKey );
 
             Assert.NotNull( parsed );
             Assert.True( parsed.IsLicenseServerEligible );
@@ -102,21 +104,20 @@ public sealed class SeedTestLicensesTests : IDisposable
     [Fact]
     public async Task Seed_Twice_AddsNothingTheSecondTime()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        TestLicenseAuthority authority = this.CreateAuthority();
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var authority = this.CreateAuthority();
 
         TestLicenseSeeder.Seed( context.Db, authority, TimeProvider.System, NullLogger.Instance );
 
         // The keys are sorted after they are read. On SQL Server the column has the type text, which
         // Transact-SQL refuses to sort, and the query would fail. This is the rule that
         // SchemaCompatibilityTests states for the queries of the server.
-        string[] first = ReadKeys( context );
+        var first = ReadKeys( context );
 
         Assert.Empty( TestLicenseSeeder.Seed( context.Db, authority, TimeProvider.System, NullLogger.Instance ) );
         Assert.Equal( first, ReadKeys( context ) );
 
-        static string[] ReadKeys( LicenseServerTestContext context )
-            => context.Db.Licenses.Select( l => l.LicenseKey ).AsEnumerable().Order().ToArray();
+        static string[] ReadKeys( LicenseServerTestContext context ) => context.Db.Licenses.Select( l => l.LicenseKey ).AsEnumerable().Order().ToArray();
     }
 
     /// <summary>
@@ -134,8 +135,9 @@ public sealed class SeedTestLicensesTests : IDisposable
 
         ServiceCollection services = [];
 
-        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
-            () => services.AddLicenseServerLicensing( configuration, new StubEnvironment( environmentName, this.dataDirectory ) ) );
+        var exception = Assert.Throws<InvalidOperationException>( () => services.AddLicenseServerLicensing(
+                                                                      configuration,
+                                                                      new StubEnvironment( environmentName, this.dataDirectory ) ) );
 
         Assert.Contains( "SeedTestLicenses", exception.Message, StringComparison.Ordinal );
         Assert.Contains( environmentName, exception.Message, StringComparison.Ordinal );
@@ -170,7 +172,7 @@ public sealed class SeedTestLicensesTests : IDisposable
 
         public string ContentRootPath { get; set; }
 
-        public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } =
-            new Microsoft.Extensions.FileProviders.NullFileProvider();
+        public IFileProvider ContentRootFileProvider { get; set; } =
+            new NullFileProvider();
     }
 }

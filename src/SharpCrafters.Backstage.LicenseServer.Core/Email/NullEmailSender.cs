@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 namespace SharpCrafters.Backstage.LicenseServer.Email;
 
 /// <summary>
@@ -6,6 +8,5 @@ namespace SharpCrafters.Backstage.LicenseServer.Email;
 /// </summary>
 public sealed class NullEmailSender : IEmailSender
 {
-    public Task SendAsync( EmailMessage message, CancellationToken cancellationToken = default )
-        => Task.CompletedTask;
+    public Task SendAsync( EmailMessage message, CancellationToken cancellationToken = default ) => Task.CompletedTask;
 }

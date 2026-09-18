@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using SharpCrafters.Backstage.Licensing;
@@ -41,7 +43,7 @@ public sealed class TestLicenseAuthority
     private TestLicenseAuthority( ECParameters parameters )
     {
         this.signingAuthority = CreateAuthority( ToXml( parameters, true ) );
-        this.Authority = new ExplicitLicensingAuthorityProvider( (KeyId, ToXml( parameters, false )) );
+        this.Authority = new ExplicitLicensingAuthorityProvider( ( KeyId, ToXml( parameters, false ) ) );
     }
 
     /// <summary>
@@ -53,7 +55,7 @@ public sealed class TestLicenseAuthority
         ArgumentException.ThrowIfNullOrWhiteSpace( keyFilePath );
         ArgumentNullException.ThrowIfNull( logger );
 
-        using ECDsa key = ECDsa.Create( ECCurve.NamedCurves.nistP256 );
+        using var key = ECDsa.Create( ECCurve.NamedCurves.nistP256 );
 
         if ( File.Exists( keyFilePath ) )
         {
@@ -101,13 +103,12 @@ public sealed class TestLicenseAuthority
         return builder.SignAndSerialize( this.signingAuthority );
     }
 
-    private static LicensingAuthority CreateAuthority( string keyXml )
-        => new ExplicitLicensingAuthorityProvider( (KeyId, keyXml) ).GetAuthority( KeyId );
+    private static LicensingAuthority CreateAuthority( string keyXml ) => new ExplicitLicensingAuthorityProvider( ( KeyId, keyXml ) ).GetAuthority( KeyId );
 
     private static string ToXml( ECParameters parameters, bool includePrivateValue )
         => "<ECDSAKeyValue><Curve>nistP256</Curve>"
            + $"<X>{Convert.ToBase64String( parameters.Q.X! )}</X>"
            + $"<Y>{Convert.ToBase64String( parameters.Q.Y! )}</Y>"
-           + (includePrivateValue ? $"<D>{Convert.ToBase64String( parameters.D! )}</D>" : string.Empty)
+           + ( includePrivateValue ? $"<D>{Convert.ToBase64String( parameters.D! )}</D>" : string.Empty )
            + "</ECDSAKeyValue>";
 }

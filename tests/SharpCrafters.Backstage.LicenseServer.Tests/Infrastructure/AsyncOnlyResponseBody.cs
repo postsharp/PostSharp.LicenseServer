@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 
@@ -23,28 +25,27 @@ public sealed class AsyncOnlyResponseBody : IStartupFilter
     public Action<IApplicationBuilder> Configure( Action<IApplicationBuilder> next )
         => builder =>
         {
-            builder.Use(
-                async ( context, nextMiddleware ) =>
+            builder.Use( async ( context, nextMiddleware ) =>
+            {
+                if ( !this.IsEnabled )
                 {
-                    if ( !this.IsEnabled )
-                    {
-                        await nextMiddleware( context );
+                    await nextMiddleware( context );
 
-                        return;
-                    }
+                    return;
+                }
 
-                    Stream original = context.Response.Body;
-                    context.Response.Body = new AsyncOnlyStream( original );
+                var original = context.Response.Body;
+                context.Response.Body = new AsyncOnlyStream( original );
 
-                    try
-                    {
-                        await nextMiddleware( context );
-                    }
-                    finally
-                    {
-                        context.Response.Body = original;
-                    }
-                } );
+                try
+                {
+                    await nextMiddleware( context );
+                }
+                finally
+                {
+                    context.Response.Body = original;
+                }
+            } );
 
             next( builder );
         };

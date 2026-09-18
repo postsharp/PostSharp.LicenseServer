@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SharpCrafters.Backstage.LicenseServer;
@@ -10,7 +12,7 @@ using SharpCrafters.Backstage.LicenseServer.Options;
 using SharpCrafters.Backstage.LicenseServer.Services;
 using SharpCrafters.Backstage.LicenseServer.Time;
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder( args );
+var builder = WebApplication.CreateBuilder( args );
 
 builder.Services
     .AddOptions<LicenseServerOptions>()
@@ -31,7 +33,7 @@ builder.Services.AddLicenseServerDatabase( builder.Configuration, builder.Enviro
 builder.Services.AddScoped<ILeaseRepository, LeaseRepository>();
 builder.Services.AddScoped<LeaseService>();
 
-IReadOnlyList<byte> testLicensingAuthorities =
+var testLicensingAuthorities =
     builder.Services.AddLicenseServerLicensing( builder.Configuration, builder.Environment );
 
 builder.Services.AddSingleton<ILicenseServerVersion, BackstageServerVersion>();
@@ -44,39 +46,36 @@ builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>( "database" )
     .AddCheck<LicenseHealthCheck>( "licenses" );
 
-
-builder.Services.AddSingleton<IEmailSender>(
-    services => services.GetRequiredService<IOptions<SmtpOptions>>().Value.Enabled
-        ? ActivatorUtilities.CreateInstance<SmtpEmailSender>( services )
-        : new NullEmailSender() );
+builder.Services.AddSingleton<IEmailSender>( services => services.GetRequiredService<IOptions<SmtpOptions>>().Value.Enabled
+                                                 ? ActivatorUtilities.CreateInstance<SmtpEmailSender>( services )
+                                                 : new NullEmailSender() );
 
 // The acceleration of the clock exists so that a licensing scenario that lasts several days can be
 // replayed in minutes. It is disabled unless the configuration enables it.
-builder.Services.AddSingleton<TimeProvider>(
-    services =>
+builder.Services.AddSingleton<TimeProvider>( services =>
+{
+    var options = services.GetRequiredService<IOptions<LicenseServerOptions>>().Value;
+
+    if ( options.TimeAcceleration is 0 or 1 )
     {
-        LicenseServerOptions options = services.GetRequiredService<IOptions<LicenseServerOptions>>().Value;
+        return TimeProvider.System;
+    }
 
-        if ( options.TimeAcceleration is 0 or 1 )
-        {
-            return TimeProvider.System;
-        }
+    services.GetRequiredService<ILogger<Program>>()
+        .LogWarning(
+            "Time is accelerated by a factor of {Acceleration}. This is a test configuration and must not be "
+            + "used in production.",
+            options.TimeAcceleration );
 
-        services.GetRequiredService<ILogger<Program>>()
-            .LogWarning(
-                "Time is accelerated by a factor of {Acceleration}. This is a test configuration and must not be "
-                + "used in production.",
-                options.TimeAcceleration );
+    return new AcceleratedTimeProvider( TimeProvider.System, (double) options.TimeAcceleration );
+} );
 
-        return new AcceleratedTimeProvider( TimeProvider.System, (double) options.TimeAcceleration );
-    } );
-
-string authenticationScheme = builder.Services.AddLicenseServerAuthentication( builder.Configuration );
+var authenticationScheme = builder.Services.AddLicenseServerAuthentication( builder.Configuration );
 
 // A policy is built before the options are available from the container, so the section is bound
 // here. It is bound as a whole, and not read key by key, so that the policy and the rest of the
 // application read the same properties of the same type.
-LicenseServerOptions startupOptions =
+var startupOptions =
     builder.Configuration.GetSection( LicenseServerOptions.SectionName ).Get<LicenseServerOptions>() ?? new LicenseServerOptions();
 
 builder.Services.AddAuthorizationBuilder()
@@ -84,7 +83,7 @@ builder.Services.AddAuthorizationBuilder()
         AuthorizationPolicies.Admin,
         policy =>
         {
-            string[] roles = startupOptions.AdminRoles;
+            var roles = startupOptions.AdminRoles;
 
             // When no role is configured, the administrative pages are open, as they were in the
             // legacy Web.config. A restrictive default would lock administrators out of their own
@@ -112,13 +111,12 @@ builder.Services.AddAuthorizationBuilder()
             }
         } );
 
-builder.Services.AddRazorPages(
-    options =>
-    {
-        options.Conventions.AuthorizeFolder( "/Admin", AuthorizationPolicies.Admin );
-    } );
+builder.Services.AddRazorPages( options =>
+{
+    options.Conventions.AuthorizeFolder( "/Admin", AuthorizationPolicies.Admin );
+} );
 
-WebApplication app = builder.Build();
+var app = builder.Build();
 
 if ( !app.Environment.IsDevelopment() )
 {
@@ -143,7 +141,7 @@ if ( string.Equals(
         "Sqlite",
         StringComparison.OrdinalIgnoreCase ) )
 {
-    using IServiceScope scope = app.Services.CreateScope();
+    using var scope = app.Services.CreateScope();
     scope.ServiceProvider.GetRequiredService<LicenseServerDbContext>().Database.EnsureCreated();
 }
 
@@ -151,11 +149,11 @@ if ( string.Equals(
 // load simulation has a license to lease. The registration has already refused to start when this
 // setting is used outside the Development environment.
 {
-    TestLicenseAuthority? testAuthority = app.Services.GetService<TestLicenseAuthority>();
+    var testAuthority = app.Services.GetService<TestLicenseAuthority>();
 
     if ( testAuthority != null )
     {
-        using IServiceScope scope = app.Services.CreateScope();
+        using var scope = app.Services.CreateScope();
 
         TestLicenseSeeder.Seed(
             scope.ServiceProvider.GetRequiredService<LicenseServerDbContext>(),
@@ -168,7 +166,7 @@ if ( string.Equals(
 // The administrative pages are the only way to add and to revoke a license. The server writes a
 // warning, because a comment in a configuration file is not enough for an open default.
 {
-    LicenseServerOptions options = app.Services.GetRequiredService<IOptions<LicenseServerOptions>>().Value;
+    var options = app.Services.GetRequiredService<IOptions<LicenseServerOptions>>().Value;
 
     if ( options.AdminRoles.Length == 0 )
     {

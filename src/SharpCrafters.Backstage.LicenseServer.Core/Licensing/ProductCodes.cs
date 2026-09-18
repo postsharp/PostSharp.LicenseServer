@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Collections.Immutable;
 using SharpCrafters.Backstage.Licensing;
 
@@ -59,12 +61,12 @@ public static class ProductCodes
     /// </summary>
     public static IReadOnlyList<string> Matching( string productCode )
     {
-        if ( legacyNames.TryGetValue( productCode, out string? legacy ) )
+        if ( legacyNames.TryGetValue( productCode, out var legacy ) )
         {
             return [productCode, legacy];
         }
 
-        if ( currentNames.TryGetValue( productCode, out string? current ) )
+        if ( currentNames.TryGetValue( productCode, out var current ) )
         {
             return [productCode, current];
         }

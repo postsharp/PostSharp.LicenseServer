@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using SharpCrafters.Backstage.LicenseServer.Data;
 
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
@@ -9,10 +11,10 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests;
 public sealed class SeatCountingTests
 {
     [Fact]
-    public void CountSeats_NoUsers_ReturnsZero()
-        => Assert.Equal( 0, SeatCounter.CountSeats( [], 2 ) );
+    public void CountSeats_NoUsers_ReturnsZero() => Assert.Equal( 0, SeatCounter.CountSeats( [], 2 ) );
 
     [Theory]
+
     // One user, N machines, two machines per seat.
     [InlineData( 1, 1 )]
     [InlineData( 2, 1 )]
@@ -23,12 +25,10 @@ public sealed class SeatCountingTests
         => Assert.Equal( expectedSeats, SeatCounter.CountSeats( [machines], 2 ) );
 
     [Fact]
-    public void CountSeats_TwoUsersOneMachineEach_ConsumesTwoSeats()
-        => Assert.Equal( 2, SeatCounter.CountSeats( [1, 1], 2 ) );
+    public void CountSeats_TwoUsersOneMachineEach_ConsumesTwoSeats() => Assert.Equal( 2, SeatCounter.CountSeats( [1, 1], 2 ) );
 
     [Fact]
-    public void CountSeats_TwoUsersTwoMachinesEach_ConsumesTwoSeats()
-        => Assert.Equal( 2, SeatCounter.CountSeats( [2, 2], 2 ) );
+    public void CountSeats_TwoUsersTwoMachinesEach_ConsumesTwoSeats() => Assert.Equal( 2, SeatCounter.CountSeats( [2, 2], 2 ) );
 
     [Fact]
     public void CountSeats_RoundsUpPerUserNotInTotal()
@@ -46,6 +46,5 @@ public sealed class SeatCountingTests
         => Assert.Equal( expectedSeats, SeatCounter.CountSeats( [machines], machinesPerUser ) );
 
     [Fact]
-    public void CountSeats_MachinesPerUserBelowOne_Throws()
-        => Assert.Throws<ArgumentOutOfRangeException>( () => SeatCounter.CountSeats( [1], 0 ) );
+    public void CountSeats_MachinesPerUserBelowOne_Throws() => Assert.Throws<ArgumentOutOfRangeException>( () => SeatCounter.CountSeats( [1], 0 ) );
 }

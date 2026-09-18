@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
@@ -17,6 +19,7 @@ using SharpCrafters.Backstage.LicenseServer.Locking;
 using SharpCrafters.Backstage.LicenseServer.Options;
 using SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 using SharpCrafters.Common;
+using System.Globalization;
 
 namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
@@ -87,53 +90,51 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
             ["LicenseServer:NewLeaseDays"] = "3",
             ["LicenseServer:MinLeaseDays"] = "1",
             ["LicenseServer:BuildServers"] = "buildagent",
-            ["LicenseServer:MutexTimeout"] = this.MutexTimeoutSeconds.ToString( System.Globalization.CultureInfo.InvariantCulture ),
+            ["LicenseServer:MutexTimeout"] = this.MutexTimeoutSeconds.ToString( CultureInfo.InvariantCulture ),
             ["LicenseServer:DatabaseProvider"] = this.database.ProviderName,
             [$"ConnectionStrings:{DatabaseRegistration.ConnectionStringName}"] = this.database.ConnectionString,
             ["Smtp:Enabled"] = "false"
         };
 
-        foreach ( (string key, string? value) in settings )
+        foreach ( var (key, value) in settings )
         {
             builder.UseSetting( key, value );
         }
 
-        builder.ConfigureServices(
-            services =>
+        builder.ConfigureServices( services =>
+        {
+            // Neither the database nor its lock is replaced here. The application selects both
+            // from the configuration above, through the code path that a customer uses.
+            services.RemoveAll<ILicenseParser>();
+            services.AddSingleton<ILicenseParser>( this.LicenseParser );
+
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<IEmailSender>( this.EmailSender );
+
+            if ( this.LeaseLock != null )
             {
-                // Neither the database nor its lock is replaced here. The application selects both
-                // from the configuration above, through the code path that a customer uses.
-                services.RemoveAll<ILicenseParser>();
-                services.AddSingleton<ILicenseParser>( this.LicenseParser );
+                services.RemoveAll<ILeaseLock>();
+                services.AddSingleton( this.LeaseLock );
+            }
 
-                services.RemoveAll<IEmailSender>();
-                services.AddSingleton<IEmailSender>( this.EmailSender );
+            services.AddSingleton<ITestSynchronizationProvider>( this.Synchronization );
 
-                if ( this.LeaseLock != null )
-                {
-                    services.RemoveAll<ILeaseLock>();
-                    services.AddSingleton( this.LeaseLock );
-                }
+            // Windows authentication cannot be negotiated against an in-memory host.
+            services.AddAuthentication( TestAuthenticationHandler.SchemeName )
+                .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>(
+                    TestAuthenticationHandler.SchemeName,
+                    _ => { } );
 
-                services.AddSingleton<ITestSynchronizationProvider>( this.Synchronization );
-
-                // Windows authentication cannot be negotiated against an in-memory host.
-                services.AddAuthentication( TestAuthenticationHandler.SchemeName )
-                    .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>(
-                        TestAuthenticationHandler.SchemeName,
-                        _ => { } );
-
-                services.PostConfigure<AuthenticationOptions>(
-                    options =>
-                    {
-                        options.DefaultAuthenticateScheme = TestAuthenticationHandler.SchemeName;
-                        options.DefaultChallengeScheme = TestAuthenticationHandler.SchemeName;
-                    } );
-
-                services.AddSingleton<IStartupFilter>( this.ResponseBody );
-
-                services.AddLogging( logging => logging.SetMinimumLevel( LogLevel.Warning ) );
+            services.PostConfigure<AuthenticationOptions>( options =>
+            {
+                options.DefaultAuthenticateScheme = TestAuthenticationHandler.SchemeName;
+                options.DefaultChallengeScheme = TestAuthenticationHandler.SchemeName;
             } );
+
+            services.AddSingleton<IStartupFilter>( this.ResponseBody );
+
+            services.AddLogging( logging => logging.SetMinimumLevel( LogLevel.Warning ) );
+        } );
     }
 
     public LicenseServerDbContext CreateDbContext() => this.database.CreateContext();
@@ -150,12 +151,12 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
     /// </summary>
     public License AddLicense( LicenseBuilder builder )
     {
-        LicenseInfo info = builder.BuildInfo();
-        string key = $"FAKE-KEY-{info.LicenseId}";
+        var info = builder.BuildInfo();
+        var key = $"FAKE-KEY-{info.LicenseId}";
 
         this.LicenseParser.Register( key, info );
 
-        using LicenseServerDbContext db = this.CreateDbContext();
+        using var db = this.CreateDbContext();
 
         License license = new()
         {
@@ -217,8 +218,6 @@ public sealed class TestAuthenticationHandler : AuthenticationHandler<Authentica
             [new Claim( ClaimTypes.Name, "DOMAIN\\tester" )],
             SchemeName );
 
-        return Task.FromResult(
-            AuthenticateResult.Success(
-                new AuthenticationTicket( new ClaimsPrincipal( identity ), SchemeName ) ) );
+        return Task.FromResult( AuthenticateResult.Success( new AuthenticationTicket( new ClaimsPrincipal( identity ), SchemeName ) ) );
     }
 }

@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using SharpCrafters.Backstage.Licensing.Licenses;
 
 namespace SharpCrafters.Backstage.LicenseServer.Licensing;
@@ -19,9 +21,9 @@ public sealed class CompositeLicensingAuthorityProvider : ILicensingAuthorityPro
     {
         ArgumentNullException.ThrowIfNull( providers );
 
-        foreach ( ILicensingAuthorityProvider provider in providers )
+        foreach ( var provider in providers )
         {
-            foreach ( byte keyId in provider.KeyIds )
+            foreach ( var keyId in provider.KeyIds )
             {
                 if ( !this.providers.TryAdd( keyId, provider ) )
                 {
@@ -36,7 +38,7 @@ public sealed class CompositeLicensingAuthorityProvider : ILicensingAuthorityPro
     public IEnumerable<byte> KeyIds => this.providers.Keys;
 
     public LicensingAuthority GetAuthority( byte keyId )
-        => this.providers.TryGetValue( keyId, out ILicensingAuthorityProvider? provider )
+        => this.providers.TryGetValue( keyId, out var provider )
             ? provider.GetAuthority( keyId )
             : throw new KeyNotFoundException( $"There is no licensing authority key of identifier {keyId}." );
 }

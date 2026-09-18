@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Data.Common;
 using System.Globalization;
 using System.Security.Cryptography;
@@ -48,17 +50,17 @@ public sealed class PostgreSqlLeaseLock : ILeaseLock
     /// </summary>
     public static readonly long ResourceKey =
         BitConverter.ToInt64( SHA256.HashData( Encoding.UTF8.GetBytes( resourceName ) ) );
+
     public PostgreSqlLeaseLock( LicenseServerDbContext db )
     {
         this.db = db;
     }
 
-
     public async ValueTask<IAsyncDisposable?> TryAcquireAsync(
         TimeSpan timeout,
         CancellationToken cancellationToken = default )
     {
-        DatabaseFacade database = this.db.Database;
+        var database = this.db.Database;
 
         await database.OpenConnectionAsync( cancellationToken );
 
@@ -66,7 +68,7 @@ public sealed class PostgreSqlLeaseLock : ILeaseLock
         {
             // SET takes no parameter, so the value is written into the statement. It is a number
             // computed here and never a value that a request carries.
-            int milliseconds = Math.Max( 0, (int) timeout.TotalMilliseconds );
+            var milliseconds = Math.Max( 0, (int) timeout.TotalMilliseconds );
 
             await ExecuteAsync(
                 database,
@@ -100,7 +102,7 @@ public sealed class PostgreSqlLeaseLock : ILeaseLock
         string sql,
         CancellationToken cancellationToken )
     {
-        await using DbCommand command = database.GetDbConnection().CreateCommand();
+        await using var command = database.GetDbConnection().CreateCommand();
         command.CommandText = sql;
 
         await command.ExecuteNonQueryAsync( cancellationToken );

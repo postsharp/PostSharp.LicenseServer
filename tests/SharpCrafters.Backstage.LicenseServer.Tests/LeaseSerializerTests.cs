@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using SharpCrafters.Backstage.LicenseServer.Licensing;
 
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
@@ -45,7 +47,7 @@ public sealed class LeaseSerializerTests
     [Fact]
     public void Serialize_ProducesFourPartsTheClientCanSplit()
     {
-        string[] parts = LeaseSerializer.Serialize( "1-ABCDEF", start, start, start ).Split( ';' );
+        var parts = LeaseSerializer.Serialize( "1-ABCDEF", start, start, start ).Split( ';' );
 
         Assert.Equal( 4, parts.Length );
         Assert.Equal( ["License", "StartTime", "EndTime", "RenewTime"], parts.Select( p => p[..p.IndexOf( ':', StringComparison.Ordinal )].Trim() ) );

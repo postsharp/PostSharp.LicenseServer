@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using SharpCrafters.Backstage.LicenseServer.Data;
@@ -28,27 +30,22 @@ public sealed class IndexModel : PageModel
 
     public async Task OnGetAsync( CancellationToken cancellationToken )
     {
-        License[] licenses = await this.repository.Licenses
+        var licenses = await this.repository.Licenses
             .OrderBy( l => l.Priority )
             .ThenByDescending( l => l.LicenseId )
             .AsNoTracking()
             .ToArrayAsync( cancellationToken );
 
-        DateTime now = this.timeProvider.GetUtcNow().UtcDateTime;
+        var now = this.timeProvider.GetUtcNow().UtcDateTime;
         List<LicenseSummary> summaries = [];
 
-        foreach ( License license in licenses )
+        foreach ( var license in licenses )
         {
-            LicenseInfo? parsedLicense = this.licenseParser.TryParse( license.LicenseKey );
+            var parsedLicense = this.licenseParser.TryParse( license.LicenseKey );
 
             summaries.Add(
                 parsedLicense == null
-                    ? new LicenseSummary
-                    {
-                        LicenseId = license.LicenseId,
-                        LicenseType = "INVALID",
-                        Status = "Invalid"
-                    }
+                    ? new LicenseSummary { LicenseId = license.LicenseId, LicenseType = "INVALID", Status = "Invalid" }
                     : new LicenseSummary
                     {
                         LicenseId = license.LicenseId,

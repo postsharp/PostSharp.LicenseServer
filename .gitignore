@@ -28,3 +28,7 @@ nuget.config
 /source-dependencies/
 /eng/tools/
 /.config/dotnet-tools.json
+
+# The local tool manifest that `Build.ps1 codestyle format` writes when it installs the JetBrains
+# command line tools. It pins a version per machine and is not part of the product.
+/dotnet-tools.json

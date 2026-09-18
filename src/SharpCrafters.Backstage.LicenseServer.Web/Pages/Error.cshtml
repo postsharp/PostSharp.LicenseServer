@@ -8,11 +8,13 @@
 
 <p>An unexpected error occurred while handling your request.</p>
 
-@if ( Model.RequestId != null )
+@if (Model.RequestId != null)
 {
     <p>Request identifier: <code>@Model.RequestId</code></p>
 }
 
 <p>The details are in the server log.</p>
 
-<p><a asp-page="/Index">Back to the licenses</a></p>
+<p>
+    <a asp-page="/Index">Back to the licenses</a>
+</p>

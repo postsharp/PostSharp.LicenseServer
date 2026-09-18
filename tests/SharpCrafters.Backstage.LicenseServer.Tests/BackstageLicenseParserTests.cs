@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using SharpCrafters.Backstage.LicenseServer.Licensing;
 using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 using SharpCrafters.Backstage.Licensing;
@@ -17,14 +19,14 @@ public sealed class BackstageLicenseParserTests
     [Fact]
     public void SignedKey_IsParsedIntoTheFactsTheServerNeeds()
     {
-        LicenseKeyDataBuilder builder = TestLicenseKeys.Builder( licenseId: 4242 );
+        var builder = TestLicenseKeys.Builder( licenseId: 4242 );
         builder.UserNumber = 25;
         builder.ValidTo = new DateTime( 2030, 6, 30, 0, 0, 0, DateTimeKind.Utc );
         builder.SubscriptionEndDate = new DateTime( 2029, 6, 30, 0, 0, 0, DateTimeKind.Utc );
         builder.GraceDays = 7;
         builder.GracePercent = 15;
 
-        LicenseInfo? license = parser.TryParse( builder.Sign() );
+        var license = parser.TryParse( builder.Sign() );
 
         Assert.NotNull( license );
         Assert.Equal( 4242, license.LicenseId );
@@ -51,7 +53,7 @@ public sealed class BackstageLicenseParserTests
     [Fact]
     public void KeyIssuedByTheBackstageTestProvider_IsParsed()
     {
-        LicenseInfo? license = parser.TryParse( TestLicenseKeys.Keys.PostSharpUltimate );
+        var license = parser.TryParse( TestLicenseKeys.Keys.PostSharpUltimate );
 
         Assert.NotNull( license );
         Assert.Equal( "PostSharpUltimate", license.Product );
@@ -63,8 +65,7 @@ public sealed class BackstageLicenseParserTests
     /// serve a key signed with a key that the authority does not hold.
     /// </summary>
     [Fact]
-    public void KeySignedWithAForgedKey_IsRejected()
-        => Assert.Null( parser.TryParse( TestLicenseKeys.Builder().SignWithAForgedKey() ) );
+    public void KeySignedWithAForgedKey_IsRejected() => Assert.Null( parser.TryParse( TestLicenseKeys.Builder().SignWithAForgedKey() ) );
 
     /// <summary>
     /// A key whose signature names an authority that was never issued is an invalid key, and not an
@@ -76,8 +77,7 @@ public sealed class BackstageLicenseParserTests
         => Assert.Null( parser.TryParse( TestLicenseKeys.Builder().SignWithAnUnknownAuthority() ) );
 
     [Fact]
-    public void UnsignedKeyOfATypeThatRequiresASignature_IsRejected()
-        => Assert.Null( parser.TryParse( TestLicenseKeys.Builder().Unsigned() ) );
+    public void UnsignedKeyOfATypeThatRequiresASignature_IsRejected() => Assert.Null( parser.TryParse( TestLicenseKeys.Builder().Unsigned() ) );
 
     /// <summary>
     /// An evaluation key carries no signature by design, and the server may serve it.
@@ -85,9 +85,9 @@ public sealed class BackstageLicenseParserTests
     [Fact]
     public void UnsignedKeyOfATypeThatRequiresNoSignature_IsParsed()
     {
-        string key = TestLicenseKeys.Builder( licenseType: LicenseType.Evaluation ).Unsigned();
+        var key = TestLicenseKeys.Builder( licenseType: LicenseType.Evaluation ).Unsigned();
 
-        LicenseInfo? license = parser.TryParse( key );
+        var license = parser.TryParse( key );
 
         Assert.NotNull( license );
         Assert.Equal( nameof(LicenseType.Evaluation), license.LicenseType );
@@ -108,7 +108,7 @@ public sealed class BackstageLicenseParserTests
     [Fact]
     public void KeyWithoutAGracePercentage_GetsThirtyPercent()
     {
-        LicenseKeyDataBuilder builder = TestLicenseKeys.Builder();
+        var builder = TestLicenseKeys.Builder();
         builder.GracePercent = null;
 
         Assert.Equal( 30, parser.TryParse( builder.Sign() )!.GracePercent );
@@ -127,7 +127,7 @@ public sealed class BackstageLicenseParserTests
     [Fact]
     public void KeyWithoutAGracePeriod_GetsThirtyDays()
     {
-        LicenseKeyDataBuilder builder = TestLicenseKeys.Builder();
+        var builder = TestLicenseKeys.Builder();
 
         Assert.Equal( 30, parser.TryParse( builder.Sign() )!.GraceDays );
     }
@@ -141,7 +141,7 @@ public sealed class BackstageLicenseParserTests
     [Fact]
     public void MinPostSharpVersion_IsDerivedWhenTheKeyDoesNotDeclareIt()
     {
-        LicenseInfo? license = parser.TryParse( TestLicenseKeys.Builder().Sign() );
+        var license = parser.TryParse( TestLicenseKeys.Builder().Sign() );
 
         Assert.NotNull( license );
         Assert.Equal( new Version( 5, 0, 22 ), license.MinPostSharpVersion );
@@ -155,8 +155,7 @@ public sealed class BackstageLicenseParserTests
     [Fact]
     public void Product_IsStoredUnderItsBackstageName()
     {
-        LicenseInfo? license = parser.TryParse(
-            TestLicenseKeys.Builder( product: LicenseProduct.PostSharpFramework ).Sign() );
+        var license = parser.TryParse( TestLicenseKeys.Builder( product: LicenseProduct.PostSharpFramework ).Sign() );
 
         Assert.Equal( "PostSharpFramework", license!.Product );
     }
@@ -167,7 +166,7 @@ public sealed class BackstageLicenseParserTests
     [Fact]
     public void KeyThatIsNotEligibleForALicenseServer_SaysSo()
     {
-        LicenseKeyDataBuilder builder = TestLicenseKeys.Builder();
+        var builder = TestLicenseKeys.Builder();
         builder.LicenseServerEligible = false;
 
         Assert.False( parser.TryParse( builder.Sign() )!.IsLicenseServerEligible );
@@ -187,8 +186,8 @@ public sealed class BackstageLicenseParserTests
     [Fact]
     public void PastedKey_ParsesAfterCleaning()
     {
-        string key = TestLicenseKeys.Builder().Sign();
-        string pasted = key[..10] + " \r\n " + key[10..];
+        var key = TestLicenseKeys.Builder().Sign();
+        var pasted = key[..10] + " \r\n " + key[10..];
 
         Assert.Null( parser.TryParse( pasted ) );
         Assert.NotNull( parser.TryParse( parser.CleanLicenseString( pasted ) ) );

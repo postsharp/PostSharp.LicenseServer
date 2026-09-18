@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using SharpCrafters.Backstage.LicenseServer.Licensing;
 using SharpCrafters.Backstage.LicenseServer.Services;
 using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
@@ -34,8 +36,7 @@ public sealed class ProductCodesTests
     [InlineData( "MetalamaProfessional" )]
     [InlineData( "PostSharpEssentials" )]
     [InlineData( "SomethingNobodyHasHeardOf" )]
-    public void ProductWithOneSpelling_IsMatchedByItself( string productCode )
-        => Assert.Equal( [productCode], ProductCodes.Matching( productCode ) );
+    public void ProductWithOneSpelling_IsMatchedByItself( string productCode ) => Assert.Equal( [productCode], ProductCodes.Matching( productCode ) );
 
     /// <summary>
     /// The server serves a license added by an earlier version to a client that asks for the same
@@ -45,10 +46,10 @@ public sealed class ProductCodesTests
     [Fact]
     public async Task LicenseStoredUnderTheLegacyName_IsServedToAClientAskingForTheBackstageName()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
         LicenseBuilder.Default().WithProduct( "Ultimate" ).WithUsers( 5 ).AddTo( context );
 
-        GrantedLease? lease = await context.LeaseService.GetLicenseLeaseAsync(
+        var lease = await context.LeaseService.GetLicenseLeaseAsync(
             "PostSharpUltimate",
             new Version( 2025, 1, 0 ),
             null,
@@ -68,10 +69,10 @@ public sealed class ProductCodesTests
     [Fact]
     public async Task LicenseOfAnotherProduct_IsStillNotServed()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
         LicenseBuilder.Default().WithProduct( "Ultimate" ).WithUsers( 5 ).AddTo( context );
 
-        GrantedLease? lease = await context.LeaseService.GetLicenseLeaseAsync(
+        var lease = await context.LeaseService.GetLicenseLeaseAsync(
             "PostSharpFramework",
             new Version( 2025, 1, 0 ),
             null,

@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using SharpCrafters.Backstage.LicenseServer.Licensing;
 
 namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
@@ -179,7 +181,7 @@ public sealed class LicenseBuilder
     /// </summary>
     public License AddTo( LicenseServerTestContext context )
     {
-        string key = $"FAKE-KEY-{this.licenseId}";
+        var key = $"FAKE-KEY-{this.licenseId}";
 
         License license = new()
         {

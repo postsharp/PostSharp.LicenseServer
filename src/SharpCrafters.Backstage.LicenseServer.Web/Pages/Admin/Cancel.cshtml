@@ -1,12 +1,14 @@
 @page
-@model SharpCrafters.Backstage.LicenseServer.Pages.Admin.CancelModel
+@model CancelModel
 @{
     ViewData["Title"] = "Cancel a lease";
 }
 
 <div class="page-header">
     <h2>Cancel a lease</h2>
-    <p><a asp-page="/Admin/Details" asp-route-id="@Model.Lease!.LicenseId">Back</a></p>
+    <p>
+        <a asp-page="/Admin/Details" asp-route-id="@Model.Lease!.LicenseId">Back</a>
+    </p>
 </div>
 
 <p>

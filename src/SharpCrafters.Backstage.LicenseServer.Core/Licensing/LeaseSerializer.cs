@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Xml;
 
 namespace SharpCrafters.Backstage.LicenseServer.Licensing;
@@ -37,6 +39,5 @@ public static class LeaseSerializer
     /// so both modes give the same result for them. This mode also gives the correct result for a
     /// caller that passes an instant without a kind.
     /// </remarks>
-    private static string ToUtcString( DateTime value )
-        => XmlConvert.ToString( value, XmlDateTimeSerializationMode.Utc );
+    private static string ToUtcString( DateTime value ) => XmlConvert.ToString( value, XmlDateTimeSerializationMode.Utc );
 }

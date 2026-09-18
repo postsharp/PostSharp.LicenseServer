@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using SharpCrafters.Backstage.LicenseServer.Email;
 using SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
@@ -16,7 +18,7 @@ public sealed class EmailSenderTests
 
         await sender.SendAsync( new EmailMessage( "admin@example.com", null, "Subject", "Body" ) );
 
-        EmailMessage message = Assert.Single( sender.Sent );
+        var message = Assert.Single( sender.Sent );
         Assert.Equal( "admin@example.com", message.To );
         Assert.Equal( "Subject", message.Subject );
         Assert.Equal( "Body", message.Body );
@@ -53,8 +55,7 @@ public sealed class EmailSenderTests
     {
         InMemoryEmailSender sender = new() { ThrowOnSend = new InvalidOperationException( "SMTP is down" ) };
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => sender.SendAsync( new EmailMessage( "a@example.com", null, "s", "b" ) ) );
+        await Assert.ThrowsAsync<InvalidOperationException>( () => sender.SendAsync( new EmailMessage( "a@example.com", null, "s", "b" ) ) );
 
         Assert.Empty( sender.Sent );
     }

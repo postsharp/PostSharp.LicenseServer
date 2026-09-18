@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using SharpCrafters.Backstage.Licensing;
 using SharpCrafters.Backstage.Licensing.Licenses;
 using SharpCrafters.Backstage.Licensing.Registration;
@@ -37,7 +39,7 @@ public sealed class BackstageLicenseParser : ILicenseParser
             return null;
         }
 
-        if ( !LicenseKeyData.TryDeserialize( licenseKey, out LicenseKeyData? data, out _ ) )
+        if ( !LicenseKeyData.TryDeserialize( licenseKey, out var data, out _ ) )
         {
             return null;
         }
@@ -57,7 +59,7 @@ public sealed class BackstageLicenseParser : ILicenseParser
         // works around postsharp-ops/SharpCrafters.Backstage#2. It can be removed when
         // TryVerifySignature returns false for an unknown identifier.
         if ( data.RequiresSignature()
-             && (data.SignatureKeyId == null || !this.authorities.KeyIds.Contains( data.SignatureKeyId.Value )) )
+             && ( data.SignatureKeyId == null || !this.authorities.KeyIds.Contains( data.SignatureKeyId.Value ) ) )
         {
             return null;
         }
@@ -72,7 +74,7 @@ public sealed class BackstageLicenseParser : ILicenseParser
         // PostSharp version of a key that is older than MinPostSharpVersion, and the normalization
         // of the products that were renamed. Reading the fields directly would duplicate these
         // rules.
-        LicenseRegistrationProperties properties = data.ToLicenseRegistrationProperties(
+        var properties = data.ToLicenseRegistrationProperties(
             LicenseServerProductCatalog.Instance,
             licenseKey );
 
@@ -108,6 +110,5 @@ public sealed class BackstageLicenseParser : ILicenseParser
     /// alone and converts the result to upper case, which changes a key rather than only trimming
     /// what a web form added.
     /// </remarks>
-    public string CleanLicenseString( string licenseKey )
-        => new( licenseKey.Where( c => !char.IsWhiteSpace( c ) ).ToArray() );
+    public string CleanLicenseString( string licenseKey ) => new( licenseKey.Where( c => !char.IsWhiteSpace( c ) ).ToArray() );
 }

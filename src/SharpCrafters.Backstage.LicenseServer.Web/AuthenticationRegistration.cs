@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Runtime.InteropServices;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
@@ -38,7 +40,7 @@ public static class AuthenticationRegistration
         this IServiceCollection services,
         IConfiguration configuration )
     {
-        string scheme = ResolveScheme( configuration );
+        var scheme = ResolveScheme( configuration );
 
         switch ( scheme )
         {
@@ -61,8 +63,7 @@ public static class AuthenticationRegistration
                 break;
 
             default:
-                throw new InvalidOperationException(
-                    $"Unknown authentication scheme '{scheme}'. Use '{IisIntegrated}', '{Negotiate}' or '{None}'." );
+                throw new InvalidOperationException( $"Unknown authentication scheme '{scheme}'. Use '{IisIntegrated}', '{Negotiate}' or '{None}'." );
         }
 
         return scheme;
@@ -79,13 +80,13 @@ public static class AuthenticationRegistration
     /// </remarks>
     private static string ResolveScheme( IConfiguration configuration )
     {
-        string? configured = configuration["Authentication:Scheme"];
+        var configured = configuration["Authentication:Scheme"];
 
         if ( !string.IsNullOrWhiteSpace( configured ) )
         {
             // The comparison ignores the case, so that "negotiate" in the environment of a container
             // is accepted.
-            foreach ( string known in new[] { IisIntegrated, Negotiate, None } )
+            foreach ( var known in new[] { IisIntegrated, Negotiate, None } )
             {
                 if ( string.Equals( configured, known, StringComparison.OrdinalIgnoreCase ) )
                 {
@@ -118,6 +119,5 @@ public sealed class AnonymousAuthenticationHandler : AuthenticationHandler<Authe
 
     public const string SchemeName = "None";
 
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-        => Task.FromResult( AuthenticateResult.NoResult() );
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync() => Task.FromResult( AuthenticateResult.NoResult() );
 }

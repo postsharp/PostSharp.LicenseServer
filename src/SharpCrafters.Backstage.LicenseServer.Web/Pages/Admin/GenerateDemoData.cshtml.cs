@@ -1,4 +1,7 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using SharpCrafters.Backstage.LicenseServer.Data;
@@ -51,7 +54,7 @@ public sealed class GenerateDemoDataModel : PageModel
     ];
 
     [BindProperty]
-    [Microsoft.AspNetCore.Mvc.ModelBinding.BindNever]
+    [BindNever]
     public string? Message { get; private set; }
 
     public bool IsAvailable => this.environment.IsDevelopment();
@@ -72,7 +75,7 @@ public sealed class GenerateDemoDataModel : PageModel
         this.UserCount = Math.Clamp( userCount, 1, 200 );
         this.Days = Math.Clamp( days, 1, 365 );
 
-        License[] licenses = await this.repository.Licenses
+        var licenses = await this.repository.Licenses
             .Where( l => l.Priority >= 0 )
             .OrderBy( l => l.Priority )
             .ToArrayAsync( cancellationToken );
@@ -88,43 +91,42 @@ public sealed class GenerateDemoDataModel : PageModel
         Random random = new( 20260105 );
 
         (string User, string[] Machines)[] users = Enumerable.Range( 0, this.UserCount )
-            .Select(
-                i =>
-                {
-                    string user =
-                        $"{firstNames[i % firstNames.Length]}.{lastNames[(i * 7) % lastNames.Length]}".ToLowerInvariant();
+            .Select( i =>
+            {
+                var user =
+                    $"{firstNames[i % firstNames.Length]}.{lastNames[( i * 7 ) % lastNames.Length]}".ToLowerInvariant();
 
-                    string[] machines = random.Next( 3 ) == 0
-                        ? [$"{user}-desktop", $"{user}-laptop"]
-                        : [$"{user}-desktop"];
+                string[] machines = random.Next( 3 ) == 0
+                    ? [$"{user}-desktop", $"{user}-laptop"]
+                    : [$"{user}-desktop"];
 
-                    return (user, machines);
-                } )
+                return ( user, machines );
+            } )
             .ToArray();
 
-        DateTime now = this.timeProvider.GetUtcNow().UtcDateTime;
-        DateTime start = now.Date.AddDays( -this.Days );
-        int granted = 0;
+        var now = this.timeProvider.GetUtcNow().UtcDateTime;
+        var start = now.Date.AddDays( -this.Days );
+        var granted = 0;
 
-        for ( int day = 0; day < this.Days; day++ )
+        for ( var day = 0; day < this.Days; day++ )
         {
-            DateTime date = start.AddDays( day );
+            var date = start.AddDays( day );
 
-            bool isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+            var isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
 
-            foreach ( (string user, string[] machines) in users )
+            foreach ( var (user, machines) in users )
             {
                 // Most developers do not work at the weekend, and a developer does not build every
                 // day.
-                if ( random.NextDouble() > (isWeekend ? 0.1 : 0.85) )
+                if ( random.NextDouble() > ( isWeekend ? 0.1 : 0.85 ) )
                 {
                     continue;
                 }
 
-                string machine = machines[random.Next( machines.Length )];
-                DateTime time = date.AddHours( 8 + (random.NextDouble() * 9) );
+                var machine = machines[random.Next( machines.Length )];
+                var time = date.AddHours( 8 + ( random.NextDouble() * 9 ) );
 
-                Lease? lease = await this.leaseService.GetLeaseAsync(
+                var lease = await this.leaseService.GetLeaseAsync(
                     new Version( 2025, 1, 0 ),
                     null,
                     machine,

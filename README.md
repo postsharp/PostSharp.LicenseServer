@@ -17,8 +17,8 @@ your organization, ask the PostSharp sales team for a license key that waives it
 
 ## License
 
-The license server is published under the MIT License. PostSharp itself is a commercial product with
-a proprietary license.
+The license server is published under the MIT License, which [LICENSE.md](LICENSE.md) states in full.
+PostSharp itself is a commercial product with a proprietary license.
 
 ## Download
 
@@ -183,9 +183,23 @@ the dependency at it, and build that repository first:
 root of the repository is a symbolic link to `eng/style/.editorconfig`, so a clone needs
 `core.symlinks = true`. Refresh the style with `./Build.ps1 codestyle pull`.
 
-In Rider, open Settings, choose "Manage Layers", select the team-shared layer, click the plus icon,
-choose "Open Settings File", and select `eng/style/CommonStyle.DotSettings`. This step is what makes
-`./Build.ps1 codestyle format` reformat the code the way the team writes it.
+`SharpCrafters.Backstage.LicenseServer.slnx.DotSettings` carries the team-shared layer of the
+solution, which names `eng/style/CommonStyle.DotSettings`. In Rider that layer is what
+"Manage Layers" edits, so no manual step is left there.
+
+Reformat the code with the command below. `./Build.ps1 codestyle format` does the same thing, but it
+fails against this repository: it relies on the settings layer of the solution to find the cleanup
+profile, and the JetBrains command line tools do not read that layer for a solution in the `.slnx`
+format. They report "Unable to find the code cleanup profile with 'Custom' name". Naming the settings
+file works:
+
+```
+dotnet jb cleanupcode --profile:Custom --settings=eng/style/CommonStyle.DotSettings `
+  --disable-settings-layers:"GlobalAll;GlobalPerProduct;SolutionPersonal;ProjectPersonal" `
+  SharpCrafters.Backstage.LicenseServer.slnx
+```
+
+Commit your work before you reformat, so that the reformatting is a commit of its own.
 
 ### Running the tests
 

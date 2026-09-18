@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -36,7 +38,7 @@ public sealed class CancelModel : PageModel
 
     public async Task<IActionResult> OnPostAsync( CancellationToken cancellationToken )
     {
-        Lease? lease = await this.repository.OpenLeases
+        var lease = await this.repository.OpenLeases
             .Include( l => l.License )
             .SingleOrDefaultAsync( l => l.LeaseId == this.Id, cancellationToken );
 

@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Collections.Immutable;
 using SharpCrafters.Backstage.Licensing;
 
@@ -41,8 +43,7 @@ public sealed class LicenseServerProductCatalog : LicenseProductCatalog
     public override bool IsProductOfFamily( LicenseProduct product ) => true;
 
     /// <inheritdoc />
-    public override bool IsFreeProduct( LicenseProduct product )
-        => product is LicenseProduct.MetalamaCommunity or LicenseProduct.PostSharpEssentials;
+    public override bool IsFreeProduct( LicenseProduct product ) => product is LicenseProduct.MetalamaCommunity or LicenseProduct.PostSharpEssentials;
 
     /// <summary>
     /// The server stores every license key in the same table. The registration of a client, which
@@ -51,8 +52,7 @@ public sealed class LicenseServerProductCatalog : LicenseProductCatalog
     public override bool RequiresVersionSpecificRegistration( LicenseProduct product ) => false;
 
     /// <inheritdoc />
-    public override ImmutableArray<LicenseProduct> GetProductsCoexistingWith( LicenseProduct product )
-        => throw new NotSupportedException( notAClient );
+    public override ImmutableArray<LicenseProduct> GetProductsCoexistingWith( LicenseProduct product ) => throw new NotSupportedException( notAClient );
 
     /// <inheritdoc />
     public override string PremiumEditionDisplayName => throw new NotSupportedException( notAClient );

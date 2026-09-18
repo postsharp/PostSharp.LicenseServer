@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SharpCrafters.Backstage.LicenseServer.Data;
@@ -29,14 +31,14 @@ public sealed class SqliteTestDatabase : ITestDatabase
 
     public static async Task<SqliteTestDatabase> CreateAsync()
     {
-        string connectionString = $"DataSource=licenseserver-{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+        var connectionString = $"DataSource=licenseserver-{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
 
         SqliteConnection connection = new( connectionString );
         await connection.OpenAsync();
 
         SqliteTestDatabase database = new( connection, connectionString );
 
-        await using LicenseServerDbContext context = database.CreateContext();
+        await using var context = database.CreateContext();
         await context.Database.EnsureCreatedAsync();
 
         return database;

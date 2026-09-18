@@ -12,9 +12,9 @@
     <h2>License @Model.Id: @Model.Days-day usage history</h2>
 
     <p class="chart-windows">
-        @foreach ( int window in GraphModel.AllowedWindows )
+        @foreach (var window in GraphModel.AllowedWindows)
         {
-            if ( window == Model.Days )
+            if (window == Model.Days)
             {
                 <span class="current">@window days</span>
             }

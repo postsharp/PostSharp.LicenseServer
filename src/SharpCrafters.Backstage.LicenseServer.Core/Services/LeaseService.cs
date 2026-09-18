@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
@@ -45,7 +47,7 @@ public sealed partial class LeaseService
 
         if ( !string.IsNullOrWhiteSpace( this.settings.BuildServers ) )
         {
-            foreach ( string buildServer in this.settings.BuildServers.Split( [';', ',', ' '] ) )
+            foreach ( var buildServer in this.settings.BuildServers.Split( [';', ',', ' '] ) )
             {
                 if ( !string.IsNullOrWhiteSpace( buildServer ) )
                 {
@@ -74,12 +76,12 @@ public sealed partial class LeaseService
         Dictionary<int, LicenseState> cache,
         Dictionary<int, string> errors )
     {
-        if ( cache.TryGetValue( license.LicenseId, out LicenseState? licenseState ) )
+        if ( cache.TryGetValue( license.LicenseId, out var licenseState ) )
         {
             return licenseState;
         }
 
-        LicenseInfo? parsedLicense = this.licenseParser.TryParse( license.LicenseKey );
+        var parsedLicense = this.licenseParser.TryParse( license.LicenseKey );
 
         if ( parsedLicense == null )
         {
@@ -101,7 +103,7 @@ public sealed partial class LeaseService
         // A PostSharp license names the lowest version of PostSharp that can read it, and a Metalama
         // license names the lowest version of Metalama. The two are independent, so the minimum that
         // applies is the one of the family of the licensed product.
-        Version minClientVersion = parsedLicense.MinClientVersion;
+        var minClientVersion = parsedLicense.MinClientVersion;
 
         if ( minClientVersion > version )
         {
@@ -122,8 +124,8 @@ public sealed partial class LeaseService
             return null;
         }
 
-        if ( !(buildDate == null || parsedLicense.SubscriptionEndDate == null
-                                 || buildDate <= parsedLicense.SubscriptionEndDate) )
+        if ( !( buildDate == null || parsedLicense.SubscriptionEndDate == null
+                                  || buildDate <= parsedLicense.SubscriptionEndDate ) )
         {
             // The version number was introduced in the license server protocol in PostSharp 5.
             errors[license.LicenseId] = version.Major >= 5
@@ -159,12 +161,12 @@ public sealed partial class LeaseService
     {
         // A client that names no product is served from any pool. Every PostSharp client relies on
         // this behaviour, because none of them sends the argument.
-        IReadOnlyList<string> productCodes = string.IsNullOrEmpty( productCode )
+        var productCodes = string.IsNullOrEmpty( productCode )
             ? []
             : ProductCodes.Matching( productCode );
 
-        License[] licenses = await this.repository.Licenses
-            .Where( license => (productCodes.Count == 0 || productCodes.Contains( license.ProductCode ))
+        var licenses = await this.repository.Licenses
+            .Where( license => ( productCodes.Count == 0 || productCodes.Contains( license.ProductCode ) )
                                && license.Priority >= 0 )
             .OrderBy( license => license.Priority )
             .ToArrayAsync( cancellationToken );
@@ -175,9 +177,9 @@ public sealed partial class LeaseService
 
             // A build agent is exempt from consuming a seat. It is not exempt from the rules that
             // decide which licenses may be served, so the same validation runs.
-            foreach ( License candidate in licenses )
+            foreach ( var candidate in licenses )
             {
-                LicenseState? state =
+                var state =
                     this.GetLicenseState( candidate, version, buildDate, now, buildServerStates, errors );
 
                 if ( state == null )
@@ -185,7 +187,7 @@ public sealed partial class LeaseService
                     continue;
                 }
 
-                DateTime endTime = now.AddDays( this.settings.NewLeaseDays );
+                var endTime = now.AddDays( this.settings.NewLeaseDays );
 
                 if ( state.ParsedLicense.ValidTo.HasValue && state.ParsedLicense.ValidTo < endTime )
                 {
@@ -210,7 +212,7 @@ public sealed partial class LeaseService
             // No license could be served without a lease. Continue with the normal allocation.
         }
 
-        Lease? lease = await this.GetLeaseAsync(
+        var lease = await this.GetLeaseAsync(
             version,
             buildDate,
             machine,
@@ -252,9 +254,9 @@ public sealed partial class LeaseService
         Dictionary<int, LicenseState> licenseStates = [];
 
         // First pass: a lease this user already holds on this machine, reused or prolonged.
-        foreach ( License license in licenses )
+        foreach ( var license in licenses )
         {
-            LicenseState? licenseState =
+            var licenseState =
                 this.GetLicenseState( license, version, buildDate, now, licenseStates, errors );
 
             if ( licenseState == null )
@@ -262,9 +264,9 @@ public sealed partial class LeaseService
                 continue;
             }
 
-            int licenseId = license.LicenseId;
+            var licenseId = license.LicenseId;
 
-            Lease[] currentLeases = await this.repository.OpenLeases
+            var currentLeases = await this.repository.OpenLeases
                 .Where( l => l.LicenseId == licenseId && l.StartTime <= now && l.EndTime > now && l.UserName == userName )
                 .Include( l => l.License )
                 .OrderBy( l => l.StartTime )
@@ -272,7 +274,7 @@ public sealed partial class LeaseService
 
             Dictionary<string, string> machines = new( StringComparer.OrdinalIgnoreCase );
 
-            foreach ( Lease candidateLease in currentLeases )
+            foreach ( var candidateLease in currentLeases )
             {
                 machines[candidateLease.Machine] = candidateLease.Machine;
 
@@ -290,7 +292,7 @@ public sealed partial class LeaseService
                 // A lease can always be prolonged, because a lease starts at the current instant and
                 // therefore already covers it. The license period or the grace period can still end
                 // first.
-                Lease? prolonged = this.repository.ProlongLease( candidateLease, authenticatedUserName, now );
+                var prolonged = this.repository.ProlongLease( candidateLease, authenticatedUserName, now );
 
                 if ( prolonged == null )
                 {
@@ -304,7 +306,7 @@ public sealed partial class LeaseService
             // the user works on fewer machines than MachinesPerUser.
             if ( machines.Count % this.settings.MachinesPerUser != 0 )
             {
-                Lease? lease = this.repository.CreateLease(
+                var lease = this.repository.CreateLease(
                     license,
                     userName,
                     machine,
@@ -320,9 +322,9 @@ public sealed partial class LeaseService
         }
 
         // Second pass: a new lease against spare capacity.
-        foreach ( License license in licenses )
+        foreach ( var license in licenses )
         {
-            LicenseState? licenseState =
+            var licenseState =
                 this.GetLicenseState( license, version, buildDate, now, licenseStates, errors );
 
             if ( licenseState == null )
@@ -331,14 +333,14 @@ public sealed partial class LeaseService
             }
 
             if ( licenseState.Maximum.HasValue && licenseState.Maximum.Value <= licenseState.Usage
-                                               && (!licenseState.ParsedLicense.ValidTo.HasValue
-                                                   || now < licenseState.ParsedLicense.ValidTo) )
+                                               && ( !licenseState.ParsedLicense.ValidTo.HasValue
+                                                    || now < licenseState.ParsedLicense.ValidTo ) )
             {
                 // This license is full.
                 continue;
             }
 
-            Lease? lease = this.repository.CreateLease( license, userName, machine, authenticatedUserName, now, false );
+            var lease = this.repository.CreateLease( license, userName, machine, authenticatedUserName, now, false );
 
             if ( lease != null )
             {
@@ -347,9 +349,9 @@ public sealed partial class LeaseService
         }
 
         // Third pass: the grace period.
-        foreach ( License license in licenses )
+        foreach ( var license in licenses )
         {
-            LicenseState? licenseState =
+            var licenseState =
                 this.GetLicenseState( license, version, buildDate, now, licenseStates, errors );
 
             if ( licenseState == null )
@@ -367,18 +369,18 @@ public sealed partial class LeaseService
 
             license.GraceStartTime ??= now;
 
-            int graceLimit = LicenseCapacity.GetGraceLimit(
+            var graceLimit = LicenseCapacity.GetGraceLimit(
                 licenseState.Maximum.Value,
                 licenseState.ParsedLicense.GracePercent );
 
-            DateTime graceEnd = license.GraceStartTime.Value.AddDays( licenseState.ParsedLicense.GraceDays );
+            var graceEnd = license.GraceStartTime.Value.AddDays( licenseState.ParsedLicense.GraceDays );
 
             if ( license.GraceStartTime <= now && graceEnd > now && licenseState.Usage < graceLimit )
             {
                 if ( license.GraceLastWarningTime.GetValueOrDefault( DateTime.MinValue )
                         .AddDays( this.settings.GracePeriodWarningDays ) < now )
                 {
-                    string body =
+                    var body =
                         $"The license #{license.LicenseId} has a capacity of {licenseState.Maximum} concurrent user(s), "
                         + $"but {licenseState.Usage + 1} users are currently using the product "
                         + $"{licenseState.ParsedLicense.Product}. "
@@ -398,7 +400,7 @@ public sealed partial class LeaseService
                     license.GraceLastWarningTime = now;
                 }
 
-                Lease? lease = this.repository.CreateLease(
+                var lease = this.repository.CreateLease(
                     license,
                     userName,
                     machine,
@@ -450,7 +452,8 @@ public sealed partial class LeaseService
 
         try
         {
-            await this.emailSender.SendAsync( new EmailMessage( to.Trim( ' ', '\n', '\r', '\t' ), cc, subject, body ),
+            await this.emailSender.SendAsync(
+                new EmailMessage( to.Trim( ' ', '\n', '\r', '\t' ), cc, subject, body ),
                 cancellationToken );
         }
         catch ( Exception e )

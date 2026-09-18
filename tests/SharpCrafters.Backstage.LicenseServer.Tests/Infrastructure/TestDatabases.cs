@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using SharpCrafters.Backstage.LicenseServer.Data;
 
 namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
@@ -104,6 +106,5 @@ public static class TestDatabases
         return await SqliteTestDatabase.CreateAsync();
     }
 
-    private static string? Read( string variable )
-        => Environment.GetEnvironmentVariable( variable ) is { Length: > 0 } value ? value : null;
+    private static string? Read( string variable ) => Environment.GetEnvironmentVariable( variable ) is { Length: > 0 } value ? value : null;
 }

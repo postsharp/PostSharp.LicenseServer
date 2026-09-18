@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
@@ -40,8 +42,8 @@ public sealed class PostgreSqlTestDatabase : ITestDatabase
 
     public static async Task<PostgreSqlTestDatabase> CreateAsync( string serverConnectionString )
     {
-        PostgreSqlDatabasePool pool = PostgreSqlDatabasePool.Get( serverConnectionString );
-        string databaseName = await pool.RentAsync();
+        var pool = PostgreSqlDatabasePool.Get( serverConnectionString );
+        var databaseName = await pool.RentAsync();
 
         return new PostgreSqlTestDatabase( pool, databaseName, pool.GetConnectionString( databaseName ) );
     }
@@ -129,7 +131,7 @@ internal sealed class PostgreSqlDatabasePool
 
         try
         {
-            if ( this.available.TryTake( out string? databaseName ) )
+            if ( this.available.TryTake( out var databaseName ) )
             {
                 await this.ClearAsync( databaseName );
 
@@ -186,7 +188,7 @@ internal sealed class PostgreSqlDatabasePool
 
     private async Task CreateSchemaAsync( string databaseName )
     {
-        string script = await File.ReadAllTextAsync( LocateCreateTablesScript() );
+        var script = await File.ReadAllTextAsync( LocateCreateTablesScript() );
 
         // PostgreSQL has no batch separator: the whole script is one command.
         await ExecuteAsync( this.GetConnectionString( databaseName ), script );
@@ -218,10 +220,10 @@ internal sealed class PostgreSqlDatabasePool
             {
                 await connection.OpenAsync();
 
-                await using NpgsqlCommand query = connection.CreateCommand();
+                await using var query = connection.CreateCommand();
                 query.CommandText = $"SELECT datname FROM pg_database WHERE datname LIKE '{prefix}%'";
 
-                await using NpgsqlDataReader reader = await query.ExecuteReaderAsync();
+                await using var reader = await query.ExecuteReaderAsync();
 
                 while ( await reader.ReadAsync() )
                 {
@@ -229,7 +231,7 @@ internal sealed class PostgreSqlDatabasePool
                 }
             }
 
-            foreach ( string leftover in leftovers )
+            foreach ( var leftover in leftovers )
             {
                 await this.DropAsync( leftover );
             }
@@ -266,7 +268,7 @@ internal sealed class PostgreSqlDatabasePool
         await using NpgsqlConnection connection = new( connectionString );
         await connection.OpenAsync();
 
-        await using NpgsqlCommand command = connection.CreateCommand();
+        await using var command = connection.CreateCommand();
         command.CommandText = sql;
 
         await command.ExecuteNonQueryAsync();
@@ -278,7 +280,7 @@ internal sealed class PostgreSqlDatabasePool
     /// </summary>
     private static string LocateCreateTablesScript()
     {
-        string path = Path.Combine( AppContext.BaseDirectory, "Database", "CreateTables.PostgreSql.sql" );
+        var path = Path.Combine( AppContext.BaseDirectory, "Database", "CreateTables.PostgreSql.sql" );
 
         if ( !File.Exists( path ) )
         {

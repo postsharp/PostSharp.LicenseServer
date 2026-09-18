@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Security.Cryptography;
 using SharpCrafters.Backstage.Licensing;
 using SharpCrafters.Backstage.Licensing.Licenses;
@@ -48,10 +50,10 @@ public static class TestLicenseKeys
 
     static TestLicenseKeys()
     {
-        string probe = new LicenseKeyDataBuilder { LicenseId = 1, LicenseType = LicenseType.Business }
+        var probe = new LicenseKeyDataBuilder { LicenseId = 1, LicenseType = LicenseType.Business }
             .SignAndSerialize( provider.Authority );
 
-        LicenseKeyData.TryDeserialize( probe, out LicenseKeyData? data, out _ );
+        LicenseKeyData.TryDeserialize( probe, out var data, out _ );
         authorityKeyId = data!.SignatureKeyId!.Value;
 
         Authority = new TestAuthorityProvider( provider.Authority, authorityKeyId );
@@ -77,8 +79,7 @@ public static class TestLicenseKeys
     /// <summary>
     /// Signs and serializes a license key with the test authority.
     /// </summary>
-    public static string Sign( this LicenseKeyDataBuilder builder )
-        => builder.SignAndSerialize( provider.Authority );
+    public static string Sign( this LicenseKeyDataBuilder builder ) => builder.SignAndSerialize( provider.Authority );
 
     /// <summary>
     /// Serializes a license key without signing it. Only the types of license that require no
@@ -91,8 +92,7 @@ public static class TestLicenseKeys
     /// result is a forgery: the parser reads the identifier, finds the real key, and the signature
     /// does not verify against it.
     /// </summary>
-    public static string SignWithAForgedKey( this LicenseKeyDataBuilder builder )
-        => builder.SignAndSerialize( CreateStandaloneAuthority( authorityKeyId ) );
+    public static string SignWithAForgedKey( this LicenseKeyDataBuilder builder ) => builder.SignAndSerialize( CreateStandaloneAuthority( authorityKeyId ) );
 
     /// <summary>
     /// Signs a license key with an authority that the parser does not know, so that the identifier of
@@ -102,21 +102,20 @@ public static class TestLicenseKeys
     /// The identifier differs from the identifiers of the production keys and from the identifiers of
     /// the test keys of Backstage.
     /// </remarks>
-    public static string SignWithAnUnknownAuthority( this LicenseKeyDataBuilder builder )
-        => builder.SignAndSerialize( CreateStandaloneAuthority( 200 ) );
+    public static string SignWithAnUnknownAuthority( this LicenseKeyDataBuilder builder ) => builder.SignAndSerialize( CreateStandaloneAuthority( 200 ) );
 
     private static LicensingAuthority CreateStandaloneAuthority( byte keyId )
     {
-        using ECDsa key = ECDsa.Create( ECCurve.NamedCurves.nistP256 );
-        ECParameters parameters = key.ExportParameters( true );
+        using var key = ECDsa.Create( ECCurve.NamedCurves.nistP256 );
+        var parameters = key.ExportParameters( true );
 
-        string xml = "<ECDSAKeyValue><Curve>nistP256</Curve>"
-                     + $"<X>{Convert.ToBase64String( parameters.Q.X! )}</X>"
-                     + $"<Y>{Convert.ToBase64String( parameters.Q.Y! )}</Y>"
-                     + $"<D>{Convert.ToBase64String( parameters.D! )}</D>"
-                     + "</ECDSAKeyValue>";
+        var xml = "<ECDSAKeyValue><Curve>nistP256</Curve>"
+                  + $"<X>{Convert.ToBase64String( parameters.Q.X! )}</X>"
+                  + $"<Y>{Convert.ToBase64String( parameters.Q.Y! )}</Y>"
+                  + $"<D>{Convert.ToBase64String( parameters.D! )}</D>"
+                  + "</ECDSAKeyValue>";
 
-        return new ExplicitLicensingAuthorityProvider( (keyId, xml) ).GetAuthority( keyId );
+        return new ExplicitLicensingAuthorityProvider( ( keyId, xml ) ).GetAuthority( keyId );
     }
 
     /// <summary>

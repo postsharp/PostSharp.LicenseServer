@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Data;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -36,7 +38,7 @@ public sealed class SqliteLeaseLock : ILeaseLock
         TimeSpan timeout,
         CancellationToken cancellationToken = default )
     {
-        DatabaseFacade database = this.db.Database;
+        var database = this.db.Database;
 
         await database.OpenConnectionAsync( cancellationToken );
 
@@ -49,7 +51,7 @@ public sealed class SqliteLeaseLock : ILeaseLock
             // not change that, because the provider passes its own value at every command. The
             // previous value is restored with the connection, which the pool hands to another
             // request.
-            int previousTimeout = connection.DefaultTimeout;
+            var previousTimeout = connection.DefaultTimeout;
             connection.DefaultTimeout = Math.Max( 1, (int) timeout.TotalSeconds );
 
             SqliteTransaction transaction;
@@ -75,7 +77,7 @@ public sealed class SqliteLeaseLock : ILeaseLock
 
             // The context runs its own statements inside this transaction, so the reads that decide
             // the allocation and the insert that records it are one unit.
-            IDbContextTransaction? contextTransaction =
+            var contextTransaction =
                 await database.UseTransactionAsync( transaction, cancellationToken );
 
             return new Handle( database, contextTransaction!, connection, previousTimeout );

@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -54,7 +56,7 @@ public sealed class GraphModel : PageModel
             return this.BadRequest( $"The window must be one of {string.Join( ", ", AllowedWindows )} days." );
         }
 
-        License? license = await this.repository.Licenses
+        var license = await this.repository.Licenses
             .AsNoTracking()
             .SingleOrDefaultAsync( l => l.LicenseId == this.Id, cancellationToken );
 
@@ -63,14 +65,14 @@ public sealed class GraphModel : PageModel
             return this.NotFound();
         }
 
-        DateTime endDate = this.timeProvider.GetUtcNow().UtcDateTime.Date.AddDays( 1 );
-        DateTime startDate = endDate.AddDays( -this.Days );
+        var endDate = this.timeProvider.GetUtcNow().UtcDateTime.Date.AddDays( 1 );
+        var startDate = endDate.AddDays( -this.Days );
 
         int? maximum = null;
         int? graceMaximum = null;
-        int axisMaximum = 0;
+        var axisMaximum = 0;
 
-        LicenseInfo? parsedLicense = this.licenseParser.TryParse( license.LicenseKey );
+        var parsedLicense = this.licenseParser.TryParse( license.LicenseKey );
 
         if ( parsedLicense?.UserNumber != null )
         {
@@ -79,32 +81,31 @@ public sealed class GraphModel : PageModel
             // The arithmetic of the allocator, which rounds up. An integer division would round
             // down, and a license of one seat with a grace period of 20 per cent would then be drawn
             // with a limit of one seat, while the server grants two.
-            graceMaximum = (int) Math.Ceiling( maximum.Value * (100.0 + parsedLicense.GracePercent) / 100.0 );
+            graceMaximum = (int) Math.Ceiling( maximum.Value * ( 100.0 + parsedLicense.GracePercent ) / 100.0 );
             axisMaximum = graceMaximum.Value;
         }
 
         var dailyUsage = this.repository.GetLeaseCountingPoints( this.Id, startDate, endDate )
             .GroupBy( point => point.Time.Date )
-            .Select(
-                day => new
-                {
-                    Date = day.Key,
-                    Peak = day.Max( point => point.SeatCount ),
+            .Select( day => new
+            {
+                Date = day.Key,
+                Peak = day.Max( point => point.SeatCount ),
 
-                    // The timeline is ordered, and the grouping preserves that order inside a group,
-                    // so the last point of a day carries the count that the next day starts from.
-                    AtEndOfDay = day.Last().SeatCount
-                } )
+                // The timeline is ordered, and the grouping preserves that order inside a group,
+                // so the last point of a day carries the count that the next day starts from.
+                AtEndOfDay = day.Last().SeatCount
+            } )
             .ToList();
 
-        string[] labels = new string[this.Days];
-        int[] values = new int[this.Days];
-        bool[] hasValue = new bool[this.Days];
-        int?[] endOfDayValues = new int?[this.Days];
+        var labels = new string[this.Days];
+        var values = new int[this.Days];
+        var hasValue = new bool[this.Days];
+        var endOfDayValues = new int?[this.Days];
 
         foreach ( var point in dailyUsage )
         {
-            int day = (int) Math.Floor( point.Date.Subtract( startDate ).TotalDays );
+            var day = (int) Math.Floor( point.Date.Subtract( startDate ).TotalDays );
 
             if ( point.Peak > axisMaximum )
             {
@@ -112,7 +113,7 @@ public sealed class GraphModel : PageModel
             }
 
             // A lease that started before the window contributes to its first day.
-            int index = day < 0 ? 0 : day;
+            var index = day < 0 ? 0 : day;
 
             if ( index < this.Days )
             {
@@ -123,11 +124,11 @@ public sealed class GraphModel : PageModel
         }
 
         // A day without lease activity keeps the count of the end of the previous day.
-        int lastValue = 0;
+        var lastValue = 0;
 
-        for ( int i = 0; i < this.Days; i++ )
+        for ( var i = 0; i < this.Days; i++ )
         {
-            DateTime date = startDate.AddDays( i );
+            var date = startDate.AddDays( i );
 
             labels[i] = date.ToString( "yyyy-MM-dd", CultureInfo.InvariantCulture );
 

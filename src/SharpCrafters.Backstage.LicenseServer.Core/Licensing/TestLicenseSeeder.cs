@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SharpCrafters.Backstage.LicenseServer.Data;
@@ -18,8 +20,8 @@ public static class TestLicenseSeeder
     /// </summary>
     private static readonly (int LicenseId, LicenseProduct Product, short Users)[] licenses =
     [
-        (900001, LicenseProduct.MetalamaProfessional, 25),
-        (900002, LicenseProduct.PostSharpUltimate, 25)
+        ( 900001, LicenseProduct.MetalamaProfessional, 25 ),
+        ( 900002, LicenseProduct.PostSharpUltimate, 25 )
     ];
 
     /// <summary>
@@ -44,11 +46,11 @@ public static class TestLicenseSeeder
         ArgumentNullException.ThrowIfNull( timeProvider );
         ArgumentNullException.ThrowIfNull( logger );
 
-        DateTime now = timeProvider.GetUtcNow().UtcDateTime;
+        var now = timeProvider.GetUtcNow().UtcDateTime;
         HashSet<int> existing = [.. db.Licenses.Select( l => l.LicenseId )];
         List<int> added = [];
 
-        foreach ( (int licenseId, LicenseProduct product, short users) in licenses )
+        foreach ( var (licenseId, product, users) in licenses )
         {
             if ( existing.Contains( licenseId ) )
             {

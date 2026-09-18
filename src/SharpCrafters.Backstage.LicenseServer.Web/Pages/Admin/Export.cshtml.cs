@@ -1,7 +1,10 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Globalization;
 
 namespace SharpCrafters.Backstage.LicenseServer.Pages.Admin;
 
@@ -39,13 +42,13 @@ public sealed class ExportModel : PageModel
 
     public static SelectList Months { get; } = new(
         Enumerable.Range( 1, 12 )
-            .Select( m => new { Value = m, Text = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName( m ) } ),
+            .Select( m => new { Value = m, Text = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName( m ) } ),
         "Value",
         "Text" );
 
     public void OnGet()
     {
-        DateTime now = this.timeProvider.GetUtcNow().UtcDateTime;
+        var now = this.timeProvider.GetUtcNow().UtcDateTime;
 
         this.FromYear = now.Year;
         this.ToYear = now.Year;
@@ -69,8 +72,6 @@ public sealed class ExportModel : PageModel
 
         // Url.Content resolves the path, so that the link works when the server is installed as an
         // application below the root of an IIS site.
-        return this.Redirect(
-            this.Url.Content(
-                $"~/Admin/Export.ashx?fy={this.FromYear}&fm={this.FromMonth}&ty={this.ToYear}&tm={this.ToMonth}" ) );
+        return this.Redirect( this.Url.Content( $"~/Admin/Export.ashx?fy={this.FromYear}&fm={this.FromMonth}&ty={this.ToYear}&tm={this.ToMonth}" ) );
     }
 }

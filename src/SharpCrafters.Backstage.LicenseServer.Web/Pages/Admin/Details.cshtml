@@ -1,5 +1,5 @@
 @page
-@model SharpCrafters.Backstage.LicenseServer.Pages.Admin.DetailsModel
+@model DetailsModel
 @{
     ViewData["Title"] = $"License {Model.Id}";
 }
@@ -15,7 +15,7 @@
             <summary class="btn btn--small">Manage</summary>
 
             <div class="menu__items">
-                @if ( Model.IsDisabled )
+                @if (Model.IsDisabled)
                 {
                     <form method="post" asp-page-handler="Enable" asp-route-id="@Model.Id"
                           data-confirm="Enable license @Model.Id?"
@@ -48,7 +48,7 @@
     </div>
 </div>
 
-@if ( Model.IsDisabled )
+@if (Model.IsDisabled)
 {
     <div class="callout callout--warning">
         <p>
@@ -70,7 +70,7 @@
     The capacity of a license is a number of seats.
 </p>
 
-@if ( Model.Leases.Count == 0 )
+@if (Model.Leases.Count == 0)
 {
     <p>No lease is currently held against this license.</p>
 }
@@ -78,31 +78,33 @@ else
 {
     <div class="table-scroll">
         <table>
-        <thead>
-        <tr>
-            <th>Lease</th>
-            <th>User</th>
-            <th>Machine</th>
-            <th>Start</th>
-            <th>End</th>
-            <th>Grace</th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach ( var lease in Model.Leases )
-        {
+            <thead>
             <tr>
-                <td>@lease.LeaseId</td>
-                <td>@lease.UserName</td>
-                <td>@lease.Machine</td>
-                <td>@lease.StartTime.ToString( "g" )</td>
-                <td>@lease.EndTime.ToString( "g" )</td>
-                <td>@(lease.Grace ? "Yes" : "")</td>
-                <td><a asp-page="/Admin/Cancel" asp-route-id="@lease.LeaseId">Cancel</a></td>
+                <th>Lease</th>
+                <th>User</th>
+                <th>Machine</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Grace</th>
+                <th></th>
             </tr>
-        }
-        </tbody>
+            </thead>
+            <tbody>
+            @foreach (var lease in Model.Leases)
+            {
+                <tr>
+                    <td>@lease.LeaseId</td>
+                    <td>@lease.UserName</td>
+                    <td>@lease.Machine</td>
+                    <td>@lease.StartTime.ToString( "g" )</td>
+                    <td>@lease.EndTime.ToString( "g" )</td>
+                    <td>@( lease.Grace ? "Yes" : "" )</td>
+                    <td>
+                        <a asp-page="/Admin/Cancel" asp-route-id="@lease.LeaseId">Cancel</a>
+                    </td>
+                </tr>
+            }
+            </tbody>
         </table>
     </div>
 }

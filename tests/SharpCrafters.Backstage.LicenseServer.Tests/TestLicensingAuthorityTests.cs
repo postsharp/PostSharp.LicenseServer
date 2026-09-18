@@ -1,7 +1,10 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Globalization;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using SharpCrafters.Backstage.LicenseServer.Licensing;
 using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
@@ -24,9 +27,9 @@ public sealed class TestLicensingAuthorityTests
     [Fact]
     public void ConfiguredAuthority_InDevelopment_IsAccepted()
     {
-        (string publicKey, string licenseKey) = CreateAuthorityAndKey();
+        var (publicKey, licenseKey) = CreateAuthorityAndKey();
 
-        ILicenseParser parser = BuildParser( "Development", (keyId, publicKey) );
+        var parser = BuildParser( "Development", ( keyId, publicKey ) );
 
         Assert.NotNull( parser.TryParse( licenseKey ) );
     }
@@ -38,10 +41,10 @@ public sealed class TestLicensingAuthorityTests
     [Fact]
     public void UnconfiguredAuthority_InDevelopment_IsRejected()
     {
-        (string publicKey, _) = CreateAuthorityAndKey();
-        (_, string otherLicenseKey) = CreateAuthorityAndKey();
+        var (publicKey, _) = CreateAuthorityAndKey();
+        var (_, otherLicenseKey) = CreateAuthorityAndKey();
 
-        ILicenseParser parser = BuildParser( "Development", (keyId, publicKey) );
+        var parser = BuildParser( "Development", ( keyId, publicKey ) );
 
         Assert.Null( parser.TryParse( otherLicenseKey ) );
     }
@@ -57,10 +60,9 @@ public sealed class TestLicensingAuthorityTests
     [InlineData( "Testing" )]
     public void ConfiguredAuthority_OutsideDevelopment_RefusesToStart( string environmentName )
     {
-        (string publicKey, _) = CreateAuthorityAndKey();
+        var (publicKey, _) = CreateAuthorityAndKey();
 
-        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
-            () => BuildParser( environmentName, (keyId, publicKey) ) );
+        var exception = Assert.Throws<InvalidOperationException>( () => BuildParser( environmentName, ( keyId, publicKey ) ) );
 
         Assert.Contains( "TestLicensingAuthorities", exception.Message, StringComparison.Ordinal );
         Assert.Contains( environmentName, exception.Message, StringComparison.Ordinal );
@@ -73,9 +75,9 @@ public sealed class TestLicensingAuthorityTests
     [Fact]
     public void NoConfiguredAuthority_OutsideDevelopment_Starts()
     {
-        (_, string licenseKey) = CreateAuthorityAndKey();
+        var (_, licenseKey) = CreateAuthorityAndKey();
 
-        ILicenseParser parser = BuildParser( "Production" );
+        var parser = BuildParser( "Production" );
 
         Assert.Null( parser.TryParse( licenseKey ) );
     }
@@ -87,9 +89,9 @@ public sealed class TestLicensingAuthorityTests
     [Fact]
     public void ConfiguredAuthority_TakingAProductionKeyIdentifier_IsRefused()
     {
-        (string publicKey, _) = CreateAuthorityAndKey();
+        var (publicKey, _) = CreateAuthorityAndKey();
 
-        Assert.Throws<ArgumentException>( () => BuildParser( "Development", (2, publicKey) ) );
+        Assert.Throws<ArgumentException>( () => BuildParser( "Development", ( 2, publicKey ) ) );
     }
 
     /// <summary>
@@ -98,13 +100,13 @@ public sealed class TestLicensingAuthorityTests
     /// </summary>
     [Fact]
     public void ConfiguredAuthority_WithAMalformedKey_FailsAtStartup()
-        => Assert.ThrowsAny<Exception>( () => BuildParser( "Development", (keyId, "not-a-key") ) );
+        => Assert.ThrowsAny<Exception>( () => BuildParser( "Development", ( keyId, "not-a-key" ) ) );
 
     private static ILicenseParser BuildParser( string environmentName, params (int KeyId, string PublicKey)[] authorities )
     {
         Dictionary<string, string?> settings = [];
 
-        for ( int i = 0; i < authorities.Length; i++ )
+        for ( var i = 0; i < authorities.Length; i++ )
         {
             settings[$"LicenseServer:TestLicensingAuthorities:{i}:KeyId"] = authorities[i].KeyId.ToString( CultureInfo.InvariantCulture );
             settings[$"LicenseServer:TestLicensingAuthorities:{i}:PublicKey"] = authorities[i].PublicKey;
@@ -123,22 +125,22 @@ public sealed class TestLicensingAuthorityTests
     /// </summary>
     private static (string PublicKey, string LicenseKey) CreateAuthorityAndKey()
     {
-        using ECDsa key = ECDsa.Create( ECCurve.NamedCurves.nistP256 );
-        ECParameters parameters = key.ExportParameters( true );
+        using var key = ECDsa.Create( ECCurve.NamedCurves.nistP256 );
+        var parameters = key.ExportParameters( true );
 
         string ToXml( bool includePrivateValue )
             => "<ECDSAKeyValue><Curve>nistP256</Curve>"
                + $"<X>{Convert.ToBase64String( parameters.Q.X! )}</X>"
                + $"<Y>{Convert.ToBase64String( parameters.Q.Y! )}</Y>"
-               + (includePrivateValue ? $"<D>{Convert.ToBase64String( parameters.D! )}</D>" : "")
+               + ( includePrivateValue ? $"<D>{Convert.ToBase64String( parameters.D! )}</D>" : "" )
                + "</ECDSAKeyValue>";
 
-        LicensingAuthority authority =
-            new ExplicitLicensingAuthorityProvider( (keyId, ToXml( true )) ).GetAuthority( keyId );
+        var authority =
+            new ExplicitLicensingAuthorityProvider( ( keyId, ToXml( true ) ) ).GetAuthority( keyId );
 
-        string licenseKey = TestLicenseKeys.Builder().SignAndSerialize( authority );
+        var licenseKey = TestLicenseKeys.Builder().SignAndSerialize( authority );
 
-        return (ToXml( false ), licenseKey);
+        return ( ToXml( false ), licenseKey );
     }
 
     private sealed class StubEnvironment : IHostEnvironment
@@ -154,7 +156,7 @@ public sealed class TestLicensingAuthorityTests
 
         public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
 
-        public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } =
-            new Microsoft.Extensions.FileProviders.NullFileProvider();
+        public IFileProvider ContentRootFileProvider { get; set; } =
+            new NullFileProvider();
     }
 }

@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using SharpCrafters.Backstage.LicenseServer.Data;
@@ -76,7 +78,7 @@ public sealed class LicenseServerTestContext : IAsyncDisposable
 
         configure?.Invoke( options );
 
-        ITestDatabase database = await TestDatabases.CreateAsync();
+        var database = await TestDatabases.CreateAsync();
 
         return new LicenseServerTestContext( database, database.CreateContext(), options );
     }

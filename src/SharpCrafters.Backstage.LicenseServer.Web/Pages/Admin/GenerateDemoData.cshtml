@@ -1,12 +1,14 @@
 @page
-@model SharpCrafters.Backstage.LicenseServer.Pages.Admin.GenerateDemoDataModel
+@model GenerateDemoDataModel
 @{
     ViewData["Title"] = "Generate demo data";
 }
 
 <div class="page-header">
     <h2>Generate demo data</h2>
-    <p><a asp-page="/Index">Back</a></p>
+    <p>
+        <a asp-page="/Index">Back</a>
+    </p>
 </div>
 
 <p>
@@ -14,19 +16,21 @@
     something to show. This page exists only in a development environment.
 </p>
 
-@if ( Model.Message != null )
+@if (Model.Message != null)
 {
-    <p><strong>@Model.Message</strong></p>
+    <p>
+        <strong>@Model.Message</strong>
+    </p>
 }
 
 <form method="post">
     <p>
         <label for="userCount">Users</label>
-        <input id="userCount" name="userCount" type="number" min="1" max="200" value="@Model.UserCount" />
+        <input id="userCount" name="userCount" type="number" min="1" max="200" value="@Model.UserCount"/>
     </p>
     <p>
         <label for="days">Days of history</label>
-        <input id="days" name="days" type="number" min="1" max="365" value="@Model.Days" />
+        <input id="days" name="days" type="number" min="1" max="365" value="@Model.Days"/>
     </p>
     <p>
         <button type="submit">Generate</button>

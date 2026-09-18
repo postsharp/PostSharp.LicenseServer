@@ -1,12 +1,14 @@
 @page
-@model SharpCrafters.Backstage.LicenseServer.Pages.Admin.AddLicenseModel
+@model AddLicenseModel
 @{
     ViewData["Title"] = "Add a license";
 }
 
 <div class="page-header">
     <h2>Add a license</h2>
-    <p><a asp-page="/Index">Back</a></p>
+    <p>
+        <a asp-page="/Index">Back</a>
+    </p>
 </div>
 
 <p>Paste the license key sent to you by PostSharp Technologies.</p>
@@ -15,9 +17,9 @@
     <div asp-validation-summary="All" class="validation-summary-errors"></div>
 
     <p>
-        <label asp-for="LicenseKey"></label><br />
-        <textarea asp-for="LicenseKey" rows="4" cols="80"></textarea>
-        <span asp-validation-for="LicenseKey" class="field-validation-error"></span>
+        <label asp-for="LicenseKey "></label><br/>
+        <textarea asp-for="LicenseKey " rows="4" cols="80"></textarea>
+        <span asp-validation-for="LicenseKey " class="field-validation-error"></span>
     </p>
 
     <p>

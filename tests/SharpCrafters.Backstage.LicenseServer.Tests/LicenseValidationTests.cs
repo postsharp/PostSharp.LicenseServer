@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
@@ -16,7 +18,7 @@ public sealed class LicenseValidationTests
     {
         Dictionary<int, string> errors = [];
 
-        Lease? lease = await context.LeaseService.GetLeaseAsync(
+        var lease = await context.LeaseService.GetLeaseAsync(
             version ?? new Version( 2025, 1, 0 ),
             buildDate,
             "desktop-1",
@@ -26,22 +28,16 @@ public sealed class LicenseValidationTests
             errors,
             [license] );
 
-        return (lease, errors);
+        return ( lease, errors );
     }
 
     [Fact]
     public async Task UnparseableKey_IsReportedAsInvalid()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
         // Added straight to the database, so the fake parser has no entry for its key.
-        License license = new()
-        {
-            LicenseId = 99,
-            LicenseKey = "NOT-A-KEY",
-            ProductCode = "Ultimate",
-            CreatedOn = TestClock.Origin
-        };
+        License license = new() { LicenseId = 99, LicenseKey = "NOT-A-KEY", ProductCode = "Ultimate", CreatedOn = TestClock.Origin };
 
         context.Db.Licenses.Add( license );
         await context.Db.SaveChangesAsync();
@@ -55,28 +51,30 @@ public sealed class LicenseValidationTests
     [Fact]
     public async Task LicenseNeedsANewerLicenseServer_SaysSo()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
-        License license = LicenseBuilder.Default()
+        var license = LicenseBuilder.Default()
             .WithMinPostSharpVersion( new Version( 2099, 3, 7 ) )
             .AddTo( context );
 
         var (lease, errors) = await RequestAsync( context, license );
 
         Assert.Null( lease );
+
         Assert.Contains(
             "requires a higher version of the licensing library on the License Server",
             errors[1],
             StringComparison.Ordinal );
+
         Assert.Contains( "2099.3.7", errors[1], StringComparison.Ordinal );
     }
 
     [Fact]
     public async Task ClientIsOlderThanTheLicenseRequires_SaysSo()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
-        License license = LicenseBuilder.Default()
+        var license = LicenseBuilder.Default()
             .WithMinPostSharpVersion( new Version( 2024, 0, 0 ) )
             .AddTo( context );
 
@@ -94,9 +92,9 @@ public sealed class LicenseValidationTests
     [Fact]
     public async Task MetalamaClientIsOlderThanTheLicenseRequires_SaysSo()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
-        License license = LicenseBuilder.Default()
+        var license = LicenseBuilder.Default()
             .AsMetalamaProduct()
             .WithMinMetalamaVersion( new Version( 2026, 1, 0 ) )
             .AddTo( context );
@@ -116,9 +114,9 @@ public sealed class LicenseValidationTests
     [Fact]
     public async Task MetalamaLicense_IgnoresTheMinimumPostSharpVersion()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
-        License license = LicenseBuilder.Default()
+        var license = LicenseBuilder.Default()
             .AsMetalamaProduct()
             .WithMinPostSharpVersion( new Version( 2024, 0, 0 ) )
             .WithMinMetalamaVersion( null )
@@ -133,8 +131,8 @@ public sealed class LicenseValidationTests
     [Fact]
     public async Task LicenseNotEligibleForALicenseServer_SaysSo()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        License license = LicenseBuilder.Default().NotLicenseServerEligible().AddTo( context );
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().NotLicenseServerEligible().AddTo( context );
 
         var (lease, errors) = await RequestAsync( context, license );
 
@@ -145,9 +143,9 @@ public sealed class LicenseValidationTests
     [Fact]
     public async Task BuildIsNewerThanTheSubscription_SaysSoWithTheRequestedVersion()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
-        License license = LicenseBuilder.Default()
+        var license = LicenseBuilder.Default()
             .WithSubscriptionEndDate( TestClock.Days( -30 ) )
             .AddTo( context );
 
@@ -164,9 +162,9 @@ public sealed class LicenseValidationTests
     [Fact]
     public async Task BuildIsNewerThanTheSubscriptionOnAnOldClient_OmitsTheVersion()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
-        License license = LicenseBuilder.Default()
+        var license = LicenseBuilder.Default()
             .WithSubscriptionEndDate( TestClock.Days( -30 ) )
             .AddTo( context );
 
@@ -180,9 +178,9 @@ public sealed class LicenseValidationTests
     [Fact]
     public async Task BuildExactlyOnTheSubscriptionEndDate_IsAccepted()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
-        License license = LicenseBuilder.Default()
+        var license = LicenseBuilder.Default()
             .WithSubscriptionEndDate( TestClock.Origin )
             .AddTo( context );
 
@@ -194,9 +192,9 @@ public sealed class LicenseValidationTests
     [Fact]
     public async Task NoBuildDate_SkipsTheSubscriptionCheck()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
-        License license = LicenseBuilder.Default()
+        var license = LicenseBuilder.Default()
             .WithSubscriptionEndDate( TestClock.Days( -30 ) )
             .AddTo( context );
 
@@ -208,8 +206,8 @@ public sealed class LicenseValidationTests
     [Fact]
     public async Task NoSubscriptionEndDate_SkipsTheSubscriptionCheck()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        License license = LicenseBuilder.Default().WithSubscriptionEndDate( null ).AddTo( context );
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().WithSubscriptionEndDate( null ).AddTo( context );
 
         var (lease, _) = await RequestAsync( context, license, buildDate: TestClock.Days( 1000 ) );
 

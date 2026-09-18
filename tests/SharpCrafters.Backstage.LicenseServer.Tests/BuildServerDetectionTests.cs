@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using SharpCrafters.Backstage.LicenseServer.Data;
@@ -38,14 +40,14 @@ public sealed class BuildServerDetectionTests
         => Assert.Equal( expected, CreateService( "server" ).IsBuildServer( machine ) );
 
     [Theory]
+
     // Only a hexadecimal suffix is stripped, so "-xyz" stays part of the name.
     [InlineData( "server-xyz" )]
     [InlineData( "myserver" )]
     [InlineData( "server2" )]
     [InlineData( "desktop-1a2b" )]
     [InlineData( "" )]
-    public void IsBuildServer_OtherMachine_ReturnsFalse( string machine )
-        => Assert.False( CreateService( "server" ).IsBuildServer( machine ) );
+    public void IsBuildServer_OtherMachine_ReturnsFalse( string machine ) => Assert.False( CreateService( "server" ).IsBuildServer( machine ) );
 
     [Theory]
     [InlineData( "build1;build2" )]
@@ -54,7 +56,7 @@ public sealed class BuildServerDetectionTests
     [InlineData( " build1 ; build2 " )]
     public void IsBuildServer_AcceptsEverySeparatorAndTrimsWhitespace( string buildServers )
     {
-        LeaseService service = CreateService( buildServers );
+        var service = CreateService( buildServers );
 
         Assert.True( service.IsBuildServer( "build1" ) );
         Assert.True( service.IsBuildServer( "build2-ff01" ) );
@@ -89,11 +91,9 @@ public sealed class BuildServerDetectionTests
             bool grace )
             => throw new NotSupportedException();
 
-        public Lease? ProlongLease( Lease oldLease, string authenticatedUserName, DateTime time )
-            => throw new NotSupportedException();
+        public Lease? ProlongLease( Lease oldLease, string authenticatedUserName, DateTime time ) => throw new NotSupportedException();
 
-        public void CancelLease( Lease lease, string authenticatedUserName, DateTime time )
-            => throw new NotSupportedException();
+        public void CancelLease( Lease lease, string authenticatedUserName, DateTime time ) => throw new NotSupportedException();
 
         public int GetActiveSeats( int licenseId, DateTime dateTime ) => throw new NotSupportedException();
 
@@ -103,8 +103,7 @@ public sealed class BuildServerDetectionTests
             DateTime endTime )
             => throw new NotSupportedException();
 
-        public Task<int> SaveChangesAsync( CancellationToken cancellationToken = default )
-            => throw new NotSupportedException();
+        public Task<int> SaveChangesAsync( CancellationToken cancellationToken = default ) => throw new NotSupportedException();
 
         public int SaveChanges() => throw new NotSupportedException();
     }

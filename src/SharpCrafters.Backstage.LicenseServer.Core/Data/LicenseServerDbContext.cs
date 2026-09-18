@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -31,14 +33,13 @@ public class LicenseServerDbContext : DbContext
     /// returned a lease twice when two leases had overwritten it. No unique constraint prevents
     /// that.
     /// </remarks>
-    public IQueryable<Lease> OpenLeases
-        => this.Leases.Where( l => !this.Leases.Any( o => o.OverwrittenLeaseId == l.LeaseId ) );
+    public IQueryable<Lease> OpenLeases => this.Leases.Where( l => !this.Leases.Any( o => o.OverwrittenLeaseId == l.LeaseId ) );
 
     protected override void OnModelCreating( ModelBuilder modelBuilder )
     {
         modelBuilder.ApplyConfigurationsFromAssembly( typeof(LicenseServerDbContext).Assembly );
 
-        bool isSqlServer = this.Database.ProviderName == "Microsoft.EntityFrameworkCore.SqlServer";
+        var isSqlServer = this.Database.ProviderName == "Microsoft.EntityFrameworkCore.SqlServer";
 
         // Every timestamp of this database is UTC, and the converter states it in both directions.
         //
@@ -98,7 +99,7 @@ public class LicenseServerDbContext : DbContext
             //
             // SQLite carries NOCASE. PostgreSQL carries no collation that ignores the case, so the
             // schema creates one.
-            string collation = this.Database.ProviderName == "Npgsql.EntityFrameworkCore.PostgreSQL"
+            var collation = this.Database.ProviderName == "Npgsql.EntityFrameworkCore.PostgreSQL"
                 ? CaseInsensitiveCollation
                 : "NOCASE";
 

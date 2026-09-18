@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.EntityFrameworkCore;
 using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
@@ -12,14 +14,14 @@ public sealed class CancelLeaseTests
     [Fact]
     public async Task CancelLease_InsertsAReplacementEndingNow()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        License license = LicenseBuilder.Default().AddTo( context );
-        Lease original = LeaseBuilder.For( license ).From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().AddTo( context );
+        var original = LeaseBuilder.For( license ).From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
 
         context.Repository.CancelLease( original, "DOMAIN\\admin", TestClock.Days( 1 ) );
         await context.Repository.SaveChangesAsync();
 
-        Lease replacement = await context.Db.Leases.SingleAsync( l => l.LeaseId != original.LeaseId );
+        var replacement = await context.Db.Leases.SingleAsync( l => l.LeaseId != original.LeaseId );
 
         Assert.Equal( original.LeaseId, replacement.OverwrittenLeaseId );
         Assert.Equal( TestClock.Days( 1 ), replacement.EndTime );
@@ -32,9 +34,9 @@ public sealed class CancelLeaseTests
     [Fact]
     public async Task CancelLease_KeepsTheOriginalRow()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        License license = LicenseBuilder.Default().AddTo( context );
-        Lease original = LeaseBuilder.For( license ).AddTo( context );
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().AddTo( context );
+        var original = LeaseBuilder.For( license ).AddTo( context );
 
         context.Repository.CancelLease( original, "admin", TestClock.Days( 1 ) );
         await context.Repository.SaveChangesAsync();
@@ -47,9 +49,9 @@ public sealed class CancelLeaseTests
     [Fact]
     public async Task CancelLease_ReleasesTheSeat()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        License license = LicenseBuilder.Default().AddTo( context );
-        Lease original = LeaseBuilder.For( license ).From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().AddTo( context );
+        var original = LeaseBuilder.For( license ).From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
 
         Assert.Equal( 1, context.Repository.GetActiveSeats( license.LicenseId, TestClock.Days( 2 ) ) );
 
@@ -67,28 +69,28 @@ public sealed class CancelLeaseTests
     [Fact]
     public async Task CancelLease_IsNotRejectedForEndingImmediately()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        License license = LicenseBuilder.Default().WithValidTo( TestClock.Days( 2 ) ).AddTo( context );
-        Lease original = LeaseBuilder.For( license ).From( TestClock.Origin ).Lasting( 2 ).AddTo( context );
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().WithValidTo( TestClock.Days( 2 ) ).AddTo( context );
+        var original = LeaseBuilder.For( license ).From( TestClock.Origin ).Lasting( 2 ).AddTo( context );
 
         context.Repository.CancelLease( original, "admin", TestClock.Days( 1 ) );
         await context.Repository.SaveChangesAsync();
 
-        Lease replacement = await context.Db.Leases.SingleAsync( l => l.LeaseId != original.LeaseId );
+        var replacement = await context.Db.Leases.SingleAsync( l => l.LeaseId != original.LeaseId );
         Assert.Equal( TestClock.Days( 1 ), replacement.EndTime );
     }
 
     [Fact]
     public async Task CancelLease_ThenRequestAgain_GrantsAFreshLease()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        License license = LicenseBuilder.Default().AddTo( context );
-        Lease original = LeaseBuilder.For( license ).User( "alice" ).Machine( "desktop-1" ).AddTo( context );
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().AddTo( context );
+        var original = LeaseBuilder.For( license ).User( "alice" ).Machine( "desktop-1" ).AddTo( context );
 
         context.Repository.CancelLease( original, "admin", TestClock.Days( 1 ) );
         await context.Repository.SaveChangesAsync();
 
-        Lease? lease = await context.LeaseService.GetLeaseAsync(
+        var lease = await context.LeaseService.GetLeaseAsync(
             new Version( 2025, 1, 0 ),
             null,
             "desktop-1",

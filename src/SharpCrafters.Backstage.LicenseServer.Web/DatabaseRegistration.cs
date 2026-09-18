@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SharpCrafters.Backstage.LicenseServer.Data;
@@ -28,8 +30,8 @@ public static class DatabaseRegistration
         IConfiguration configuration,
         IHostEnvironment environment )
     {
-        string provider = configuration["LicenseServer:DatabaseProvider"] ?? "SqlServer";
-        string? connectionString = configuration.GetConnectionString( ConnectionStringName );
+        var provider = configuration["LicenseServer:DatabaseProvider"] ?? "SqlServer";
+        var connectionString = configuration.GetConnectionString( ConnectionStringName );
 
         if ( string.IsNullOrWhiteSpace( connectionString ) )
         {
@@ -53,16 +55,14 @@ public static class DatabaseRegistration
                 break;
 
             case "sqlite":
-                services.AddDbContext<LicenseServerDbContext>(
-                    options => options.UseSqlite( ResolveSqliteFile( connectionString, environment ) ) );
+                services.AddDbContext<LicenseServerDbContext>( options => options.UseSqlite( ResolveSqliteFile( connectionString, environment ) ) );
 
                 services.AddScoped<ILeaseLock, SqliteLeaseLock>();
 
                 break;
 
             default:
-                throw new InvalidOperationException(
-                    $"Unknown database provider '{provider}'. Use 'SqlServer', 'PostgreSql' or 'Sqlite'." );
+                throw new InvalidOperationException( $"Unknown database provider '{provider}'. Use 'SqlServer', 'PostgreSql' or 'Sqlite'." );
         }
 
         return services;

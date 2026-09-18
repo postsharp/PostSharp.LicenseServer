@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.Extensions.Logging.Abstractions;
 using SharpCrafters.Backstage.LicenseServer.Licensing;
 using SharpCrafters.Backstage.LicenseServer.Options;
@@ -29,12 +31,12 @@ public static class LicensingRegistration
         IConfiguration configuration,
         IHostEnvironment environment )
     {
-        IConfigurationSection section = configuration.GetSection( LicenseServerOptions.SectionName );
+        var section = configuration.GetSection( LicenseServerOptions.SectionName );
 
-        TestLicensingAuthority[] testAuthorities =
+        var testAuthorities =
             section.GetSection( "TestLicensingAuthorities" ).Get<TestLicensingAuthority[]>() ?? [];
 
-        bool seedTestLicenses = section.GetValue( "SeedTestLicenses", false );
+        var seedTestLicenses = section.GetValue( "SeedTestLicenses", false );
 
         // The server refuses to start instead of ignoring the setting or applying it. Ignoring it
         // would let an administrator believe that the server accepts those license keys. Applying it
@@ -50,12 +52,11 @@ public static class LicensingRegistration
 
         if ( testAuthorities.Length > 0 )
         {
-            var explicitAuthorities = new ExplicitLicensingAuthorityProvider(
-                testAuthorities.Select( a => ((int) a.KeyId, a.PublicKey) ).ToArray() );
+            var explicitAuthorities = new ExplicitLicensingAuthorityProvider( testAuthorities.Select( a => ( (int) a.KeyId, a.PublicKey ) ).ToArray() );
 
             // A key is parsed at its first use, which would be during a lease request. Requesting
             // each authority here turns a malformed key into a failure at startup.
-            foreach ( TestLicensingAuthority authority in testAuthorities )
+            foreach ( var authority in testAuthorities )
             {
                 explicitAuthorities.GetAuthority( authority.KeyId );
             }
@@ -66,7 +67,7 @@ public static class LicensingRegistration
 
         if ( seedTestLicenses )
         {
-            TestLicenseAuthority ownAuthority = TestLicenseAuthority.LoadOrCreate(
+            var ownAuthority = TestLicenseAuthority.LoadOrCreate(
                 Path.Combine( ResolveDataDirectory( section, environment ), "test-authority.key" ),
                 NullLogger.Instance );
 
@@ -76,8 +77,7 @@ public static class LicensingRegistration
             testKeyIds.Add( TestLicenseAuthority.KeyId );
         }
 
-        services.AddSingleton<ILicenseParser>(
-            _ => new CachingLicenseParser( new BackstageLicenseParser( authorities ) ) );
+        services.AddSingleton<ILicenseParser>( _ => new CachingLicenseParser( new BackstageLicenseParser( authorities ) ) );
 
         return testKeyIds;
 
@@ -100,7 +100,7 @@ public static class LicensingRegistration
     /// </summary>
     public static string ResolveDataDirectory( IConfigurationSection section, IHostEnvironment environment )
     {
-        string configured = section.GetValue( "DataDirectory", "App_Data" ) ?? "App_Data";
+        var configured = section.GetValue( "DataDirectory", "App_Data" ) ?? "App_Data";
 
         return Path.IsPathRooted( configured )
             ? configured

@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 namespace SharpCrafters.Backstage.LicenseServer.Time;
 
 /// <summary>
@@ -28,8 +30,7 @@ public sealed class AcceleratedTimeProvider : TimeProvider
 
     public double Acceleration => this.acceleration;
 
-    public override DateTimeOffset GetUtcNow()
-        => this.origin + ((this.inner.GetUtcNow() - this.origin) * this.acceleration);
+    public override DateTimeOffset GetUtcNow() => this.origin + ( ( this.inner.GetUtcNow() - this.origin ) * this.acceleration );
 
     public override long GetTimestamp() => this.inner.GetTimestamp();
 

@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Net;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -18,9 +20,9 @@ public sealed class OperationsEndpointTests : IDisposable
 
     private async Task<(HttpStatusCode Status, JsonElement Body)> GetAsync( string url )
     {
-        HttpResponseMessage response = await this.application.CreateClient().GetAsync( url );
+        var response = await this.application.CreateClient().GetAsync( url );
 
-        return (response.StatusCode, JsonDocument.Parse( await response.Content.ReadAsStringAsync() ).RootElement);
+        return ( response.StatusCode, JsonDocument.Parse( await response.Content.ReadAsStringAsync() ).RootElement );
     }
 
     private static JsonElement Check( JsonElement body, string name )
@@ -35,12 +37,12 @@ public sealed class OperationsEndpointTests : IDisposable
     {
         this.application.AddLicense( LicenseBuilder.Default().WithUsers( 5 ) );
 
-        (HttpStatusCode status, JsonElement body) = await this.GetAsync( "/health" );
+        var (status, body) = await this.GetAsync( "/health" );
 
         Assert.Equal( HttpStatusCode.OK, status );
         Assert.Equal( "Healthy", body.GetProperty( "status" ).GetString() );
 
-        string[] checks = body.GetProperty( "checks" )
+        var checks = body.GetProperty( "checks" )
             .EnumerateArray()
             .Select( c => c.GetProperty( "name" ).GetString()! )
             .ToArray();
@@ -56,12 +58,12 @@ public sealed class OperationsEndpointTests : IDisposable
     [Fact]
     public async Task Health_NoLicense_WarnsAndStaysServed()
     {
-        (HttpStatusCode status, JsonElement body) = await this.GetAsync( "/health" );
+        var (status, body) = await this.GetAsync( "/health" );
 
         Assert.Equal( HttpStatusCode.OK, status );
         Assert.Equal( "Degraded", body.GetProperty( "status" ).GetString() );
 
-        JsonElement licenses = LicenseCheck( body );
+        var licenses = LicenseCheck( body );
 
         Assert.Equal( "Degraded", licenses.GetProperty( "status" ).GetString() );
         Assert.Equal( "No license is registered.", licenses.GetProperty( "description" ).GetString() );
@@ -70,10 +72,9 @@ public sealed class OperationsEndpointTests : IDisposable
     [Fact]
     public async Task Health_ExpiredLicense_WarnsAndStaysServed()
     {
-        this.application.AddLicense(
-            LicenseBuilder.Default().WithUsers( 5 ).WithValidTo( TestClock.Days( -1 ) ) );
+        this.application.AddLicense( LicenseBuilder.Default().WithUsers( 5 ).WithValidTo( TestClock.Days( -1 ) ) );
 
-        (HttpStatusCode status, JsonElement body) = await this.GetAsync( "/health" );
+        var (status, body) = await this.GetAsync( "/health" );
 
         Assert.Equal( HttpStatusCode.OK, status );
         Assert.Equal( "Degraded", body.GetProperty( "status" ).GetString() );
@@ -96,7 +97,7 @@ public sealed class OperationsEndpointTests : IDisposable
         // The database keeps no schema after this test, so it must not serve another one.
         this.application.DoNotReuseDatabase();
 
-        using ( LicenseServerDbContext db = this.application.CreateDbContext() )
+        using ( var db = this.application.CreateDbContext() )
         {
             // PostgreSQL folds an identifier that is not quoted to lower case, and the tables of this
             // schema keep their capitals. The quotation marks are accepted by all three engines.
@@ -104,15 +105,15 @@ public sealed class OperationsEndpointTests : IDisposable
             await db.Database.ExecuteSqlRawAsync( "DROP TABLE \"Licenses\"" );
         }
 
-        (HttpStatusCode status, JsonElement body) = await this.GetAsync( "/health" );
+        var (status, body) = await this.GetAsync( "/health" );
 
         Assert.Equal( HttpStatusCode.ServiceUnavailable, status );
         Assert.Equal( "Unhealthy", DatabaseCheck( body ).GetProperty( "status" ).GetString() );
         Assert.Equal( "Degraded", LicenseCheck( body ).GetProperty( "status" ).GetString() );
 
-        foreach ( JsonElement check in body.GetProperty( "checks" ).EnumerateArray() )
+        foreach ( var check in body.GetProperty( "checks" ).EnumerateArray() )
         {
-            string description = check.GetProperty( "description" ).GetString()!;
+            var description = check.GetProperty( "description" ).GetString()!;
 
             Assert.EndsWith( "The reason is in the log of the server.", description, StringComparison.Ordinal );
             Assert.DoesNotContain( "no such table", description, StringComparison.OrdinalIgnoreCase );
@@ -126,7 +127,7 @@ public sealed class OperationsEndpointTests : IDisposable
     [Fact]
     public async Task Liveness_NoLicense_IsHealthy()
     {
-        (HttpStatusCode status, JsonElement body) = await this.GetAsync( "/health/live" );
+        var (status, body) = await this.GetAsync( "/health/live" );
 
         Assert.Equal( HttpStatusCode.OK, status );
         Assert.Equal( "Healthy", body.GetProperty( "status" ).GetString() );
@@ -136,13 +137,13 @@ public sealed class OperationsEndpointTests : IDisposable
     [Fact]
     public async Task Version_ReportsTheProductAndTheLicensingLibrary()
     {
-        (HttpStatusCode status, JsonElement body) = await this.GetAsync( "/version" );
+        var (status, body) = await this.GetAsync( "/version" );
 
         Assert.Equal( HttpStatusCode.OK, status );
         Assert.Equal( "SharpCrafters.Backstage.LicenseServer", body.GetProperty( "product" ).GetString() );
 
         // A version, not the empty string, and without the commit hash the build appends to it.
-        string version = body.GetProperty( "version" ).GetString()!;
+        var version = body.GetProperty( "version" ).GetString()!;
 
         Assert.NotEmpty( version );
         Assert.DoesNotContain( "+", version, StringComparison.Ordinal );
@@ -159,10 +160,10 @@ public sealed class OperationsEndpointTests : IDisposable
     [InlineData( "/version" )]
     public async Task Endpoint_AnonymousRequest_IsServed( string url )
     {
-        HttpClient client = this.application.CreateClient();
+        var client = this.application.CreateClient();
         client.DefaultRequestHeaders.Add( TestAuthenticationHandler.AnonymousHeader, "true" );
 
-        HttpResponseMessage response = await client.GetAsync( url );
+        var response = await client.GetAsync( url );
 
         Assert.Equal( HttpStatusCode.OK, response.StatusCode );
     }

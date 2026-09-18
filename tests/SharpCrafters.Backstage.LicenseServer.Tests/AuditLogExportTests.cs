@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Net;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SharpCrafters.Backstage.LicenseServer.Data;
@@ -26,30 +28,30 @@ public sealed class AuditLogExportTests : IDisposable
     [Fact]
     public async Task Export_WithMoreLeasesThanTheWriterBuffers_StreamsThemAll()
     {
-        License license = this.application.AddLicense( LicenseBuilder.Default().WithUsers( 5 ) );
+        var license = this.application.AddLicense( LicenseBuilder.Default().WithUsers( 5 ) );
         this.SeedLeases( license, leaseCount );
 
-        HttpClient client = this.application.CreateClient();
+        var client = this.application.CreateClient();
 
         // The response body refuses a synchronous write, exactly as Kestrel does. TestServer accepts
         // one whatever its AllowSynchronousIO property says, so without this guard an endpoint that
         // writes synchronously passes here and fails against a real server.
         this.application.ResponseBody.IsEnabled = true;
 
-        HttpResponseMessage response = await client.GetAsync( ExportUrl( 1, 12 ) );
+        var response = await client.GetAsync( ExportUrl( 1, 12 ) );
 
         Assert.Equal( HttpStatusCode.OK, response.StatusCode );
 
-        string[] lines = (await response.Content.ReadAsStringAsync())
+        var lines = ( await response.Content.ReadAsStringAsync() )
             .Split( '\n', StringSplitOptions.RemoveEmptyEntries );
 
         Assert.Equal( leaseCount, lines.Length );
 
-        foreach ( string line in lines )
+        foreach ( var line in lines )
         {
             // The identifier, the overwritten lease, the license, the two instants, the machine and
             // the user.
-            string[] fields = line.TrimEnd( '\r' ).Split( ';' );
+            var fields = line.TrimEnd( '\r' ).Split( ';' );
 
             Assert.Equal( 7, fields.Length );
         }
@@ -64,13 +66,13 @@ public sealed class AuditLogExportTests : IDisposable
     [Fact]
     public async Task Export_WithLeases_IsOfferedAsAFile()
     {
-        License license = this.application.AddLicense( LicenseBuilder.Default().WithUsers( 5 ) );
+        var license = this.application.AddLicense( LicenseBuilder.Default().WithUsers( 5 ) );
         this.SeedLeases( license, 1 );
 
-        HttpClient client = this.application.CreateClient();
+        var client = this.application.CreateClient();
         this.application.ResponseBody.IsEnabled = true;
 
-        HttpResponseMessage response = await client.GetAsync( ExportUrl( 3, 4 ) );
+        var response = await client.GetAsync( ExportUrl( 3, 4 ) );
 
         Assert.Equal( HttpStatusCode.OK, response.StatusCode );
 
@@ -86,10 +88,10 @@ public sealed class AuditLogExportTests : IDisposable
     [Fact]
     public async Task Export_WithNoLease_IsEmpty()
     {
-        HttpClient client = this.application.CreateClient();
+        var client = this.application.CreateClient();
         this.application.ResponseBody.IsEnabled = true;
 
-        HttpResponseMessage response = await client.GetAsync( ExportUrl( 1, 12 ) );
+        var response = await client.GetAsync( ExportUrl( 1, 12 ) );
 
         Assert.Equal( HttpStatusCode.OK, response.StatusCode );
         Assert.Equal( "", await response.Content.ReadAsStringAsync() );
@@ -101,11 +103,11 @@ public sealed class AuditLogExportTests : IDisposable
     /// </summary>
     private void SeedLeases( License license, int count )
     {
-        using LicenseServerDbContext db = this.application.CreateDbContext();
+        using var db = this.application.CreateDbContext();
 
-        DateTime start = DateTime.UtcNow.Date.AddDays( -1 );
+        var start = DateTime.UtcNow.Date.AddDays( -1 );
 
-        for ( int i = 0; i < count; i++ )
+        for ( var i = 0; i < count; i++ )
         {
             db.Leases.Add(
                 new Lease
@@ -124,7 +126,7 @@ public sealed class AuditLogExportTests : IDisposable
 
     private static string ExportUrl( int fromMonth, int toMonth )
     {
-        int year = DateTime.UtcNow.Year;
+        var year = DateTime.UtcNow.Year;
 
         return $"/Admin/Export.ashx?fy={year}&fm={fromMonth}&ty={year}&tm={toMonth}";
     }

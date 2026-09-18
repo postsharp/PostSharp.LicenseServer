@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Data.SqlClient;
@@ -41,8 +43,8 @@ public sealed class SqlServerTestDatabase : ITestDatabase
 
     public static async Task<SqlServerTestDatabase> CreateAsync( string serverConnectionString )
     {
-        SqlServerDatabasePool pool = SqlServerDatabasePool.Get( serverConnectionString );
-        string databaseName = await pool.RentAsync();
+        var pool = SqlServerDatabasePool.Get( serverConnectionString );
+        var databaseName = await pool.RentAsync();
 
         return new SqlServerTestDatabase( pool, databaseName, pool.GetConnectionString( databaseName ) );
     }
@@ -134,7 +136,7 @@ internal sealed class SqlServerDatabasePool
 
         try
         {
-            if ( this.available.TryTake( out string? databaseName ) )
+            if ( this.available.TryTake( out var databaseName ) )
             {
                 await this.ClearAsync( databaseName );
 
@@ -208,10 +210,10 @@ internal sealed class SqlServerDatabasePool
 
     private async Task CreateSchemaAsync( string databaseName )
     {
-        string script = await File.ReadAllTextAsync( LocateCreateTablesScript() );
+        var script = await File.ReadAllTextAsync( LocateCreateTablesScript() );
 
         // sqlcmd separates the batches of a script with GO, which is not a statement of Transact-SQL.
-        foreach ( string batch in script.Split(
+        foreach ( var batch in script.Split(
                      "\nGO",
                      StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries ) )
         {
@@ -247,11 +249,11 @@ internal sealed class SqlServerDatabasePool
 
             List<string> leftovers = [];
 
-            await using ( SqlCommand query = connection.CreateCommand() )
+            await using ( var query = connection.CreateCommand() )
             {
                 query.CommandText = $"SELECT name FROM sys.databases WHERE name LIKE '{prefix}%'";
 
-                await using SqlDataReader reader = await query.ExecuteReaderAsync();
+                await using var reader = await query.ExecuteReaderAsync();
 
                 while ( await reader.ReadAsync() )
                 {
@@ -259,7 +261,7 @@ internal sealed class SqlServerDatabasePool
                 }
             }
 
-            foreach ( string leftover in leftovers )
+            foreach ( var leftover in leftovers )
             {
                 await this.DropAsync( leftover );
             }
@@ -289,7 +291,7 @@ internal sealed class SqlServerDatabasePool
         await using SqlConnection connection = new( connectionString );
         await connection.OpenAsync();
 
-        await using SqlCommand command = connection.CreateCommand();
+        await using var command = connection.CreateCommand();
         command.CommandText = sql;
 
         await command.ExecuteNonQueryAsync();
@@ -300,7 +302,7 @@ internal sealed class SqlServerDatabasePool
     /// </summary>
     private static string LocateCreateTablesScript()
     {
-        string path = Path.Combine( AppContext.BaseDirectory, "Database", "CreateTables.sql" );
+        var path = Path.Combine( AppContext.BaseDirectory, "Database", "CreateTables.sql" );
 
         if ( !File.Exists( path ) )
         {

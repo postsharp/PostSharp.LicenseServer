@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.EntityFrameworkCore;
 using SharpCrafters.Backstage.LicenseServer.Data;
 using SharpCrafters.Backstage.LicenseServer.Licensing;
@@ -42,17 +44,17 @@ public sealed class LicenseAvailabilityService
         DateTime now,
         CancellationToken cancellationToken = default )
     {
-        License[] licenses = await this.repository.Licenses
+        var licenses = await this.repository.Licenses
             .AsNoTracking()
             .ToArrayAsync( cancellationToken );
 
-        int available = 0;
-        int disabled = 0;
-        int invalid = 0;
-        int expired = 0;
-        int exhausted = 0;
+        var available = 0;
+        var disabled = 0;
+        var invalid = 0;
+        var expired = 0;
+        var exhausted = 0;
 
-        foreach ( License license in licenses )
+        foreach ( var license in licenses )
         {
             if ( license.Priority < 0 )
             {
@@ -61,7 +63,7 @@ public sealed class LicenseAvailabilityService
                 continue;
             }
 
-            LicenseInfo? parsedLicense = this.licenseParser.TryParse( license.LicenseKey );
+            var parsedLicense = this.licenseParser.TryParse( license.LicenseKey );
 
             if ( parsedLicense == null
                  || !parsedLicense.IsLicenseServerEligible
@@ -87,7 +89,7 @@ public sealed class LicenseAvailabilityService
                 continue;
             }
 
-            int usage = this.repository.GetActiveSeats( license.LicenseId, now );
+            var usage = this.repository.GetActiveSeats( license.LicenseId, now );
 
             if ( usage < parsedLicense.UserNumber.Value )
             {
@@ -99,8 +101,8 @@ public sealed class LicenseAvailabilityService
             // Above the capacity, only the grace period remains. It is limited by a number of seats
             // and by a number of days. A license whose grace period has not started yet starts it at
             // the next request, so it counts as available.
-            int graceLimit = LicenseCapacity.GetGraceLimit( parsedLicense.UserNumber.Value, parsedLicense.GracePercent );
-            DateTime graceEnd = (license.GraceStartTime ?? now).AddDays( parsedLicense.GraceDays );
+            var graceLimit = LicenseCapacity.GetGraceLimit( parsedLicense.UserNumber.Value, parsedLicense.GracePercent );
+            var graceEnd = ( license.GraceStartTime ?? now ).AddDays( parsedLicense.GraceDays );
 
             if ( usage < graceLimit && graceEnd > now )
             {

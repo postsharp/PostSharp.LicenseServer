@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -46,14 +48,13 @@ public sealed class DetailsModel : PageModel
     /// Gets <see cref="MachinesPerSeat"/> with its noun, so that a server configured with one
     /// machine per seat displays "1 machine" and not "1 machines".
     /// </summary>
-    public string MachinesPerSeatText
-        => this.MachinesPerSeat == 1 ? "1 machine" : $"{this.MachinesPerSeat} machines";
+    public string MachinesPerSeatText => this.MachinesPerSeat == 1 ? "1 machine" : $"{this.MachinesPerSeat} machines";
 
     public bool IsDisabled { get; private set; }
 
     public async Task<IActionResult> OnGetAsync( CancellationToken cancellationToken )
     {
-        License? license = await this.repository.Licenses
+        var license = await this.repository.Licenses
             .AsNoTracking()
             .SingleOrDefaultAsync( l => l.LicenseId == this.Id, cancellationToken );
 
@@ -62,7 +63,7 @@ public sealed class DetailsModel : PageModel
             return this.NotFound();
         }
 
-        DateTime now = this.timeProvider.GetUtcNow().UtcDateTime;
+        var now = this.timeProvider.GetUtcNow().UtcDateTime;
 
         this.Leases = await this.repository.OpenLeases
             .Where( l => l.LicenseId == this.Id && l.StartTime <= now && l.EndTime >= now )
@@ -76,15 +77,13 @@ public sealed class DetailsModel : PageModel
         return this.Page();
     }
 
-    public Task<IActionResult> OnPostEnableAsync( CancellationToken cancellationToken )
-        => this.SetPriorityAsync( 0, cancellationToken );
+    public Task<IActionResult> OnPostEnableAsync( CancellationToken cancellationToken ) => this.SetPriorityAsync( 0, cancellationToken );
 
-    public Task<IActionResult> OnPostDisableAsync( CancellationToken cancellationToken )
-        => this.SetPriorityAsync( -1, cancellationToken );
+    public Task<IActionResult> OnPostDisableAsync( CancellationToken cancellationToken ) => this.SetPriorityAsync( -1, cancellationToken );
 
     private async Task<IActionResult> SetPriorityAsync( int priority, CancellationToken cancellationToken )
     {
-        License? license = await this.db.Licenses.SingleOrDefaultAsync( l => l.LicenseId == this.Id, cancellationToken );
+        var license = await this.db.Licenses.SingleOrDefaultAsync( l => l.LicenseId == this.Id, cancellationToken );
 
         if ( license == null )
         {
@@ -108,12 +107,12 @@ public sealed class DetailsModel : PageModel
 
         // The leases reference each other through the chain of replacements, so they are deleted
         // before the license, and the most recent ones before the ones they replaced.
-        List<Lease> leases = await this.db.Leases
+        var leases = await this.db.Leases
             .Where( l => l.LicenseId == this.Id )
             .OrderByDescending( l => l.LeaseId )
             .ToListAsync( cancellationToken );
 
-        foreach ( Lease lease in leases )
+        foreach ( var lease in leases )
         {
             this.db.Leases.Remove( lease );
             await this.db.SaveChangesAsync( cancellationToken );

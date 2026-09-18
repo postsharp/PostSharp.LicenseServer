@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using SharpCrafters.Backstage.LicenseServer.Data;
@@ -36,7 +38,7 @@ public sealed class LeaseAuditLineTests
     [Fact]
     public void Write_NoOverwrittenLease_LeavesTheFieldEmpty()
     {
-        Lease lease = CreateLease();
+        var lease = CreateLease();
         lease.OverwrittenLeaseId = null;
 
         Assert.Equal(
@@ -52,7 +54,7 @@ public sealed class LeaseAuditLineTests
     [Fact]
     public void Write_NamesTheUserAndTheMachine()
     {
-        string[] fields = CreateLease().ToAuditLine().Split( ';' );
+        var fields = CreateLease().ToAuditLine().Split( ';' );
 
         Assert.Equal( "desktop-1", fields[5] );
         Assert.Equal( "alice", fields[6] );
@@ -70,7 +72,7 @@ public sealed class LeaseAuditLineTests
     [Fact]
     public void Write_EmitsAbsoluteTimestamps()
     {
-        string[] fields = CreateLease().ToAuditLine().Split( ';' );
+        var fields = CreateLease().ToAuditLine().Split( ';' );
 
         Assert.EndsWith( "Z", fields[3], StringComparison.Ordinal );
         Assert.EndsWith( "Z", fields[4], StringComparison.Ordinal );
@@ -83,12 +85,12 @@ public sealed class LeaseAuditLineTests
     [Fact]
     public async Task Write_AfterReload_StillEmitsUtc()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        License license = LicenseBuilder.Default().AddTo( context );
-        Lease saved = LeaseBuilder.For( license ).From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().AddTo( context );
+        var saved = LeaseBuilder.For( license ).From( TestClock.Origin ).Lasting( 3 ).AddTo( context );
 
-        await using LicenseServerDbContext reader = context.CreateFreshContext();
-        Lease reloaded = await reader.Leases.SingleAsync( l => l.LeaseId == saved.LeaseId );
+        await using var reader = context.CreateFreshContext();
+        var reloaded = await reader.Leases.SingleAsync( l => l.LeaseId == saved.LeaseId );
 
         Assert.Equal( DateTimeKind.Utc, reloaded.StartTime.Kind );
         Assert.Equal( DateTimeKind.Utc, reloaded.EndTime.Kind );
@@ -98,7 +100,7 @@ public sealed class LeaseAuditLineTests
     [Fact]
     public void Write_UsesInvariantFormatting()
     {
-        CultureInfo original = CultureInfo.CurrentCulture;
+        var original = CultureInfo.CurrentCulture;
 
         try
         {

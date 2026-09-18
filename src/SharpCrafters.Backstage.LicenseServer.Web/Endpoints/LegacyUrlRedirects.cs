@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 namespace SharpCrafters.Backstage.LicenseServer.Endpoints;
 
 /// <summary>
@@ -8,13 +10,13 @@ public static class LegacyUrlRedirects
 {
     private static readonly (string Legacy, string Current)[] redirects =
     [
-        ("/Default.aspx", "/"),
-        ("/Graph.aspx", "/Graph"),
-        ("/Admin/AddLicense.aspx", "/Admin/AddLicense"),
-        ("/Admin/Cancel.aspx", "/Admin/Cancel"),
-        ("/Admin/Details.aspx", "/Admin/Details"),
-        ("/Admin/Export.aspx", "/Admin/Export"),
-        ("/Admin/GenerateDemoData.aspx", "/Admin/GenerateDemoData")
+        ( "/Default.aspx", "/" ),
+        ( "/Graph.aspx", "/Graph" ),
+        ( "/Admin/AddLicense.aspx", "/Admin/AddLicense" ),
+        ( "/Admin/Cancel.aspx", "/Admin/Cancel" ),
+        ( "/Admin/Details.aspx", "/Admin/Details" ),
+        ( "/Admin/Export.aspx", "/Admin/Export" ),
+        ( "/Admin/GenerateDemoData.aspx", "/Admin/GenerateDemoData" )
     ];
 
     /// <summary>
@@ -34,16 +36,16 @@ public static class LegacyUrlRedirects
         }
 
         // The home page is the path base itself, and not the path base followed by a slash.
-        string path = target == "/" ? pathBase.Value! : pathBase.Value + target;
+        var path = target == "/" ? pathBase.Value! : pathBase.Value + target;
 
         return path + queryString;
     }
 
     public static void MapLegacyUrlRedirects( this WebApplication app )
     {
-        foreach ( (string legacy, string current) in redirects )
+        foreach ( var (legacy, current) in redirects )
         {
-            string target = current;
+            var target = current;
 
             app.MapGet(
                 legacy,

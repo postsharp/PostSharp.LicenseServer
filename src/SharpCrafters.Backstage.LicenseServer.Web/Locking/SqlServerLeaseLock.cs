@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Data;
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
@@ -32,23 +34,23 @@ public sealed class SqlServerLeaseLock : ILeaseLock
     /// this name is shared by every process that serves this database, and by nothing else.
     /// </summary>
     public const string ResourceName = "SharpCrafters.Backstage.LicenseServer.Lease";
+
     public SqlServerLeaseLock( LicenseServerDbContext db )
     {
         this.db = db;
     }
 
-
     public async ValueTask<IAsyncDisposable?> TryAcquireAsync(
         TimeSpan timeout,
         CancellationToken cancellationToken = default )
     {
-        DatabaseFacade database = this.db.Database;
+        var database = this.db.Database;
 
         await database.OpenConnectionAsync( cancellationToken );
 
         try
         {
-            int result = await ExecuteAsync(
+            var result = await ExecuteAsync(
                 database,
                 "sp_getapplock",
                 command =>
@@ -73,8 +75,7 @@ public sealed class SqlServerLeaseLock : ILeaseLock
             {
                 await database.CloseConnectionAsync();
 
-                throw new InvalidOperationException(
-                    $"sp_getapplock returned {result} for the resource '{ResourceName}'." );
+                throw new InvalidOperationException( $"sp_getapplock returned {result} for the resource '{ResourceName}'." );
             }
 
             return new Handle( database );
@@ -89,7 +90,7 @@ public sealed class SqlServerLeaseLock : ILeaseLock
 
     private static void AddParameter( DbCommand command, string name, object value )
     {
-        DbParameter parameter = command.CreateParameter();
+        var parameter = command.CreateParameter();
         parameter.ParameterName = name;
         parameter.Value = value;
         command.Parameters.Add( parameter );
@@ -105,14 +106,14 @@ public sealed class SqlServerLeaseLock : ILeaseLock
         Action<DbCommand> addParameters,
         CancellationToken cancellationToken )
     {
-        await using DbCommand command = database.GetDbConnection().CreateCommand();
+        await using var command = database.GetDbConnection().CreateCommand();
 
         command.CommandText = procedure;
         command.CommandType = CommandType.StoredProcedure;
 
         addParameters( command );
 
-        DbParameter returnValue = command.CreateParameter();
+        var returnValue = command.CreateParameter();
         returnValue.ParameterName = "@Result";
         returnValue.DbType = DbType.Int32;
         returnValue.Direction = ParameterDirection.ReturnValue;

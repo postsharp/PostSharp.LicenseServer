@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using System.Diagnostics;
 using System.Globalization;
 using System.Xml;
@@ -54,7 +56,7 @@ public static class LicenseServerEndpoints
         {
             version = new Version( 4, 9, 9 );
         }
-        else if ( !Version.TryParse( versionString, out Version? parsedVersion ) )
+        else if ( !Version.TryParse( versionString, out var parsedVersion ) )
         {
             return Error( 400, "Cannot parse the argument: version." );
         }
@@ -72,7 +74,7 @@ public static class LicenseServerEndpoints
                     buildDateString,
                     CultureInfo.InvariantCulture,
                     DateTimeStyles.RoundtripKind,
-                    out DateTime parsedBuildDate ) )
+                    out var parsedBuildDate ) )
             {
                 return Error( 400, "Cannot parse the argument: buildDate." );
             }
@@ -100,9 +102,9 @@ public static class LicenseServerEndpoints
 
         // An anonymous request has no name in ASP.NET Core, where WebForms returned an empty string.
         // The column does not accept null.
-        string authenticatedUserName = context.User.Identity?.Name ?? string.Empty;
+        var authenticatedUserName = context.User.Identity?.Name ?? string.Empty;
 
-        await using IAsyncDisposable? handle = await leaseLock.TryAcquireAsync(
+        await using var handle = await leaseLock.TryAcquireAsync(
             options.Value.MutexTimeoutSpan,
             cancellationToken );
 
@@ -115,7 +117,7 @@ public static class LicenseServerEndpoints
         // waits for the lock. Two requests that merely run at the same time do not prove it: they
         // pass whether the lock works or not. The service is absent in production, and the call then
         // costs a null check. See ITestSynchronizationProvider.
-        ITestSynchronizationProvider? synchronization =
+        var synchronization =
             context.RequestServices.GetService<ITestSynchronizationProvider>();
 
         if ( synchronization != null )
@@ -123,11 +125,11 @@ public static class LicenseServerEndpoints
             await synchronization.SyncPointAsync( HoldingLeaseLockSyncPoint, cancellationToken );
         }
 
-        long startTimestamp = timeProvider.GetTimestamp();
+        var startTimestamp = timeProvider.GetTimestamp();
 
         Dictionary<int, string> errors = [];
 
-        GrantedLease? grantedLease = await leaseService.GetLicenseLeaseAsync(
+        var grantedLease = await leaseService.GetLicenseLeaseAsync(
             productCode,
             version,
             buildDate,
@@ -145,7 +147,7 @@ public static class LicenseServerEndpoints
 
         await repository.SaveChangesAsync( cancellationToken );
 
-        TimeSpan elapsed = timeProvider.GetElapsedTime( startTimestamp );
+        var elapsed = timeProvider.GetElapsedTime( startTimestamp );
 
         if ( elapsed > TimeSpan.FromSeconds( 1 ) )
         {
@@ -200,13 +202,12 @@ public static class LicenseServerEndpoints
              || fm is null or < 1 or > 12
              || tm is null or < 1 or > 12 )
         {
-            return Results.BadRequest(
-                $"The range of months is missing or invalid. Years must be between {firstYear} and {lastYear}." );
+            return Results.BadRequest( $"The range of months is missing or invalid. Years must be between {firstYear} and {lastYear}." );
         }
 
         // The months are read as UTC, which is the time zone of every timestamp of the database.
         DateTime fromTime = new( fy.Value, fm.Value, 1, 0, 0, 0, DateTimeKind.Utc );
-        DateTime toTime = new DateTime( ty.Value, tm.Value, 1, 0, 0, 0, DateTimeKind.Utc ).AddMonths( 1 );
+        var toTime = new DateTime( ty.Value, tm.Value, 1, 0, 0, 0, DateTimeKind.Utc ).AddMonths( 1 );
 
         // The range of months is resolved to a range of lease identifiers, and every lease in that
         // range is exported. The legacy server selected the rows in the same way, and customers
@@ -218,7 +219,7 @@ public static class LicenseServerEndpoints
             .Select( g => new { MinLeaseId = g.Min( l => l.LeaseId ), MaxLeaseId = g.Max( l => l.LeaseId ) } )
             .SingleOrDefaultAsync( cancellationToken );
 
-        string fileName =
+        var fileName =
             $"PostSharp_LicenseLog_{fy.Value}-{fm.Value}_{ty.Value}-{tm.Value}.txt";
 
         context.Response.Headers.ContentDisposition = $"attachment; filename={fileName}";
@@ -228,8 +229,8 @@ public static class LicenseServerEndpoints
             return Results.Text( string.Empty, "text/plain" );
         }
 
-        int minLeaseId = bounds.MinLeaseId;
-        int maxLeaseId = bounds.MaxLeaseId;
+        var minLeaseId = bounds.MinLeaseId;
+        var maxLeaseId = bounds.MaxLeaseId;
 
         // The rows are written to the response as they arrive. An audit log that covers years of
         // activity is too large to assemble in memory, and the download starts before the server has
@@ -239,13 +240,13 @@ public static class LicenseServerEndpoints
             {
                 await using StreamWriter writer = new( stream );
 
-                IAsyncEnumerable<Lease> leases = repository.Leases
+                var leases = repository.Leases
                     .Where( l => l.LeaseId >= minLeaseId && l.LeaseId <= maxLeaseId )
                     .OrderBy( l => l.LeaseId )
                     .AsNoTracking()
                     .AsAsyncEnumerable();
 
-                await foreach ( Lease lease in leases.WithCancellation( cancellationToken ) )
+                await foreach ( var lease in leases.WithCancellation( cancellationToken ) )
                 {
                     // The line is built in memory and written asynchronously. Writing the fields
                     // directly to the writer makes the writer flush synchronously when its buffer is
@@ -257,8 +258,7 @@ public static class LicenseServerEndpoints
             "text/plain" );
     }
 
-    private static IResult Error( int statusCode, string description )
-        => Results.Text( description, "text/plain", statusCode: statusCode );
+    private static IResult Error( int statusCode, string description ) => Results.Text( description, "text/plain", statusCode: statusCode );
 
     /// <summary>
     /// Removes the control characters from a value of the request, so that the value cannot forge a

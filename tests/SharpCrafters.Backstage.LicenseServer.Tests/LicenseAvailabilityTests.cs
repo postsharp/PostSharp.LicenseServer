@@ -1,3 +1,5 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
 using SharpCrafters.Backstage.LicenseServer.Data;
 using SharpCrafters.Backstage.LicenseServer.Services;
 using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
@@ -27,7 +29,7 @@ public sealed class LicenseAvailabilityTests
     /// </summary>
     private static void Occupy( LicenseServerTestContext context, License license, int seats )
     {
-        for ( int i = 0; i < seats; i++ )
+        for ( var i = 0; i < seats; i++ )
         {
             LeaseBuilder.For( license ).User( $"user{i}" ).Machine( $"machine{i}" ).AddTo( context );
         }
@@ -36,9 +38,9 @@ public sealed class LicenseAvailabilityTests
     [Fact]
     public async Task Availability_NoLicense_CannotServe()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
-        LicenseAvailability availability = await GetAvailabilityAsync( context );
+        var availability = await GetAvailabilityAsync( context );
 
         Assert.False( availability.CanServeLease );
         Assert.Equal( 0, availability.Total );
@@ -48,11 +50,11 @@ public sealed class LicenseAvailabilityTests
     [Fact]
     public async Task Availability_FreeCapacity_CanServe()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        License license = LicenseBuilder.Default().WithUsers( 5 ).AddTo( context );
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().WithUsers( 5 ).AddTo( context );
         Occupy( context, license, 3 );
 
-        LicenseAvailability availability = await GetAvailabilityAsync( context );
+        var availability = await GetAvailabilityAsync( context );
 
         Assert.True( availability.CanServeLease );
         Assert.Equal( 1, availability.Available );
@@ -61,19 +63,19 @@ public sealed class LicenseAvailabilityTests
     [Fact]
     public async Task Availability_NoSeatLimit_CanServe()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
         LicenseBuilder.Default().WithUsers( null ).AddTo( context );
 
-        Assert.True( (await GetAvailabilityAsync( context )).CanServeLease );
+        Assert.True( ( await GetAvailabilityAsync( context ) ).CanServeLease );
     }
 
     [Fact]
     public async Task Availability_Disabled_CannotServe()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
         LicenseBuilder.Default().WithUsers( 5 ).WithPriority( -1 ).AddTo( context );
 
-        LicenseAvailability availability = await GetAvailabilityAsync( context );
+        var availability = await GetAvailabilityAsync( context );
 
         Assert.False( availability.CanServeLease );
         Assert.Equal( 1, availability.Disabled );
@@ -83,10 +85,10 @@ public sealed class LicenseAvailabilityTests
     [Fact]
     public async Task Availability_Expired_CannotServe()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
         LicenseBuilder.Default().WithUsers( 5 ).WithValidTo( TestClock.Days( 0.5 ) ).AddTo( context );
 
-        LicenseAvailability availability = await GetAvailabilityAsync( context );
+        var availability = await GetAvailabilityAsync( context );
 
         Assert.False( availability.CanServeLease );
         Assert.Equal( 1, availability.Expired );
@@ -99,14 +101,13 @@ public sealed class LicenseAvailabilityTests
     [Fact]
     public async Task Availability_UnparsableKey_CannotServe()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
-        context.Db.Licenses.Add(
-            new License { LicenseId = 1, LicenseKey = "NOT-A-KEY", ProductCode = "Ultimate", CreatedOn = TestClock.Origin } );
+        context.Db.Licenses.Add( new License { LicenseId = 1, LicenseKey = "NOT-A-KEY", ProductCode = "Ultimate", CreatedOn = TestClock.Origin } );
 
         await context.Db.SaveChangesAsync();
 
-        LicenseAvailability availability = await GetAvailabilityAsync( context );
+        var availability = await GetAvailabilityAsync( context );
 
         Assert.False( availability.CanServeLease );
         Assert.Equal( 1, availability.Invalid );
@@ -119,23 +120,23 @@ public sealed class LicenseAvailabilityTests
     [Fact]
     public async Task Availability_FullWithGraceLeft_CanServe()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
         // Five seats plus 20 per cent is a grace limit of six.
-        License license = LicenseBuilder.Default().WithUsers( 5 ).WithGracePercent( 20 ).AddTo( context );
+        var license = LicenseBuilder.Default().WithUsers( 5 ).WithGracePercent( 20 ).AddTo( context );
         Occupy( context, license, 5 );
 
-        Assert.True( (await GetAvailabilityAsync( context )).CanServeLease );
+        Assert.True( ( await GetAvailabilityAsync( context ) ).CanServeLease );
     }
 
     [Fact]
     public async Task Availability_GraceSeatsUsedUp_CannotServe()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        License license = LicenseBuilder.Default().WithUsers( 5 ).WithGracePercent( 20 ).AddTo( context );
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().WithUsers( 5 ).WithGracePercent( 20 ).AddTo( context );
         Occupy( context, license, 6 );
 
-        LicenseAvailability availability = await GetAvailabilityAsync( context );
+        var availability = await GetAvailabilityAsync( context );
 
         Assert.False( availability.CanServeLease );
         Assert.Equal( 1, availability.Exhausted );
@@ -145,9 +146,9 @@ public sealed class LicenseAvailabilityTests
     [Fact]
     public async Task Availability_GracePeriodOver_CannotServe()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
-        License license = LicenseBuilder.Default()
+        var license = LicenseBuilder.Default()
             .WithUsers( 5 )
             .WithGraceDays( 10 )
             .WithGraceStartTime( TestClock.Days( -20 ) )
@@ -155,7 +156,7 @@ public sealed class LicenseAvailabilityTests
 
         Occupy( context, license, 5 );
 
-        LicenseAvailability availability = await GetAvailabilityAsync( context );
+        var availability = await GetAvailabilityAsync( context );
 
         Assert.False( availability.CanServeLease );
         Assert.Equal( 1, availability.Exhausted );
@@ -169,8 +170,8 @@ public sealed class LicenseAvailabilityTests
     [Fact]
     public async Task Availability_FullLicense_DoesNotStartTheGracePeriod()
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        License license = LicenseBuilder.Default().WithUsers( 5 ).AddTo( context );
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().WithUsers( 5 ).AddTo( context );
         Occupy( context, license, 5 );
 
         await GetAvailabilityAsync( context );
@@ -189,22 +190,22 @@ public sealed class LicenseAvailabilityTests
     [InlineData( 5, true, false )]
     public async Task Availability_AgreesWithTheAllocator( int seatsInUse, bool graceOver, bool expected )
     {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+        await using var context = await LicenseServerTestContext.CreateAsync();
 
-        LicenseBuilder builder = LicenseBuilder.Default().WithUsers( 5 ).WithGracePercent( 20 ).WithGraceDays( 10 );
+        var builder = LicenseBuilder.Default().WithUsers( 5 ).WithGracePercent( 20 ).WithGraceDays( 10 );
 
         if ( graceOver )
         {
             builder = builder.WithGraceStartTime( TestClock.Days( -20 ) );
         }
 
-        License license = builder.AddTo( context );
+        var license = builder.AddTo( context );
         Occupy( context, license, seatsInUse );
 
-        Assert.Equal( expected, (await GetAvailabilityAsync( context )).CanServeLease );
+        Assert.Equal( expected, ( await GetAvailabilityAsync( context ) ).CanServeLease );
 
         // Asked afterwards, because allocating changes the state the check reads.
-        GrantedLease? granted = await context.LeaseService.GetLicenseLeaseAsync(
+        var granted = await context.LeaseService.GetLicenseLeaseAsync(
             null,
             new Version( 2027, 0 ),
             null,
