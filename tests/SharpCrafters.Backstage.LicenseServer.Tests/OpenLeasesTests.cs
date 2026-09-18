@@ -1,0 +1,104 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
+using Microsoft.EntityFrameworkCore;
+using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
+
+namespace SharpCrafters.Backstage.LicenseServer.Tests;
+
+/// <summary>
+/// The server never updates a lease. Prolonging a lease and cancelling a lease both insert a
+/// replacement that references the previous lease. A lease is open when no other lease references
+/// it.
+/// </summary>
+public sealed class OpenLeasesTests
+{
+    [Fact]
+    public async Task OpenLeases_LeaseNeverReplaced_IsOpen()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().AddTo( context );
+        var lease = LeaseBuilder.For( license ).AddTo( context );
+
+        Assert.Equal( [lease.LeaseId], await context.Db.OpenLeases.Select( l => l.LeaseId ).ToListAsync() );
+    }
+
+    [Fact]
+    public async Task OpenLeases_ReplacedLease_IsNotOpen()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().AddTo( context );
+        var original = LeaseBuilder.For( license ).AddTo( context );
+
+        var replacement = context.Repository.ProlongLease( original, "alice", TestClock.Days( 2.5 ) );
+        await context.Repository.SaveChangesAsync();
+
+        Assert.NotNull( replacement );
+        Assert.Equal( [replacement.LeaseId], await context.Db.OpenLeases.Select( l => l.LeaseId ).ToListAsync() );
+    }
+
+    [Fact]
+    public async Task OpenLeases_ChainOfReplacements_LeavesOnlyTheLast()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().AddTo( context );
+
+        var current = LeaseBuilder.For( license ).AddTo( context );
+
+        for ( var i = 1; i <= 3; i++ )
+        {
+            current = context.Repository.ProlongLease( current, "alice", TestClock.Days( i * 2.5 ) )!;
+            await context.Repository.SaveChangesAsync();
+        }
+
+        Assert.Equal( 4, await context.Db.Leases.CountAsync() );
+        Assert.Equal( [current.LeaseId], await context.Db.OpenLeases.Select( l => l.LeaseId ).ToListAsync() );
+    }
+
+    /// <summary>
+    /// No constraint of the schema prevents two leases from replacing the same lease. The legacy
+    /// query, a left join, returned such a lease once per replacement. An anti-join returns it once.
+    /// </summary>
+    [Fact]
+    public async Task OpenLeases_LeaseReplacedTwice_IsStillListedOnlyOnce()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().AddTo( context );
+        var original = LeaseBuilder.For( license ).AddTo( context );
+
+        var survivor = LeaseBuilder.For( license ).User( "bob" ).AddTo( context );
+
+        foreach ( var _ in Enumerable.Range( 0, 2 ) )
+        {
+            context.Db.Leases.Add(
+                new Lease
+                {
+                    LicenseId = license.LicenseId,
+                    OverwrittenLeaseId = original.LeaseId,
+                    UserName = original.UserName,
+                    Machine = original.Machine,
+                    AuthenticatedUser = original.AuthenticatedUser,
+                    StartTime = original.StartTime,
+                    EndTime = TestClock.Days( 4 )
+                } );
+        }
+
+        await context.Db.SaveChangesAsync();
+
+        var open = await context.Db.OpenLeases.Select( l => l.LeaseId ).ToListAsync();
+
+        Assert.DoesNotContain( original.LeaseId, open );
+        Assert.Equal( open.Count, open.Distinct().Count() );
+        Assert.Contains( survivor.LeaseId, open );
+    }
+
+    [Fact]
+    public async Task OpenLeases_TranslatesToSqlAsAnAntiJoin()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+
+        var sql = context.Db.OpenLeases.ToQueryString();
+
+        // Proves the filter runs in the database rather than after loading every lease.
+        Assert.Contains( "NOT EXISTS", sql, StringComparison.OrdinalIgnoreCase );
+    }
+}

@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- The assembly name is the product name, so the published entry point is
+         SharpCrafters.Backstage.LicenseServer.dll. -->
+    <RootNamespace>SharpCrafters.Backstage.LicenseServer</RootNamespace>
+    <AssemblyName>SharpCrafters.Backstage.LicenseServer</AssemblyName>
+    <UserSecretsId>sharpcrafters-backstage-license-server</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <!-- Offered as an alternative engine, so the server can be evaluated without a database server. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SharpCrafters.Backstage.LicenseServer.Core\SharpCrafters.Backstage.LicenseServer.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shipped so that an administrator can create the database on a new installation, one script
+         per engine supported in production. -->
+    <Content Include="Database\CreateTables.sql" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Database\CreateTables.PostgreSql.sql" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- The release archive: the public artifact of the product, which is what an administrator unpacks
+       into an IIS application or runs with `dotnet SharpCrafters.Backstage.LicenseServer.dll`. It is
+       built rather than packed because the product ships no NuGet package. -->
+  <Import Project="..\..\eng\DeterministicZip.tasks" />
+
+  <PropertyGroup>
+    <!-- PackageOutputPath is artifacts/publish/private, where PostSharp.Engineering collects every build
+         output; it copies the ones the product declares public into artifacts/publish/public. -->
+    <ReleaseArchivePath>$(PackageOutputPath)$(AssemblyName).$(Version).zip</ReleaseArchivePath>
+
+    <!-- The contents of the archive, at a path that does not carry the version, so that the Dockerfile
+         and any other consumer can name it. The container therefore runs exactly what is released. -->
+    <ReleaseArchiveStagingPath>$([MSBuild]::NormalizeDirectory('$(RepoDirectory)artifacts\app'))</ReleaseArchiveStagingPath>
+
+    <!-- Outside a PostSharp.Engineering build nothing defines the build date, and the archive is then
+         given a fixed timestamp rather than failing: a developer building the solution directly has no
+         use for a reproducible one. -->
+    <ReleaseArchiveDate Condition="'$(BuildDate)'!=''">$(BuildDate)</ReleaseArchiveDate>
+    <ReleaseArchiveDate Condition="'$(ReleaseArchiveDate)'==''">2000-01-01</ReleaseArchiveDate>
+  </PropertyGroup>
+
+  <Target Name="PackAndZip" AfterTargets="Build" Condition="'$(ProduceReleaseArchive)'!='false'">
+
+    <!-- The staging directory is emptied first, so that the archive never carries a file that only an
+         earlier build produced. -->
+    <RemoveDir Directories="$(ReleaseArchiveStagingPath)" />
+    <Exec Command="dotnet publish &quot;$(MSBuildProjectFullPath)&quot; --no-build --nologo -c $(Configuration) -o &quot;$(ReleaseArchiveStagingPath)&quot;" />
+
+    <!-- Development-only settings must not reach a customer's server. -->
+    <Delete Files="$(ReleaseArchiveStagingPath)appsettings.Development.json" />
+
+    <MakeDir Directories="$(PackageOutputPath)" />
+    <CreateDeterministicZip SourceDirectory="$(ReleaseArchiveStagingPath)" DestinationFile="$(ReleaseArchivePath)" PackageBuildDate="$(ReleaseArchiveDate)" />
+    <Message Text="$(MSBuildProjectName) -&gt; $(ReleaseArchivePath)" Importance="High" />
+  </Target>
+
+</Project>

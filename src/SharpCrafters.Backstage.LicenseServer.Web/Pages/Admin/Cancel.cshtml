@@ -1,0 +1,33 @@
+@page
+@model CancelModel
+@{
+    ViewData["Title"] = "Cancel a lease";
+}
+
+<div class="page-header">
+    <h2>Cancel a lease</h2>
+    <p>
+        <a asp-page="/Admin/Details" asp-route-id="@Model.Lease!.LicenseId">Back</a>
+    </p>
+</div>
+
+<p>
+    Cancel the lease of <strong>@Model.Lease!.UserName</strong> on
+    <strong>@Model.Lease.Machine</strong>, which currently runs until
+    @Model.Lease.EndTime.ToString( "g" )?
+</p>
+
+<p>
+    The seat is released on this server immediately, and the lease is kept in the audit log.
+</p>
+
+<p>
+    The machine of the user keeps the lease it already holds until that lease expires, because a
+    client is never told that a lease was cancelled. Cancelling frees the seat for somebody else; it
+    does not stop the product on that machine.
+</p>
+
+<form method="post">
+    <button type="submit">Cancel the lease</button>
+    <a asp-page="/Admin/Details" asp-route-id="@Model.Lease.LicenseId">Keep it</a>
+</form>

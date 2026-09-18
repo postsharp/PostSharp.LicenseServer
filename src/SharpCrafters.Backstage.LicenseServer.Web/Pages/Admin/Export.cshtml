@@ -1,0 +1,40 @@
+@page
+@model ExportModel
+@{
+    ViewData["Title"] = "Export the audit log";
+}
+
+<div class="page-header">
+    <h2>Export the audit log</h2>
+    <p>
+        <a asp-page="/Index">Back</a>
+    </p>
+</div>
+
+<p>
+    The export is a text file with one line per lease, with the user name and the machine name as
+    they were recorded. The file contains personal data. It is meant for the administrator of this
+    server, who uses it to understand how the licenses are used.
+</p>
+
+<form method="post">
+    <div asp-validation-summary="All" class="validation-summary-errors"></div>
+
+    <p>
+        <label asp-for="FromMonth "></label>
+        <select asp-for="FromMonth " asp-items="ExportModel.Months"></select>
+        <input asp-for="FromYear " type="number" min="2010" max="2100"/>
+        <span asp-validation-for="FromYear " class="field-validation-error"></span>
+    </p>
+
+    <p>
+        <label asp-for="ToMonth "></label>
+        <select asp-for="ToMonth " asp-items="ExportModel.Months"></select>
+        <input asp-for="ToYear " type="number" min="2010" max="2100"/>
+        <span asp-validation-for="ToYear " class="field-validation-error"></span>
+    </p>
+
+    <p>
+        <button type="submit">Download</button>
+    </p>
+</form>

@@ -1,0 +1,28 @@
+# Turns the deployment in docker-compose.yml into one that can be exercised without buying a
+# license. Apply it beside the main file, never on its own:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.test.yml up
+#
+# What it changes: the server runs in the Development environment, issues itself the license keys it
+# serves, and runs its clock 1440 times faster than real time so that a fortnight of leases fits into
+# a coffee break. The license keys are signed by a licensing authority the server generates into its
+# own data volume, and no other server accepts them.
+#
+# The server refuses to start with these settings outside the Development environment, so this file
+# cannot quietly turn a real deployment into a test one.
+
+services:
+
+  licenseserver:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+
+      # Generates a licensing authority in the data volume and adds a license key per product family.
+      LicenseServer__SeedTestLicenses: "true"
+
+      # One real minute is one virtual day. See the license server protocol for how a client follows
+      # the accelerated clock through GetTime.ashx.
+      LicenseServer__TimeAcceleration: "1440"
+
+      # The machine names that LicenseServerLoadSimulator gives its build agents.
+      LicenseServer__BuildServers: server

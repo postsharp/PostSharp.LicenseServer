@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>SharpCrafters.Backstage.LicenseServer</RootNamespace>
+    <AssemblyName>SharpCrafters.Backstage.LicenseServer.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Relational only: the database provider is chosen by the hosting application,
+         so that tests can run against SQLite while production runs against SQL Server. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+    <PackageReference Include="MailKit" />
+
+    <!-- The licensing component: parses and validates license keys, and defines the wire contract
+         with the clients of both product families. -->
+    <PackageReference Include="SharpCrafters.Backstage" />
+  </ItemGroup>
+
+</Project>

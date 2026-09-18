@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>SharpCrafters.Backstage.LicenseServer.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+
+    <!-- Signs the license keys the licensing tests parse, with the same test authority that
+         SharpCrafters.Backstage verifies them against. -->
+    <PackageReference Include="SharpCrafters.Backstage.Testing" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />
+    <PackageReference Include="SQLitePCLRaw.core" />
+    <PackageReference Include="SQLitePCLRaw.provider.e_sqlite3" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SharpCrafters.Backstage.LicenseServer.Core\SharpCrafters.Backstage.LicenseServer.Core.csproj" />
+    <ProjectReference Include="..\..\src\SharpCrafters.Backstage.LicenseServer.Web\SharpCrafters.Backstage.LicenseServer.Web.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- A SQL Server run and a PostgreSQL run create the schema of every test database from these
+         scripts, which are the scripts an administrator runs, rather than from the EF Core model. -->
+    <Content Include="../../src/SharpCrafters.Backstage.LicenseServer.Web/Database/CreateTables.sql"
+             Link="Database/CreateTables.sql"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../src/SharpCrafters.Backstage.LicenseServer.Web/Database/CreateTables.PostgreSql.sql"
+             Link="Database/CreateTables.PostgreSql.sql"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

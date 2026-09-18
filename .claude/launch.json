@@ -1,0 +1,27 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "SharpCrafters.Backstage.LicenseServer",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/SharpCrafters.Backstage.LicenseServer.Web"],
+      "port": 44670,
+      "url": "http://localhost:44670"
+    },
+    {
+      "name": "SharpCrafters.Backstage.LicenseServer (accelerated)",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "src/SharpCrafters.Backstage.LicenseServer.Web",
+        "--",
+        "--LicenseServer:TimeAcceleration=1440",
+        "--LicenseServer:BuildServers=server",
+        "--Authentication:Scheme=None"
+      ],
+      "port": 44670,
+      "url": "http://localhost:44670"
+    }
+  ]
+}

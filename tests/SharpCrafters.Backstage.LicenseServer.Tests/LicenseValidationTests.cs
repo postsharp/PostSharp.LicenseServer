@@ -1,0 +1,216 @@
+// Copyright (c) SharpCrafters s.r.o. See the LICENSE.md file in the root directory of this repository root for details.
+
+using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
+
+namespace SharpCrafters.Backstage.LicenseServer.Tests;
+
+/// <summary>
+/// The reasons why a license does not serve a request. The server reports each reason to the
+/// developer in the body of the response 403, so these tests verify the text.
+/// </summary>
+public sealed class LicenseValidationTests
+{
+    private static async Task<(Lease? Lease, Dictionary<int, string> Errors)> RequestAsync(
+        LicenseServerTestContext context,
+        License license,
+        Version? version = null,
+        DateTime? buildDate = null )
+    {
+        Dictionary<int, string> errors = [];
+
+        var lease = await context.LeaseService.GetLeaseAsync(
+            version ?? new Version( 2025, 1, 0 ),
+            buildDate,
+            "desktop-1",
+            "alice",
+            "alice",
+            TestClock.Origin,
+            errors,
+            [license] );
+
+        return ( lease, errors );
+    }
+
+    [Fact]
+    public async Task UnparseableKey_IsReportedAsInvalid()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+
+        // Added straight to the database, so the fake parser has no entry for its key.
+        License license = new() { LicenseId = 99, LicenseKey = "NOT-A-KEY", ProductCode = "Ultimate", CreatedOn = TestClock.Origin };
+
+        context.Db.Licenses.Add( license );
+        await context.Db.SaveChangesAsync();
+
+        var (lease, errors) = await RequestAsync( context, license );
+
+        Assert.Null( lease );
+        Assert.Equal( "The license key #99 is invalid.", errors[99] );
+    }
+
+    [Fact]
+    public async Task LicenseNeedsANewerLicenseServer_SaysSo()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+
+        var license = LicenseBuilder.Default()
+            .WithMinPostSharpVersion( new Version( 2099, 3, 7 ) )
+            .AddTo( context );
+
+        var (lease, errors) = await RequestAsync( context, license );
+
+        Assert.Null( lease );
+
+        Assert.Contains(
+            "requires a higher version of the licensing library on the License Server",
+            errors[1],
+            StringComparison.Ordinal );
+
+        Assert.Contains( "2099.3.7", errors[1], StringComparison.Ordinal );
+    }
+
+    [Fact]
+    public async Task ClientIsOlderThanTheLicenseRequires_SaysSo()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+
+        var license = LicenseBuilder.Default()
+            .WithMinPostSharpVersion( new Version( 2024, 0, 0 ) )
+            .AddTo( context );
+
+        var (lease, errors) = await RequestAsync( context, license, new Version( 6, 5, 4 ) );
+
+        Assert.Null( lease );
+        Assert.Contains( "requires PostSharp version >= 2024.0.0", errors[1], StringComparison.Ordinal );
+        Assert.Contains( "the requested version is 6.5.4", errors[1], StringComparison.Ordinal );
+    }
+
+    /// <summary>
+    /// A Metalama license names the lowest version of Metalama that can read it, which the signature
+    /// algorithm of the key decides. That minimum is independent of the minimum PostSharp version.
+    /// </summary>
+    [Fact]
+    public async Task MetalamaClientIsOlderThanTheLicenseRequires_SaysSo()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+
+        var license = LicenseBuilder.Default()
+            .AsMetalamaProduct()
+            .WithMinMetalamaVersion( new Version( 2026, 1, 0 ) )
+            .AddTo( context );
+
+        var (lease, errors) = await RequestAsync( context, license, new Version( 2025, 2, 3 ) );
+
+        Assert.Null( lease );
+        Assert.Contains( "requires Metalama version >= 2026.1.0", errors[1], StringComparison.Ordinal );
+        Assert.Contains( "the requested version is 2025.2.3", errors[1], StringComparison.Ordinal );
+    }
+
+    /// <summary>
+    /// A Metalama client is not refused by the minimum PostSharp version of the same license. The two
+    /// minimums belong to two product families, and a Metalama version number is lower than the
+    /// PostSharp version numbers of the same years.
+    /// </summary>
+    [Fact]
+    public async Task MetalamaLicense_IgnoresTheMinimumPostSharpVersion()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+
+        var license = LicenseBuilder.Default()
+            .AsMetalamaProduct()
+            .WithMinPostSharpVersion( new Version( 2024, 0, 0 ) )
+            .WithMinMetalamaVersion( null )
+            .AddTo( context );
+
+        var (lease, errors) = await RequestAsync( context, license, new Version( 2023, 4, 0 ) );
+
+        Assert.NotNull( lease );
+        Assert.Empty( errors );
+    }
+
+    [Fact]
+    public async Task LicenseNotEligibleForALicenseServer_SaysSo()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().NotLicenseServerEligible().AddTo( context );
+
+        var (lease, errors) = await RequestAsync( context, license );
+
+        Assert.Null( lease );
+        Assert.Contains( "cannot be used in the license server", errors[1], StringComparison.Ordinal );
+    }
+
+    [Fact]
+    public async Task BuildIsNewerThanTheSubscription_SaysSoWithTheRequestedVersion()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+
+        var license = LicenseBuilder.Default()
+            .WithSubscriptionEndDate( TestClock.Days( -30 ) )
+            .AddTo( context );
+
+        var (lease, errors) = await RequestAsync( context, license, new Version( 2025, 1, 0 ), TestClock.Origin );
+
+        Assert.Null( lease );
+        Assert.Contains( "maintenance subscription of license #1 ends on", errors[1], StringComparison.Ordinal );
+        Assert.Contains( "the requested version 2025.1.0", errors[1], StringComparison.Ordinal );
+    }
+
+    /// <summary>
+    /// Clients older than PostSharp 5 do not send their version, so the message cannot mention one.
+    /// </summary>
+    [Fact]
+    public async Task BuildIsNewerThanTheSubscriptionOnAnOldClient_OmitsTheVersion()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+
+        var license = LicenseBuilder.Default()
+            .WithSubscriptionEndDate( TestClock.Days( -30 ) )
+            .AddTo( context );
+
+        var (lease, errors) = await RequestAsync( context, license, new Version( 4, 9, 9 ), TestClock.Origin );
+
+        Assert.Null( lease );
+        Assert.Contains( "but the requested version has been built on", errors[1], StringComparison.Ordinal );
+        Assert.DoesNotContain( "the requested version 4.9.9", errors[1], StringComparison.Ordinal );
+    }
+
+    [Fact]
+    public async Task BuildExactlyOnTheSubscriptionEndDate_IsAccepted()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+
+        var license = LicenseBuilder.Default()
+            .WithSubscriptionEndDate( TestClock.Origin )
+            .AddTo( context );
+
+        var (lease, _) = await RequestAsync( context, license, buildDate: TestClock.Origin );
+
+        Assert.NotNull( lease );
+    }
+
+    [Fact]
+    public async Task NoBuildDate_SkipsTheSubscriptionCheck()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+
+        var license = LicenseBuilder.Default()
+            .WithSubscriptionEndDate( TestClock.Days( -30 ) )
+            .AddTo( context );
+
+        var (lease, _) = await RequestAsync( context, license );
+
+        Assert.NotNull( lease );
+    }
+
+    [Fact]
+    public async Task NoSubscriptionEndDate_SkipsTheSubscriptionCheck()
+    {
+        await using var context = await LicenseServerTestContext.CreateAsync();
+        var license = LicenseBuilder.Default().WithSubscriptionEndDate( null ).AddTo( context );
+
+        var (lease, _) = await RequestAsync( context, license, buildDate: TestClock.Days( 1000 ) );
+
+        Assert.NotNull( lease );
+    }
+}

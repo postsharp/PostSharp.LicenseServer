@@ -1,0 +1,40 @@
+@page
+@model GraphModel
+@{
+    ViewData["Title"] = $"Usage of license {Model.Id}";
+}
+
+@section Head {
+    <script src="~/lib/chartjs/chart.umd.min.js" asp-append-version="true"></script>
+}
+
+<div class="page-header">
+    <h2>License @Model.Id: @Model.Days-day usage history</h2>
+
+    <p class="chart-windows">
+        @foreach (var window in GraphModel.AllowedWindows)
+        {
+            if (window == Model.Days)
+            {
+                <span class="current">@window days</span>
+            }
+            else
+            {
+                <a asp-page="/Graph" asp-route-id="@Model.Id" asp-route-days="@window">@window days</a>
+            }
+        }
+        &middot; <a asp-page="/Index">Back</a>
+    </p>
+</div>
+
+<div id="usage-chart-container">
+    <canvas id="usage-chart"></canvas>
+</div>
+
+@* The data is written as JSON in an element of its own, and not inside the body of a script, where a
+   closing script tag inside a string would end the block. Razor encodes the content. *@
+<script id="usage-chart-data" type="application/json">@Json.Serialize( Model.Chart )</script>
+
+@section Scripts {
+    <script src="~/js/graph.js" asp-append-version="true"></script>
+}

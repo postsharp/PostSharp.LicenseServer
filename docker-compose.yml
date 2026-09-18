@@ -1,0 +1,93 @@
+# The license server and a SQL Server database, with the schema created from CreateTables.sql.
+#
+#   export MSSQL_SA_PASSWORD='...'
+#   ./Build.ps1 build
+#   docker compose up
+#
+# This deployment serves the license keys you add to it, and holds nothing that is not yours. To
+# bring it up with license keys it issues to itself instead, which is what a trial or a load
+# simulation wants, add the test override:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.test.yml up
+#
+# Read docs/docker.md before running either for anything that matters. The database password is
+# taken from the environment and the server has no administrator credentials of its own, so securing
+# the pages under /Admin is still yours to do; see docs/configuration.md.
+
+name: backstage-license-server
+
+services:
+
+  database:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in the environment}
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - database-data:/var/opt/mssql
+    healthcheck:
+      # The server answers long before it is ready to take a query, so the check is a real query.
+      test:
+        - CMD-SHELL
+        - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" -b
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  database-schema:
+    # The server image already carries sqlcmd, so the schema job needs no second image to pull.
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in the environment}
+    volumes:
+      - ./src/SharpCrafters.Backstage.LicenseServer.Web/Database:/schema:ro
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+        SQLCMD=/opt/mssql-tools18/bin/sqlcmd
+        $$SQLCMD -S database -U sa -P "$$MSSQL_SA_PASSWORD" -C -b \
+          -Q "IF DB_ID('PostSharpLicenseServer') IS NULL CREATE DATABASE PostSharpLicenseServer"
+        # Re-running compose must not fail on an existing schema.
+        TABLES=$$($$SQLCMD -S database -U sa -P "$$MSSQL_SA_PASSWORD" -C -h -1 -W -d PostSharpLicenseServer \
+          -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM sys.tables WHERE name = 'Licenses'")
+        if [ "$$TABLES" = "0" ]; then
+          $$SQLCMD -S database -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -d PostSharpLicenseServer -i /schema/CreateTables.sql
+          echo "Schema created."
+        else
+          echo "Schema already present."
+        fi
+
+  licenseserver:
+    build:
+      context: .
+    depends_on:
+      database-schema:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+    environment:
+      LicenseServer__DatabaseProvider: SqlServer
+      ConnectionStrings__SharpCrafters_LicenseServerConnectionString: >-
+        Server=database,1433;Database=PostSharpLicenseServer;User Id=sa;Password=${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in the environment};TrustServerCertificate=True
+      # A container has no domain controller to authenticate against, so leases record no user name.
+      # Whatever fronts the container has to restrict the pages under /Admin.
+      Authentication__Scheme: None
+      Smtp__Enabled: "false"
+    volumes:
+      # The files the server generates live here. With the test override, that is the key pair of
+      # the test licensing authority, which has to outlive the container: the license keys it signed
+      # are in the database and stop verifying when the pair changes.
+      - licenseserver-data:/app/App_Data
+
+volumes:
+  database-data:
+  licenseserver-data:

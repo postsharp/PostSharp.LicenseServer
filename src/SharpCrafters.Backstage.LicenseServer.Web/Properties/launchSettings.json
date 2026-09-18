@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "SharpCrafters.Backstage.LicenseServer": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:44670",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

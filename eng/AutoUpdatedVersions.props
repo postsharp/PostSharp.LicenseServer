@@ -1,0 +1,9 @@
+<Project>
+
+    <!-- The version of each dependency, and of the last published build of this product. The version bump,
+         the publish command and the dependency resolution write them. -->
+    <PropertyGroup>
+        <BackstageVersion Condition="'$(BackstageVersion)' == ''">2027.0.1-preview</BackstageVersion>
+    </PropertyGroup>
+
+</Project>

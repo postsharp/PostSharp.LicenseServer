@@ -1,0 +1,555 @@
+/* PostSharp License Server.
+
+   The design tokens below are copied from the PostSharp website
+   (metalama-website/_sass/0-base/_tokens.scss) so that the license server looks like the rest of
+   the product. The brand is dark-first and has no light palette, so neither has this.
+
+   The website's display face, Monosten Pro, is a commercially licensed webfont that may not be
+   redistributed. This application ships to customers and runs on their own servers, so the font is
+   named first in the stack and falls back to a monospace face, which keeps the character of the
+   headings without redistributing anything. */
+
+:root {
+    color-scheme: dark;
+
+    /* Brand purples. On dark surfaces the bright purple is used with a white wordmark; the deep
+       purple is the light-surface counterpart and is deliberately not interchangeable with it. */
+    --purple: #973bfc;
+    --purple-deep: #6122b2;
+    --purple-medium-1: #6527a9;
+    --purple-dark: #190822;
+    --ink: #110b1d;
+
+    /* Surfaces. */
+    --bg-canvas: #191321;
+    --bg-footer: #120b1d;
+    --bg-panel: #1e0b38;
+    --bg-panel-2: #26183a;
+    --bg-code: #1e1e1e;
+    --doc-content-bg: #1a1229;
+    --doc-table-line: #2c1a4f;
+
+    /* Accents. Cyan is the secondary accent and carries prose links. */
+    --cyan: #38d5e4;
+    --cyan-light: #61d3e1;
+    --orange: #ff5e45;
+    --yellow: #ffc107;
+    --green: #28a745;
+    --pink-deep: #e83e8c;
+
+    /* Text. */
+    --text-primary: #ffffff;
+    --text-body: #bdbdbd;
+    --text-muted: #a0a0a0;
+    --text-soft: #d3d3d3;
+
+    /* Borders. */
+    --border-subtle: rgba(255, 255, 255, 0.15);
+    --border-card: 1px solid rgba(255, 255, 255, 0.12);
+    --border-hairline: rgba(255, 255, 255, 0.06);
+
+    /* Type. Monosten is not redistributed with this application; see the note above. */
+    --font-display: "Monosten", "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+    --font-body: "LatoLatinWeb", "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-code: "Consolas", "SFMono-Regular", ui-monospace, Menlo, monospace;
+
+    --fs-base: 16px;
+    --fs-sm: 12.8px;
+    --fs-h3: 22px;
+    --fs-h2: 32px;
+    --fs-h1: 44px;
+
+    --fw-normal: 400;
+    --fw-bold: 700;
+
+    --lh-snug: 1.2;
+    --lh-normal: 1.4;
+    --lh-relaxed: 1.6;
+    --ls-wide: 0.04em;
+
+    /* Buttons are sharp; panels round at 8px. */
+    --radius-0: 0;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+
+    --transition-fast: 150ms;
+    --transition-slow: all 500ms ease;
+
+    --container: 1400px;
+    --header-height: 64px;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background-color: var(--bg-canvas);
+    color: var(--text-body);
+    font-family: var(--font-body);
+    font-size: var(--fs-base);
+    line-height: var(--lh-relaxed);
+}
+
+/* Headings are weight 400 throughout: size does the work, not weight. */
+h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: var(--fw-normal);
+    color: var(--text-primary);
+}
+
+h1 { font-size: var(--fs-h1); line-height: var(--lh-snug); }
+h2 { font-size: var(--fs-h2); line-height: var(--lh-snug); margin-top: 0; }
+h3 { font-size: var(--fs-h3); line-height: var(--lh-normal); }
+
+a {
+    color: var(--cyan);
+    text-decoration: none;
+    transition: color var(--transition-fast) ease;
+}
+
+a:hover {
+    color: var(--cyan-light);
+    text-decoration: underline;
+}
+
+code {
+    font-family: var(--font-code);
+    color: var(--cyan-light);
+}
+
+/* The website's own focus ring. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+}
+
+/* --- Page chrome -------------------------------------------------------- */
+
+/* The company bar, reproduced from the website's header: the deepest surface, 64px tall, with the
+   logo on the left. */
+.company-bar {
+    background-color: var(--bg-footer);
+    border-bottom: 1px solid var(--border-hairline);
+}
+
+.company-bar__inner {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    height: var(--header-height);
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.company-bar__logo img {
+    display: block;
+    width: 180px;
+    height: auto;
+}
+
+.company-bar__title {
+    font-family: var(--font-display);
+    font-size: 15px;
+    color: var(--text-muted);
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+}
+
+.company-bar__nav {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+}
+
+.company-bar__nav a {
+    display: flex;
+    align-items: center;
+    height: var(--header-height);
+    padding: 0 18px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--text-muted);
+    text-decoration: none;
+}
+
+.company-bar__nav a:hover {
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+main {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+}
+
+.page-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+/* The link and the menu that act on the page, kept together at its top right. */
+.page-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.site-footer {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 32px 24px 40px;
+    border-top: 1px solid var(--border-hairline);
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+}
+
+/* --- Panels and tables --------------------------------------------------- */
+
+.panel {
+    padding: 24px;
+    background: var(--doc-content-bg);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+td, th {
+    padding: 10px 14px;
+    text-align: left;
+    border: 1px solid var(--doc-table-line);
+    color: var(--text-soft);
+}
+
+th {
+    background-color: var(--bg-panel);
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-weight: var(--fw-normal);
+}
+
+tbody tr:nth-child(even) td {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* --- Status ------------------------------------------------------------- */
+
+.status {
+    font-family: var(--font-display);
+    font-size: var(--fs-sm);
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+}
+
+.status--active { color: var(--green); }
+.status--disabled { color: var(--text-muted); }
+.status--invalid { color: var(--orange); }
+.status--grace { color: var(--yellow); }
+
+/* --- Buttons ------------------------------------------------------------ */
+
+/* Sharp, uppercase, two-pixel border: the signature of the brand's buttons. */
+.btn,
+button,
+input[type="submit"] {
+    display: inline-block;
+    padding: 7px 40px;
+    line-height: 27px;
+    font-family: var(--font-body);
+    font-size: var(--fs-base);
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-wide);
+    color: var(--text-primary);
+    background-color: var(--purple-medium-1);
+    border: 2px solid var(--purple-medium-1);
+    border-radius: var(--radius-0);
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--transition-slow);
+}
+
+.btn:hover,
+button:hover,
+input[type="submit"]:hover {
+    background-color: var(--purple-dark);
+    border-color: var(--purple-dark);
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.btn--transparent {
+    background-color: transparent;
+    border-color: var(--purple);
+}
+
+.btn--small {
+    padding: 8px 20px;
+    font-size: 14px;
+    line-height: 1;
+}
+
+/* --- Menus -------------------------------------------------------------- */
+
+/* A button that opens a short list of actions. The button is the <summary> of a <details> element,
+   which opens and closes without a script. */
+.menu {
+    position: relative;
+}
+
+.menu > summary {
+    list-style: none;
+    user-select: none;
+}
+
+.menu > summary::-webkit-details-marker {
+    display: none;
+}
+
+.menu > summary::after {
+    content: " \25BE";
+}
+
+/* The list floats over the page rather than moving what is under it. */
+.menu__items {
+    position: absolute;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    min-width: 220px;
+    margin-top: 4px;
+    padding: 6px;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.menu__items form {
+    margin: 0;
+}
+
+/* An item reads as a line of the list, not as a button of its own, until it is pointed at. */
+.menu__items button {
+    width: 100%;
+    padding: 8px 12px;
+    line-height: var(--lh-normal);
+    font-weight: var(--fw-normal);
+    text-align: left;
+    text-transform: none;
+    letter-spacing: normal;
+    background-color: transparent;
+    border-color: transparent;
+    transition: background-color var(--transition-fast) ease;
+}
+
+.menu__items button:hover {
+    background-color: var(--purple-medium-1);
+    border-color: transparent;
+}
+
+/* An action that destroys data, wherever it is offered. */
+.is-destructive {
+    color: var(--orange);
+}
+
+/* --- Dialogs ------------------------------------------------------------- */
+
+.dialog {
+    max-width: 480px;
+    padding: 24px;
+    background: var(--doc-content-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    color: var(--text-body);
+}
+
+.dialog::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.dialog h3 {
+    margin-top: 0;
+}
+
+.dialog form {
+    margin: 0;
+}
+
+/* The button that carries out a destructive action, where orange text on the purple of a button
+   would not be legible. */
+.dialog .is-destructive,
+.dialog .is-destructive:hover {
+    color: var(--ink);
+    background-color: var(--orange);
+    border-color: var(--orange);
+}
+
+/* --- Forms -------------------------------------------------------------- */
+
+label {
+    display: inline-block;
+    font-family: var(--font-display);
+    font-size: 14px;
+    color: var(--text-muted);
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+}
+
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+    padding: 10px 14px;
+    background: rgba(30, 11, 56, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: var(--fs-base);
+    line-height: var(--lh-snug);
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+textarea {
+    width: 100%;
+    font-family: var(--font-code);
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--purple);
+}
+
+.validation-summary-errors,
+.field-validation-error {
+    color: var(--pink-deep);
+}
+
+.validation-summary-errors ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+/* --- Callouts ----------------------------------------------------------- */
+
+/* A row of buttons that act on the thing the page is about, with the sentence that explains them. */
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+}
+
+.actions .note {
+    margin: 0;
+}
+
+/* The buttons of a dialog, which sit at its end rather than at its start. */
+.actions--end {
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
+/* An explanation of a term used just above it: present, but quieter than what it explains. */
+.note {
+    max-width: 68ch;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* The website's note callout: a coloured left rule on a raised panel. */
+.callout {
+    padding: 20px 24px;
+    background: var(--bg-panel-2);
+    border-left: 4px solid var(--cyan);
+    border-radius: var(--radius-sm);
+}
+
+.callout--warning {
+    border-left-color: var(--orange);
+}
+
+/* --- Usage graph -------------------------------------------------------- */
+
+#usage-chart-container {
+    position: relative;
+    width: 100%;
+    height: 420px;
+    padding: 24px;
+    background: var(--doc-content-bg);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md);
+}
+
+.chart-windows {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.chart-windows .current {
+    color: var(--text-primary);
+    font-family: var(--font-display);
+}
+
+/* --- Narrow viewports ---------------------------------------------------- */
+
+@media (max-width: 900px) {
+    .company-bar__title { display: none; }
+}
+
+@media (max-width: 720px) {
+    /* The bar becomes two rows rather than overflowing: logo above, navigation below. */
+    .company-bar__inner {
+        flex-wrap: wrap;
+        height: auto;
+        gap: 8px 16px;
+        padding: 12px 16px;
+    }
+
+    .company-bar__logo img { width: 150px; }
+
+    .company-bar__nav {
+        margin-left: 0;
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .company-bar__nav a { height: 36px; padding: 0 12px 0 0; }
+
+    main { padding: 24px 16px 48px; }
+    .site-footer { padding: 24px 16px 32px; }
+
+    h1 { font-size: 30px; }
+    h2 { font-size: 24px; }
+
+    .page-header { gap: 8px; }
+
+    /* The header wraps here, which puts the menu button at the left of the page: the list opens
+       under its left edge rather than off the screen. */
+    .menu__items {
+        right: auto;
+        left: 0;
+    }
+
+    /* A wide table scrolls inside its own box instead of widening the page. */
+    .table-scroll { overflow-x: auto; }
+
+    .btn, button, input[type="submit"] { padding: 7px 24px; }
+
+    #usage-chart-container { padding: 12px; height: 340px; }
+}

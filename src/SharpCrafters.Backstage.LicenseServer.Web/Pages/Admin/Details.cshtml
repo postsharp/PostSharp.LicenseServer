@@ -1,0 +1,129 @@
+@page
+@model DetailsModel
+@{
+    ViewData["Title"] = $"License {Model.Id}";
+}
+
+<div class="page-header">
+    <h2>License @Model.Id</h2>
+
+    <div class="page-header__actions">
+        @* A <details> element and not a menu driven by a script. It opens, it closes and it accepts
+           the keyboard without a script, so the actions remain reachable when the script does not
+           load. *@
+        <details class="menu" data-menu>
+            <summary class="btn btn--small">Manage</summary>
+
+            <div class="menu__items">
+                @if (Model.IsDisabled)
+                {
+                    <form method="post" asp-page-handler="Enable" asp-route-id="@Model.Id"
+                          data-confirm="Enable license @Model.Id?"
+                          data-confirm-detail="The license serves new leases again."
+                          data-confirm-action="Enable">
+                        <button type="submit">Enable</button>
+                    </form>
+
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Id"
+                          data-confirm="Delete license @Model.Id?"
+                          data-confirm-detail="The license and the leases it has granted are removed from the database, including from the audit log. This cannot be undone."
+                          data-confirm-action="Delete"
+                          data-confirm-destructive="true">
+                        <button type="submit" class="is-destructive">Delete</button>
+                    </form>
+                }
+                else
+                {
+                    <form method="post" asp-page-handler="Disable" asp-route-id="@Model.Id"
+                          data-confirm="Disable license @Model.Id?"
+                          data-confirm-detail="The license serves no new lease. The leases it has already granted run until they expire. A disabled license can then be deleted."
+                          data-confirm-action="Disable">
+                        <button type="submit">Disable</button>
+                    </form>
+                }
+            </div>
+        </details>
+
+        <a asp-page="/Index">Back</a>
+    </div>
+</div>
+
+@if (Model.IsDisabled)
+{
+    <div class="callout callout--warning">
+        <p>
+            This license is disabled: it serves no new lease. The leases it has already granted run
+            until they expire.
+        </p>
+    </div>
+}
+
+<p>
+    <strong>@Model.Leases.Count</strong> current lease(s), consuming
+    <strong>@Model.Seats</strong> seat(s).
+    <a asp-page="/Graph" asp-route-id="@Model.Id">See the usage history</a>.
+</p>
+
+<p class="note">
+    A seat is one user working on up to @Model.MachinesPerSeatText. A user working on more machines
+    takes more than one seat: the number of machines divided by @Model.MachinesPerSeat, rounded up.
+    The capacity of a license is a number of seats.
+</p>
+
+@if (Model.Leases.Count == 0)
+{
+    <p>No lease is currently held against this license.</p>
+}
+else
+{
+    <div class="table-scroll">
+        <table>
+            <thead>
+            <tr>
+                <th>Lease</th>
+                <th>User</th>
+                <th>Machine</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Grace</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var lease in Model.Leases)
+            {
+                <tr>
+                    <td>@lease.LeaseId</td>
+                    <td>@lease.UserName</td>
+                    <td>@lease.Machine</td>
+                    <td>@lease.StartTime.ToString( "g" )</td>
+                    <td>@lease.EndTime.ToString( "g" )</td>
+                    <td>@( lease.Grace ? "Yes" : "" )</td>
+                    <td>
+                        <a asp-page="/Admin/Cancel" asp-route-id="@lease.LeaseId">Cancel</a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+@* The script fills this dialog from the action that the administrator selected. Without a script,
+   the dialog is never displayed and the action runs at the first click, which is how the page
+   behaved before this dialog existed. *@
+<dialog id="confirm-dialog" class="dialog" aria-labelledby="confirm-title">
+    <form method="dialog">
+        <h3 id="confirm-title"></h3>
+        <p id="confirm-detail"></p>
+
+        <div class="actions actions--end">
+            <button type="submit" value="cancel" class="btn--transparent">Keep it</button>
+            <button type="submit" value="confirm" data-confirm-ok></button>
+        </div>
+    </form>
+</dialog>
+
+@section Scripts {
+    <script src="~/js/admin-actions.js" asp-append-version="true"></script>
+}

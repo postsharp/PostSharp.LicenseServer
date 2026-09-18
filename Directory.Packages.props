@@ -1,0 +1,54 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- The default for the build project, which is built before the dependencies are resolved and so
+         never sees the version that Versions.g.props carries. 2023.2.455 is the first version that
+         defines the Backstage.LicenseServer product, and 2023.2.456 the first that carries the
+         harness of the Docker-based tests. -->
+    <PostSharpEngineeringVersion Condition="'$(PostSharpEngineeringVersion)'==''">2023.2.459</PostSharpEngineeringVersion>
+  </PropertyGroup>
+
+  <ItemGroup Label="Build system">
+    <PackageVersion Include="PostSharp.Engineering.BuildTools" Version="$(PostSharpEngineeringVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="Licensing">
+    <!-- The version comes from the Backstage dependency of the product, resolved by
+         `./Build.ps1 prepare` into eng/Versions.g.props. eng/AutoUpdatedVersions.props holds the
+         value used when nothing else resolves it. -->
+    <PackageVersion Include="SharpCrafters.Backstage" Version="$(BackstageVersion)" />
+
+    <!-- Test-only: the test licensing authority, which signs the license keys the tests parse. It is
+         a private artifact of Backstage, so it never reaches a released package of this product. -->
+    <PackageVersion Include="SharpCrafters.Backstage.Testing" Version="$(BackstageVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="Runtime">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="10.0.12" />
+    <PackageVersion Include="MailKit" Version="4.18.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.0.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <!-- Pinned above the version Microsoft.EntityFrameworkCore.Sqlite brings in, which carries a
+         known high-severity advisory. Test-only, but not worth carrying. -->
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.13" />
+    <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.13" />
+    <PackageVersion Include="SQLitePCLRaw.core" Version="2.1.13" />
+    <PackageVersion Include="SQLitePCLRaw.provider.e_sqlite3" Version="2.1.13" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+</Project>

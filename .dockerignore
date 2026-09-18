@@ -1,0 +1,19 @@
+**/bin
+**/obj
+**/.vs
+.git
+.idea
+.teamcity
+eng
+src
+tests
+docs
+packages
+*.db
+*.db-shm
+*.db-wal
+App_Data
+
+# Everything the build produces, except the unpacked release archive, which is what the image runs.
+artifacts/*
+!artifacts/app
