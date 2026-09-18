@@ -12,7 +12,7 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests;
 /// </summary>
 public sealed class LeaseAuditLineTests
 {
-    // Hashes produced by CryptoUtilities.ComputeStringHash64, which is what anonymises the names.
+    // The hashes that CryptoUtilities.ComputeStringHash64 produces. They anonymize the names.
     private const string aliceHash = "f5cb4b18b2e28463";
     private const string desktop1Hash = "da7251349d0ffa49";
 
@@ -26,24 +26,15 @@ public sealed class LeaseAuditLineTests
             EndTime = new DateTime( 2026, 1, 8, 9, 0, 0, DateTimeKind.Utc ),
             UserName = "alice",
             Machine = "desktop-1",
-            AuthenticatedUser = "DOMAIN\\alice",
-            HMAC = "SIGNATURE=="
+            AuthenticatedUser = "DOMAIN\\alice"
         };
 
     [Fact]
-    public void Write_WithoutHmac_ProducesTheExpectedLine()
+    public void Write_ProducesTheExpectedLine()
     {
         Assert.Equal(
             $"42;41;7;2026-01-05T09:00:00Z;2026-01-08T09:00:00Z;{desktop1Hash};{aliceHash}",
-            CreateLease().ToAuditLine( false ) );
-    }
-
-    [Fact]
-    public void Write_WithHmac_AppendsTheSignature()
-    {
-        Assert.Equal(
-            $"42;41;7;2026-01-05T09:00:00Z;2026-01-08T09:00:00Z;{desktop1Hash};{aliceHash};SIGNATURE==",
-            CreateLease().ToAuditLine( true ) );
+            CreateLease().ToAuditLine() );
     }
 
     [Fact]
@@ -54,13 +45,13 @@ public sealed class LeaseAuditLineTests
 
         Assert.Equal(
             $"42;;7;2026-01-05T09:00:00Z;2026-01-08T09:00:00Z;{desktop1Hash};{aliceHash}",
-            lease.ToAuditLine( false ) );
+            lease.ToAuditLine() );
     }
 
     [Fact]
     public void Write_NeverDisclosesTheUserOrMachineName()
     {
-        string line = CreateLease().ToAuditLine( true );
+        string line = CreateLease().ToAuditLine();
 
         Assert.DoesNotContain( "alice", line, StringComparison.OrdinalIgnoreCase );
         Assert.DoesNotContain( "desktop", line, StringComparison.OrdinalIgnoreCase );
@@ -78,7 +69,7 @@ public sealed class LeaseAuditLineTests
     [Fact]
     public void Write_EmitsAbsoluteTimestamps()
     {
-        string[] fields = CreateLease().ToAuditLine( false ).Split( ';' );
+        string[] fields = CreateLease().ToAuditLine().Split( ';' );
 
         Assert.EndsWith( "Z", fields[3], StringComparison.Ordinal );
         Assert.EndsWith( "Z", fields[4], StringComparison.Ordinal );
@@ -100,7 +91,7 @@ public sealed class LeaseAuditLineTests
 
         Assert.Equal( DateTimeKind.Utc, reloaded.StartTime.Kind );
         Assert.Equal( DateTimeKind.Utc, reloaded.EndTime.Kind );
-        Assert.Equal( saved.ToAuditLine( false ), reloaded.ToAuditLine( false ) );
+        Assert.Equal( saved.ToAuditLine(), reloaded.ToAuditLine() );
     }
 
     [Fact]
@@ -114,12 +105,11 @@ public sealed class LeaseAuditLineTests
 
             Assert.Equal(
                 $"42;41;7;2026-01-05T09:00:00Z;2026-01-08T09:00:00Z;{desktop1Hash};{aliceHash}",
-                CreateLease().ToAuditLine( false ) );
+                CreateLease().ToAuditLine() );
         }
         finally
         {
             CultureInfo.CurrentCulture = original;
         }
     }
-
 }

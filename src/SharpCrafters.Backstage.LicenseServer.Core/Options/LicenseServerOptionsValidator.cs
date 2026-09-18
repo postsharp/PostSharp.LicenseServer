@@ -26,13 +26,6 @@ public sealed class LicenseServerOptionsValidator : IValidateOptions<LicenseServ
             failures.Add( $"TimeAcceleration ({options.TimeAcceleration}) cannot be negative." );
         }
 
-        if ( options.AuditHmacKey != null && !IsBase64( options.AuditHmacKey ) )
-        {
-            failures.Add( "AuditHmacKey must be a base64-encoded string." );
-        }
-
         return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail( failures );
     }
-
-    private static bool IsBase64( string value ) => Convert.TryFromBase64String( value, new byte[value.Length], out _ );
 }

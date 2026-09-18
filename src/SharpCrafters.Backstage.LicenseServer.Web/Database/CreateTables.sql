@@ -38,6 +38,8 @@ CREATE TABLE [dbo].[Leases](
 	[UserName] [nvarchar](200) NOT NULL,
 	[Machine] [nvarchar](200) NOT NULL,
 	[AuthenticatedUser] [nvarchar](200) NOT NULL,
+	-- The server no longer writes this column. It held a signature that nothing verified. The column
+	-- is kept so that this script creates the same table as the databases of existing installations.
 	[HMAC] [varchar](100) NULL,
 	[Grace] [bit] NOT NULL,
  CONSTRAINT [PK_Leases] PRIMARY KEY CLUSTERED 

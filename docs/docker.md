@@ -42,15 +42,13 @@ docker compose down --volumes
 | `licenseserver` | The application, built from `Dockerfile`. It waits for the schema job to finish. |
 
 The application stores the files it generates in the `licenseserver-data` volume, mounted at
-`/app/App_Data`. These files are the audit signing key, and the test licensing authority when the
-server has one. They must survive the container. The loss of the audit signing key does not
-invalidate the rows already written, but it starts a new signature chain. The loss of the test
-authority invalidates the license keys that this authority signed. The database stores its own files
-in `database-data`.
+`/app/App_Data`. The only such file is the test licensing authority, which a server that serves
+license keys of the production authority does not have. That file must survive the container,
+because its loss invalidates the license keys that the authority signed. The database stores its own
+files in `database-data`.
 
 The image declares `/app/App_Data` as a volume, so a container started with `docker run` and no
-explicit mount still stores these files outside its writable layer. Name the volume in a real
-deployment, because an anonymous volume is easy to delete by accident.
+explicit mount still stores these files outside its writable layer.
 `LicenseServer__DataDirectory` moves the directory to another location.
 
 ## Probing it
@@ -102,8 +100,8 @@ backwards and leaves the existing leases dated in the future.
 - The administrative pages are open, as they are in the default configuration of every deployment.
   The container does not restrict them. See
   [Securing the administrative pages](configuration.md#securing-the-administrative-pages).
-- Back up the `licenseserver-data` volume together with the database. It contains the audit signing
-  key.
+- Back up the database. A deployment that serves license keys of the production authority keeps
+  everything it must not lose in the database, and the `licenseserver-data` volume stays empty.
 
 ## The image on its own
 

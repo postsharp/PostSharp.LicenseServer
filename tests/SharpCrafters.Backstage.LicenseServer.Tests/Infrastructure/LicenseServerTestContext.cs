@@ -10,8 +10,8 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
 /// <summary>
 /// A license server wired up for a test: a real <see cref="LeaseRepository"/> and
-/// <see cref="Services.LeaseService"/> over an in-memory database, with the license parser, the
-/// clock, the signer and the email sender replaced by test doubles.
+/// <see cref="Services.LeaseService"/> over a database held in memory, with the license parser, the
+/// clock and the e-mail sender replaced by test doubles.
 /// </summary>
 public sealed class LicenseServerTestContext : IAsyncDisposable
 {
@@ -28,14 +28,12 @@ public sealed class LicenseServerTestContext : IAsyncDisposable
         this.Options = options;
         this.LicenseParser = new FakeLicenseParser();
         this.EmailSender = new InMemoryEmailSender();
-        this.Signer = new RecordingLeaseSigner();
         this.ServerVersion = new FixedServerVersion();
 
         this.Repository = new LeaseRepository(
             db,
             Microsoft.Extensions.Options.Options.Create( options ),
-            this.LicenseParser,
-            this.Signer );
+            this.LicenseParser );
 
         this.LeaseService = new LeaseService(
             this.Repository,
@@ -51,8 +49,6 @@ public sealed class LicenseServerTestContext : IAsyncDisposable
     public FakeLicenseParser LicenseParser { get; }
 
     public InMemoryEmailSender EmailSender { get; }
-
-    public RecordingLeaseSigner Signer { get; }
 
     public FixedServerVersion ServerVersion { get; }
 
@@ -94,8 +90,7 @@ public sealed class LicenseServerTestContext : IAsyncDisposable
         => new(
             this.fixture.CreateContext(),
             Microsoft.Extensions.Options.Options.Create( this.Options ),
-            this.LicenseParser,
-            this.Signer );
+            this.LicenseParser );
 
     public LicenseServerDbContext CreateFreshContext() => this.fixture.CreateContext();
 

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SharpCrafters.Backstage.LicenseServer.Data;
+using SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
 
 namespace SharpCrafters.Backstage.LicenseServer.Tests;
 
@@ -93,7 +94,6 @@ public sealed class SchemaCompatibilityTests
     [InlineData( "[UserName] nvarchar(200) NOT NULL" )]
     [InlineData( "[Machine] nvarchar(200) NOT NULL" )]
     [InlineData( "[AuthenticatedUser] nvarchar(200) NOT NULL" )]
-    [InlineData( "[HMAC] varchar(100) NULL" )]
     [InlineData( "[Grace] bit NOT NULL" )]
     [InlineData( "[OverwrittenLeaseId] int NULL" )]
     [InlineData( "[LicenseId] int NOT NULL" )]
@@ -134,6 +134,24 @@ public sealed class SchemaCompatibilityTests
     [Fact]
     public void ForeignKeys_DoNotCascade()
         => Assert.DoesNotContain( "ON DELETE CASCADE", CreateScript(), StringComparison.OrdinalIgnoreCase );
+
+    /// <summary>
+    /// The database of an existing installation contains the column <c>HMAC</c>, which held the
+    /// signature of the audit log. The model no longer maps that column. The column is nullable, so
+    /// the server keeps writing to such a database, and it leaves the column empty.
+    /// </summary>
+    [Fact]
+    public async Task LegacyHmacColumn_IsIgnored()
+    {
+        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
+
+        await context.Db.Database.ExecuteSqlRawAsync( "ALTER TABLE Leases ADD COLUMN HMAC varchar(100) NULL" );
+
+        License license = LicenseBuilder.Default().AddTo( context );
+        Lease lease = LeaseBuilder.For( license ).AddTo( context );
+
+        Assert.Equal( 1, await context.Db.Leases.CountAsync( l => l.LeaseId == lease.LeaseId ) );
+    }
 
     [Fact]
     public void Model_HasExactlyTheTwoExpectedTables()

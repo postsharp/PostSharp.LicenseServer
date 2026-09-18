@@ -47,12 +47,11 @@ public sealed class AuditLogExportTests : IDisposable
 
         foreach ( string line in lines )
         {
-            // The identifier, the overwritten lease, the license, the two instants, the two hashed
-            // names and the signature.
+            // The identifier, the overwritten lease, the license, the two instants and the two
+            // hashed names.
             string[] fields = line.TrimEnd( '\r' ).Split( ';' );
 
-            Assert.Equal( 8, fields.Length );
-            Assert.NotEmpty( fields[7] );
+            Assert.Equal( 7, fields.Length );
         }
 
         Assert.DoesNotContain( "alice", string.Join( "", lines ), StringComparison.OrdinalIgnoreCase );
@@ -115,8 +114,7 @@ public sealed class AuditLogExportTests : IDisposable
                     EndTime = start.AddDays( 3 ),
                     UserName = $"alice.{i:D3}",
                     Machine = $"desktop-{i:D3}",
-                    AuthenticatedUser = "DOMAIN\\tester",
-                    HMAC = $"SIGNATURE-{i:D3}"
+                    AuthenticatedUser = "DOMAIN\\tester"
                 } );
         }
 

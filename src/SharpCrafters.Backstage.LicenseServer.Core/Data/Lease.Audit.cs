@@ -16,7 +16,7 @@ public partial class Lease
     /// database. Without that kind, <see cref="XmlConvert"/> would treat them as local times and
     /// shift them.
     /// </remarks>
-    public void Write( TextWriter textWriter, bool includeHmac )
+    public void Write( TextWriter textWriter )
     {
         ArgumentNullException.ThrowIfNull( textWriter );
 
@@ -33,21 +33,15 @@ public partial class Lease
         textWriter.Write( StringHash.ComputeStringHash64( this.Machine ).ToString( "x" ) );
         textWriter.Write( ';' );
         textWriter.Write( StringHash.ComputeStringHash64( this.UserName ).ToString( "x" ) );
-
-        if ( includeHmac )
-        {
-            textWriter.Write( ';' );
-            textWriter.Write( this.HMAC );
-        }
     }
 
     /// <summary>
     /// Returns this lease as a line of the audit log.
     /// </summary>
-    public string ToAuditLine( bool includeHmac )
+    public string ToAuditLine()
     {
         StringWriter writer = new();
-        this.Write( writer, includeHmac );
+        this.Write( writer );
 
         return writer.ToString();
     }

@@ -49,14 +49,6 @@ public sealed class ConfigurationTests
     public void NegativeTimeAcceleration_IsRejected()
         => Assert.True( Validate( o => o.TimeAcceleration = -1 ).Failed );
 
-    [Fact]
-    public void NonBase64AuditKey_IsRejected()
-        => Assert.True( Validate( o => o.AuditHmacKey = "not base64 !!!" ).Failed );
-
-    [Fact]
-    public void Base64AuditKey_IsAccepted()
-        => Assert.True( Validate( o => o.AuditHmacKey = Convert.ToBase64String( new byte[32] ) ).Succeeded );
-
     [Theory]
     [InlineData( 0 )]
     [InlineData( -1 )]

@@ -221,17 +221,12 @@ that asks for `SqlApplicationLock`, which serializes through the database.
 
 ## Auditing
 
-| Setting | Default | Meaning |
-|---|---|---|
-| `LicenseServer:AuditHmacKey` | empty | The base64 key that signs the audit log. |
+The `Leases` table is the audit log. The server never updates a lease and never deletes one:
+prolonging a lease and cancelling a lease both insert a new row. Export the log from the page
+[Audit log](protocol.md#exporting-the-audit-log-get-adminexportashx), which writes one line per lease.
 
-The server signs each lease of the audit log. The signature covers the lease and the signature of the
-previous lease, so a removed or modified row invalidates the signature of every row after it. When
-`AuditHmacKey` is empty, the server generates a key at the first start and writes it to
-`App_Data\audit-signing.key`.
-
-Include this file in your backups and keep it across upgrades. The loss of the key does not
-invalidate the rows already written, but it starts a new signature chain.
+The audit log has no setting. Protect it as you protect the database: with the permissions of the
+database and with your backups.
 
 ## Storage
 
@@ -239,13 +234,15 @@ invalidate the rows already written, but it starts a new signature chain.
 |---|---|---|
 | `LicenseServer:DataDirectory` | `App_Data` | Where the server stores the files it generates. |
 
-The directory contains the audit signing key, and the test licensing authority when the server has
-one. A relative path is resolved against the application directory, so the default value works
-wherever you unpack the release package. Set an absolute path to store these files on another volume.
+The directory contains the test licensing authority, when the server has one. A relative path is
+resolved against the application directory, so the default value works wherever you unpack the
+release package. Set an absolute path to store these files on another volume.
 
-In a container, this directory must be a volume. The image declares a volume at `/app/App_Data`, so
-the files survive the replacement of the container even when no volume is named. Name the volume in a
-real deployment, and back it up together with the database. See [docker.md](docker.md).
+A server that serves the license keys of a production authority writes nothing to this directory.
+
+In a container, this directory must be a volume when the server uses a test licensing authority. The
+image declares a volume at `/app/App_Data`, so the files survive the replacement of the container
+even when no volume is named. See [docker.md](docker.md).
 
 ## Monitoring
 

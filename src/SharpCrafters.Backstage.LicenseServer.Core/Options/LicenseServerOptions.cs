@@ -78,12 +78,6 @@ public sealed class LicenseServerOptions
     public string? BuildServers { get; set; }
 
     /// <summary>
-    /// Gets or sets the base64 key that signs the lease audit log. When the value is null, the server
-    /// generates a key at the first start and stores it in <see cref="DataDirectory"/>.
-    /// </summary>
-    public string? AuditHmacKey { get; set; }
-
-    /// <summary>
     /// Gets or sets the Windows groups allowed to open the administrative pages, for example
     /// <c>DOMAIN\PostSharp Administrators</c>. When the value is empty, the administrative pages are
     /// not restricted, which is the behaviour of the legacy <c>Web.config</c>.
@@ -123,10 +117,11 @@ public sealed class LicenseServerOptions
     public bool SeedTestLicenses { get; set; }
 
     /// <summary>
-    /// Gets or sets the directory that contains the files the server generates: the audit signing
-    /// key, and the test licensing authority when the server has one. A relative path is resolved
-    /// against the application directory. In a container, this directory must be a volume. Otherwise
-    /// the audit signature chain restarts every time the container is replaced.
+    /// Gets or sets the directory that contains the files the server generates, which is the test
+    /// licensing authority when the server has one. A relative path is resolved against the
+    /// application directory. In a container, this directory must be a volume. Otherwise the server
+    /// generates a new test licensing authority every time the container is replaced, and the
+    /// license keys of the previous authority stop being valid.
     /// </summary>
     public string DataDirectory { get; set; } = "App_Data";
 

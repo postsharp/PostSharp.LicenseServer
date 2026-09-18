@@ -76,8 +76,7 @@ public sealed class OpenLeasesTests
                     Machine = original.Machine,
                     AuthenticatedUser = original.AuthenticatedUser,
                     StartTime = original.StartTime,
-                    EndTime = TestClock.Days( 4 ),
-                    HMAC = "x"
+                    EndTime = TestClock.Days( 4 )
                 } );
         }
 

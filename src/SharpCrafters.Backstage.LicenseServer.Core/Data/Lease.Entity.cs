@@ -35,11 +35,6 @@ public partial class Lease
     public string AuthenticatedUser { get; set; } = null!;
 
     /// <summary>
-    /// Gets or sets the signature that chains this lease to the previous lease of the audit log.
-    /// </summary>
-    public string? HMAC { get; set; }
-
-    /// <summary>
     /// Gets or sets a value indicating whether the server granted this lease during the grace
     /// period, that is, above the capacity of the license.
     /// </summary>

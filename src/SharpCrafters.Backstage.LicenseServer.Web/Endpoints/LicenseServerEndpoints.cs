@@ -191,8 +191,8 @@ public static class LicenseServerEndpoints
         DateTime toTime = new DateTime( ty.Value, tm.Value, 1 ).AddMonths( 1 );
 
         // The range of months is resolved to a range of lease identifiers, and every lease in that
-        // range is exported. The result is a contiguous section of the log and not a filtered
-        // selection, which keeps the signature chain verifiable. This is also the reason why a few
+        // range is exported. The legacy server selected the rows in the same way, and customers
+        // compare the files they archived, so the selection is kept. It is the reason why a few
         // leases outside the requested months appear in the file.
         var bounds = await repository.Leases
             .Where( l => l.EndTime >= fromTime && l.StartTime <= toTime )
@@ -233,7 +233,7 @@ public static class LicenseServerEndpoints
                     // directly to the writer makes the writer flush synchronously when its buffer is
                     // full, and Kestrel refuses a synchronous write to a response body. One line is
                     // a hundred bytes. The constraint applies to the whole log, not to one line.
-                    await writer.WriteLineAsync( lease.ToAuditLine( true ) );
+                    await writer.WriteLineAsync( lease.ToAuditLine() );
                 }
             },
             "text/plain" );

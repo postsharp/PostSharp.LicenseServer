@@ -128,9 +128,11 @@ points in the interpretation of a license key.
   `PostSharpUltimate` where it used to be stored as `Ultimate`. The existing rows are not modified,
   and a request that names either spelling finds both, so there is nothing to migrate.
 
-The server signs the audit log with a key stored in `App_Data\audit-signing.key`, which it generates
-at the first start. Include this file in your backups and keep it across upgrades. Its loss does not
-invalidate the existing rows, but it starts a new signature chain.
+One more change concerns the exported audit log. A line now has seven fields instead of eight. The
+eighth field contained a signature of the line, and that signature could not be verified: the server
+generated a random key at every call, so no two lines were signed with the same key. The server no
+longer writes that field, and it no longer writes the `HMAC` column of the `Leases` table. The column
+is left in place, and the values already written are left as they are.
 
 ## Building from source
 

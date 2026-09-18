@@ -17,7 +17,6 @@ public sealed class LeaseConfiguration : IEntityTypeConfiguration<Lease>
         builder.Property( x => x.UserName ).IsRequired().HasMaxLength( 200 );
         builder.Property( x => x.Machine ).IsRequired().HasMaxLength( 200 );
         builder.Property( x => x.AuthenticatedUser ).IsRequired().HasMaxLength( 200 );
-        builder.Property( x => x.HMAC ).IsUnicode( false ).HasMaxLength( 100 );
         builder.Property( x => x.Grace ).IsRequired();
 
         builder.HasOne( x => x.License )

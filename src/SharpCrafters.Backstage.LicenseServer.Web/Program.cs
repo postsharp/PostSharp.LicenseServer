@@ -8,7 +8,6 @@ using SharpCrafters.Backstage.LicenseServer.Health;
 using SharpCrafters.Backstage.LicenseServer.Licensing;
 using SharpCrafters.Backstage.LicenseServer.Locking;
 using SharpCrafters.Backstage.LicenseServer.Options;
-using SharpCrafters.Backstage.LicenseServer.Security;
 using SharpCrafters.Backstage.LicenseServer.Services;
 using SharpCrafters.Backstage.LicenseServer.Time;
 
@@ -47,18 +46,6 @@ builder.Services.AddHealthChecks()
     .AddCheck<LicenseHealthCheck>( "licenses" );
 
 builder.Services.AddSingleton<ILeaseSerializer, LeaseSerializer>();
-
-builder.Services.AddSingleton<IAuditKeyProvider>(
-    services => new FileAuditKeyProvider(
-        services.GetRequiredService<IOptions<LicenseServerOptions>>(),
-        services.GetRequiredService<ILogger<FileAuditKeyProvider>>(),
-        Path.Combine(
-            LicensingRegistration.ResolveDataDirectory(
-                builder.Configuration.GetSection( LicenseServerOptions.SectionName ),
-                services.GetRequiredService<IHostEnvironment>() ),
-            "audit-signing.key" ) ) );
-
-builder.Services.AddSingleton<ILeaseSigner, HmacLeaseSigner>();
 
 builder.Services.AddSingleton<IEmailSender>(
     services => services.GetRequiredService<IOptions<SmtpOptions>>().Value.Enabled

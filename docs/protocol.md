@@ -281,10 +281,10 @@ rows.
 
 ### Format
 
-One line per lease, with eight fields separated by `;`:
+One line per lease, with seven fields separated by `;`:
 
 ```
-40;;900001;2026-09-17T11:02:14.1234567Z;2026-09-20T11:02:14.1234567Z;d97556dbab6becaa;93cf1e71b44530bd;J+QFuzRr4fT+mkwzkYOQ/NZtkVy2EHWj1b9t82h/xB8=
+40;;900001;2026-09-17T11:02:14.1234567Z;2026-09-20T11:02:14.1234567Z;d97556dbab6becaa;93cf1e71b44530bd
 ```
 
 | Field | Meaning |
@@ -296,7 +296,6 @@ One line per lease, with eight fields separated by `;`:
 | 5 | The instant the lease ended, in UTC. |
 | 6 | The hash of the machine name. |
 | 7 | The hash of the user name. |
-| 8 | The signature. |
 
 Names appear only as hashes, so the file can be shared without disclosing who works where. The hash
 is the hexadecimal representation, in lower case, of an unkeyed 64-bit hash of the name. The name is
@@ -306,26 +305,14 @@ are irrelevant to an anonymizing hash. It is used because the values must be equ
 PostSharp has produced since 2013, and because the license audit of Backstage hashes the same names
 in the same way.
 
-### The signature chain
-
-Each signature covers the signature of the previous lease, a semicolon, and the seven fields of its
-own line:
-
-```
-signature(n) = base64( HMAC-SHA256( key, signature(n-1) + ";" + fields 1 to 7 of line n ) )
-```
-
-The first lease of a database is chained to an empty string. The key is described under Auditing in
-[configuration.md](configuration.md).
-
-An auditor can recompute the chain from an exported file alone, because the signed payload is the
-exported line. Earlier versions did not allow this. They called the parameterless `HMAC.Create()`,
-which generates a random key at every call, so the signatures they wrote could never be verified.
+A version earlier than 2027.0 wrote an eighth field, which contained a signature of the line. That
+signature could not be verified: the server generated a random key at every call, so no two lines
+were signed with the same key. The server no longer writes the field, and it no longer writes the
+`HMAC` column of the `Leases` table.
 
 The server resolves a range of months to a range of lease identifiers, and exports every lease in
-that range. The result is a contiguous section of the log and not a filtered selection, so the chain
-remains verifiable. This is also the reason why a few leases outside the requested months appear in
-the file.
+that range. The result is a contiguous section of the log and not a filtered selection. This is the
+reason why a few leases outside the requested months appear in the file.
 
 ## Compatibility
 
@@ -340,4 +327,4 @@ breaks a client that is already deployed.
 | The four part names of a lease. | A client matches the parts by name and ignores a part it does not know. |
 | The status codes, and the body of a 403. | A client displays the body of a 403 to the user and treats every other status than 200 as a failure. |
 | The trailing hexadecimal suffix of a machine name is removed before a build server is matched. | The list of build servers in an existing configuration names the machines without it. |
-| The order of the fields of an audit line, and the hash of the names. | Customers archive exported files and compare them across years. |
+| The order of the first seven fields of an audit line, and the hash of the names. | Customers archive exported files and compare them across years. |

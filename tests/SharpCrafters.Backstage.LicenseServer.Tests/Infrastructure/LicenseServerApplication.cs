@@ -16,7 +16,6 @@ using SharpCrafters.Backstage.LicenseServer.Email;
 using SharpCrafters.Backstage.LicenseServer.Licensing;
 using SharpCrafters.Backstage.LicenseServer.Locking;
 using SharpCrafters.Backstage.LicenseServer.Options;
-using SharpCrafters.Backstage.LicenseServer.Security;
 using SharpCrafters.Backstage.LicenseServer.Tests.Fakes;
 
 namespace SharpCrafters.Backstage.LicenseServer.Tests.Infrastructure;
@@ -97,9 +96,6 @@ public sealed class LicenseServerApplication : WebApplicationFactory<Program>
 
                 services.RemoveAll<IEmailSender>();
                 services.AddSingleton<IEmailSender>( this.EmailSender );
-
-                services.RemoveAll<IAuditKeyProvider>();
-                services.AddSingleton<IAuditKeyProvider, StaticAuditKeyProvider>();
 
                 services.RemoveAll<ILeaseLock>();
                 services.AddSingleton( _ => this.LeaseLock );

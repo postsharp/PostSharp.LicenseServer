@@ -79,20 +79,6 @@ public sealed class CancelLeaseTests
     }
 
     [Fact]
-    public async Task CancelLease_SignsTheReplacement()
-    {
-        await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
-        License license = LicenseBuilder.Default().AddTo( context );
-        Lease original = LeaseBuilder.For( license ).AddTo( context );
-
-        context.Repository.CancelLease( original, "admin", TestClock.Days( 1 ) );
-        await context.Repository.SaveChangesAsync();
-
-        Lease replacement = await context.Db.Leases.SingleAsync( l => l.LeaseId != original.LeaseId );
-        Assert.False( string.IsNullOrEmpty( replacement.HMAC ) );
-    }
-
-    [Fact]
     public async Task CancelLease_ThenRequestAgain_GrantsAFreshLease()
     {
         await using LicenseServerTestContext context = await LicenseServerTestContext.CreateAsync();
