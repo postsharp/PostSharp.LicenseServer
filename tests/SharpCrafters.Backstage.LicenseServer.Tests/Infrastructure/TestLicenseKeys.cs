@@ -128,13 +128,22 @@ public static class TestLicenseKeys
     /// authority from the XML representation of a key, and the key of the test authority is generated
     /// in the process instead of being written in the code.
     /// </remarks>
-    private sealed class TestAuthorityProvider( LicensingAuthority authority, byte keyId ) : ILicensingAuthorityProvider
+    private sealed class TestAuthorityProvider : ILicensingAuthorityProvider
     {
-        public IEnumerable<byte> KeyIds => [keyId];
+        private readonly LicensingAuthority authority;
+        private readonly byte keyId;
+
+        public TestAuthorityProvider( LicensingAuthority authority, byte keyId )
+        {
+            this.authority = authority;
+            this.keyId = keyId;
+        }
+
+        public IEnumerable<byte> KeyIds => [this.keyId];
 
         public LicensingAuthority GetAuthority( byte id )
-            => id == keyId
-                ? authority
-                : throw new KeyNotFoundException( $"There is no test licensing authority key of identifier {id}." );
+            => id == this.keyId
+                ? this.authority
+                : throw new KeyNotFoundException( $"There is no test licensing this.authority key of identifier {id}." );
     }
 }

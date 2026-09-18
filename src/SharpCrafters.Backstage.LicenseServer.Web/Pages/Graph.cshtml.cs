@@ -17,11 +17,22 @@ namespace SharpCrafters.Backstage.LicenseServer.Pages;
 /// the capacity, so the line and the two limits above it use the same unit, and the chart agrees
 /// with the column "In use" of the license list.
 /// </remarks>
-public sealed class GraphModel(
-    ILeaseRepository repository,
-    ILicenseParser licenseParser,
-    TimeProvider timeProvider ) : PageModel
+public sealed class GraphModel : PageModel
 {
+    private readonly ILeaseRepository repository;
+    private readonly ILicenseParser licenseParser;
+    private readonly TimeProvider timeProvider;
+
+    public GraphModel(
+        ILeaseRepository repository,
+        ILicenseParser licenseParser,
+        TimeProvider timeProvider )
+    {
+        this.repository = repository;
+        this.licenseParser = licenseParser;
+        this.timeProvider = timeProvider;
+    }
+
     /// <summary>
     /// The windows that the page offers. The list is closed, so that an arbitrary value cannot
     /// produce an unbounded query.
@@ -43,7 +54,7 @@ public sealed class GraphModel(
             return this.BadRequest( $"The window must be one of {string.Join( ", ", AllowedWindows )} days." );
         }
 
-        License? license = await repository.Licenses
+        License? license = await this.repository.Licenses
             .AsNoTracking()
             .SingleOrDefaultAsync( l => l.LicenseId == this.Id, cancellationToken );
 
@@ -52,14 +63,14 @@ public sealed class GraphModel(
             return this.NotFound();
         }
 
-        DateTime endDate = timeProvider.GetUtcNow().UtcDateTime.Date.AddDays( 1 );
+        DateTime endDate = this.timeProvider.GetUtcNow().UtcDateTime.Date.AddDays( 1 );
         DateTime startDate = endDate.AddDays( -this.Days );
 
         int? maximum = null;
         int? graceMaximum = null;
         int axisMaximum = 0;
 
-        LicenseInfo? parsedLicense = licenseParser.TryParse( license.LicenseKey );
+        LicenseInfo? parsedLicense = this.licenseParser.TryParse( license.LicenseKey );
 
         if ( parsedLicense?.UserNumber != null )
         {
@@ -72,7 +83,7 @@ public sealed class GraphModel(
             axisMaximum = graceMaximum.Value;
         }
 
-        var dailyUsage = repository.GetLeaseCountingPoints( this.Id, startDate, endDate )
+        var dailyUsage = this.repository.GetLeaseCountingPoints( this.Id, startDate, endDate )
             .GroupBy( point => point.Time.Date )
             .Select(
                 day => new

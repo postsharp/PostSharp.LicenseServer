@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using SharpCrafters.Backstage.LicenseServer.Data;
@@ -74,6 +75,11 @@ public sealed class PostgreSqlTestDatabase : ITestDatabase
 /// <summary>
 /// The databases of one PostgreSQL server, lent to the tests one at a time.
 /// </summary>
+[SuppressMessage(
+    "Microsoft.Design",
+    "CA1001",
+    Justification = "A pool lives as long as the run, in a static dictionary, and nothing disposes it. "
+                    + "Its two semaphores are released with the process." )]
 internal sealed class PostgreSqlDatabasePool
 {
     /// <summary>

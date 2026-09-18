@@ -25,8 +25,10 @@ namespace SharpCrafters.Backstage.LicenseServer.Web.Locking;
 /// the code 55P03, and the caller answers with the status 503, as it does on SQL Server.
 /// </para>
 /// </remarks>
-public sealed class PostgreSqlLeaseLock( LicenseServerDbContext db ) : ILeaseLock
+public sealed class PostgreSqlLeaseLock : ILeaseLock
 {
+    private readonly LicenseServerDbContext db;
+
     /// <summary>
     /// The name of the locked resource, which is the name the SQL Server lock uses. The two engines
     /// never share a database, so the two locks never meet.
@@ -46,12 +48,17 @@ public sealed class PostgreSqlLeaseLock( LicenseServerDbContext db ) : ILeaseLoc
     /// </summary>
     public static readonly long ResourceKey =
         BitConverter.ToInt64( SHA256.HashData( Encoding.UTF8.GetBytes( resourceName ) ) );
+    public PostgreSqlLeaseLock( LicenseServerDbContext db )
+    {
+        this.db = db;
+    }
+
 
     public async ValueTask<IAsyncDisposable?> TryAcquireAsync(
         TimeSpan timeout,
         CancellationToken cancellationToken = default )
     {
-        DatabaseFacade database = db.Database;
+        DatabaseFacade database = this.db.Database;
 
         await database.OpenConnectionAsync( cancellationToken );
 
@@ -106,9 +113,15 @@ public sealed class PostgreSqlLeaseLock( LicenseServerDbContext db ) : ILeaseLoc
     private static async Task ResetTimeoutAsync( DatabaseFacade database )
         => await ExecuteAsync( database, "SET lock_timeout = DEFAULT", CancellationToken.None );
 
-    private sealed class Handle( DatabaseFacade database ) : IAsyncDisposable
+    private sealed class Handle : IAsyncDisposable
     {
+        private readonly DatabaseFacade database;
         private int released;
+
+        public Handle( DatabaseFacade database )
+        {
+            this.database = database;
+        }
 
         public async ValueTask DisposeAsync()
         {
@@ -120,17 +133,17 @@ public sealed class PostgreSqlLeaseLock( LicenseServerDbContext db ) : ILeaseLoc
             try
             {
                 await ExecuteAsync(
-                    database,
+                    this.database,
                     $"SELECT pg_advisory_unlock({ResourceKey})",
                     CancellationToken.None );
 
-                await ResetTimeoutAsync( database );
+                await ResetTimeoutAsync( this.database );
             }
             finally
             {
                 // Closing the connection releases the lock as well, so the lock is never held by a
                 // connection that returns to the pool.
-                await database.CloseConnectionAsync();
+                await this.database.CloseConnectionAsync();
             }
         }
     }

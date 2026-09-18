@@ -14,8 +14,10 @@ namespace SharpCrafters.Backstage.LicenseServer.Data;
 /// against SQL Server or PostgreSQL creates every test database from the script of that engine, which
 /// verifies the same thing against a live server.
 /// </remarks>
-public class LicenseServerDbContext( DbContextOptions<LicenseServerDbContext> options ) : DbContext( options )
+public class LicenseServerDbContext : DbContext
 {
+    public LicenseServerDbContext( DbContextOptions<LicenseServerDbContext> options ) : base( options ) { }
+
     public DbSet<License> Licenses => this.Set<License>();
 
     public DbSet<Lease> Leases => this.Set<Lease>();

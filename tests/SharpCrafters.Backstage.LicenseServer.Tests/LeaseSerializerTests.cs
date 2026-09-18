@@ -12,8 +12,6 @@ namespace SharpCrafters.Backstage.LicenseServer.Tests;
 /// </remarks>
 public sealed class LeaseSerializerTests
 {
-    private static readonly LeaseSerializer serializer = new();
-
     private static readonly DateTime start = new( 2026, 1, 5, 9, 0, 0, DateTimeKind.Utc );
 
     [Fact]
@@ -23,7 +21,7 @@ public sealed class LeaseSerializerTests
             + "; StartTime: 2026-01-05T09:00:00Z"
             + "; EndTime: 2026-01-08T09:00:00Z"
             + "; RenewTime: 2026-01-07T09:00:00Z",
-            serializer.Serialize( "1-ABCDEF", start, start.AddDays( 3 ), start.AddDays( 2 ) ) );
+            LeaseSerializer.Serialize( "1-ABCDEF", start, start.AddDays( 3 ), start.AddDays( 2 ) ) );
 
     /// <summary>
     /// An instant read from a <c>datetime</c> column carries no kind. It is a UTC instant, and the
@@ -35,8 +33,8 @@ public sealed class LeaseSerializerTests
         DateTime unspecified = new( 2026, 1, 5, 9, 0, 0, DateTimeKind.Unspecified );
 
         Assert.Equal(
-            serializer.Serialize( "1-ABCDEF", start, start, start ),
-            serializer.Serialize( "1-ABCDEF", unspecified, unspecified, unspecified ) );
+            LeaseSerializer.Serialize( "1-ABCDEF", start, start, start ),
+            LeaseSerializer.Serialize( "1-ABCDEF", unspecified, unspecified, unspecified ) );
     }
 
     /// <summary>
@@ -47,9 +45,9 @@ public sealed class LeaseSerializerTests
     [Fact]
     public void Serialize_ProducesFourPartsTheClientCanSplit()
     {
-        string[] parts = serializer.Serialize( "1-ABCDEF", start, start, start ).Split( ';' );
+        string[] parts = LeaseSerializer.Serialize( "1-ABCDEF", start, start, start ).Split( ';' );
 
         Assert.Equal( 4, parts.Length );
-        Assert.Equal( ["License", "StartTime", "EndTime", "RenewTime"], parts.Select( p => p[..p.IndexOf( ':' )].Trim() ) );
+        Assert.Equal( ["License", "StartTime", "EndTime", "RenewTime"], parts.Select( p => p[..p.IndexOf( ':', StringComparison.Ordinal )].Trim() ) );
     }
 }

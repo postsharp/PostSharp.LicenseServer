@@ -36,7 +36,7 @@ public sealed class AuditLogExportTests : IDisposable
         // writes synchronously passes here and fails against a real server.
         this.application.ResponseBody.IsEnabled = true;
 
-        HttpResponseMessage response = await client.GetAsync( this.ExportUrl( 1, 12 ) );
+        HttpResponseMessage response = await client.GetAsync( ExportUrl( 1, 12 ) );
 
         Assert.Equal( HttpStatusCode.OK, response.StatusCode );
 
@@ -70,7 +70,7 @@ public sealed class AuditLogExportTests : IDisposable
         HttpClient client = this.application.CreateClient();
         this.application.ResponseBody.IsEnabled = true;
 
-        HttpResponseMessage response = await client.GetAsync( this.ExportUrl( 3, 4 ) );
+        HttpResponseMessage response = await client.GetAsync( ExportUrl( 3, 4 ) );
 
         Assert.Equal( HttpStatusCode.OK, response.StatusCode );
 
@@ -89,7 +89,7 @@ public sealed class AuditLogExportTests : IDisposable
         HttpClient client = this.application.CreateClient();
         this.application.ResponseBody.IsEnabled = true;
 
-        HttpResponseMessage response = await client.GetAsync( this.ExportUrl( 1, 12 ) );
+        HttpResponseMessage response = await client.GetAsync( ExportUrl( 1, 12 ) );
 
         Assert.Equal( HttpStatusCode.OK, response.StatusCode );
         Assert.Equal( "", await response.Content.ReadAsStringAsync() );
@@ -122,7 +122,7 @@ public sealed class AuditLogExportTests : IDisposable
         db.SaveChanges();
     }
 
-    private string ExportUrl( int fromMonth, int toMonth )
+    private static string ExportUrl( int fromMonth, int toMonth )
     {
         int year = DateTime.UtcNow.Year;
 

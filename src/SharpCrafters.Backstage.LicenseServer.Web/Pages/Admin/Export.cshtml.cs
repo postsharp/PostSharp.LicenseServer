@@ -8,8 +8,15 @@ namespace SharpCrafters.Backstage.LicenseServer.Pages.Admin;
 /// <summary>
 /// Chooses the range of months to export from the lease audit log.
 /// </summary>
-public sealed class ExportModel( TimeProvider timeProvider ) : PageModel
+public sealed class ExportModel : PageModel
 {
+    private readonly TimeProvider timeProvider;
+
+    public ExportModel( TimeProvider timeProvider )
+    {
+        this.timeProvider = timeProvider;
+    }
+
     [BindProperty]
     [Range( 2010, 2100, ErrorMessage = "The year must be between 2010 and 2100." )]
     [Display( Name = "From year" )]
@@ -38,7 +45,7 @@ public sealed class ExportModel( TimeProvider timeProvider ) : PageModel
 
     public void OnGet()
     {
-        DateTime now = timeProvider.GetUtcNow().UtcDateTime;
+        DateTime now = this.timeProvider.GetUtcNow().UtcDateTime;
 
         this.FromYear = now.Year;
         this.ToYear = now.Year;

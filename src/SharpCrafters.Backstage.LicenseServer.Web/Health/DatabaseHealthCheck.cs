@@ -12,22 +12,31 @@ namespace SharpCrafters.Backstage.LicenseServer.Health;
 /// own schema on SQL Server, so a database that accepts connections but has no schema is a
 /// deployment error. A query detects it; opening a connection does not.
 /// </remarks>
-public sealed class DatabaseHealthCheck( LicenseServerDbContext db, IHostEnvironment environment ) : IHealthCheck
+public sealed class DatabaseHealthCheck : IHealthCheck
 {
+    private readonly LicenseServerDbContext db;
+    private readonly IHostEnvironment environment;
+
+    public DatabaseHealthCheck( LicenseServerDbContext db, IHostEnvironment environment )
+    {
+        this.db = db;
+        this.environment = environment;
+    }
+
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
         CancellationToken cancellationToken = default )
     {
         try
         {
-            await db.Licenses.AsNoTracking().Select( l => l.LicenseId ).FirstOrDefaultAsync( cancellationToken );
+            await this.db.Licenses.AsNoTracking().Select( l => l.LicenseId ).FirstOrDefaultAsync( cancellationToken );
 
             return HealthCheckResult.Healthy( "The database answers." );
         }
         catch ( Exception e ) when ( e is not OperationCanceledException )
         {
             return HealthCheckResult.Unhealthy(
-                HealthDescriptions.ForException( "The database cannot be queried.", e, environment ),
+                HealthDescriptions.ForException( "The database cannot be queried.", e, this.environment ),
                 e );
         }
     }

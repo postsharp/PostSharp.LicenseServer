@@ -15,12 +15,16 @@ namespace SharpCrafters.Backstage.LicenseServer.Email;
 /// result, so every failure was silent. This implementation writes a failure to the log, and it
 /// still raises no exception, because an SMTP server that fails must not deny a license.
 /// </remarks>
-public sealed class SmtpEmailSender(
-    IOptions<SmtpOptions> options,
-    ILogger<SmtpEmailSender> logger ) : IEmailSender
+public sealed class SmtpEmailSender : IEmailSender
 {
-    private readonly SmtpOptions options = options.Value;
-    private readonly ILogger<SmtpEmailSender> logger = logger;
+    private readonly SmtpOptions options;
+    private readonly ILogger<SmtpEmailSender> logger;
+
+    public SmtpEmailSender( IOptions<SmtpOptions> options, ILogger<SmtpEmailSender> logger )
+    {
+        this.options = options.Value;
+        this.logger = logger;
+    }
 
     public async Task SendAsync( EmailMessage message, CancellationToken cancellationToken = default )
     {

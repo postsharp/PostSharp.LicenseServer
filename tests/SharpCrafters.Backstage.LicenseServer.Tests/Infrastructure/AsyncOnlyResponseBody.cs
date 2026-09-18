@@ -53,8 +53,15 @@ public sealed class AsyncOnlyResponseBody : IStartupFilter
     /// Forwards every asynchronous write, and raises an exception at every synchronous write, with
     /// the message that Kestrel uses.
     /// </summary>
-    private sealed class AsyncOnlyStream( Stream inner ) : Stream
+    private sealed class AsyncOnlyStream : Stream
     {
+        private readonly Stream inner;
+
+        public AsyncOnlyStream( Stream inner )
+        {
+            this.inner = inner;
+        }
+
         private const string message =
             "Synchronous operations are disallowed. Call WriteAsync or set AllowSynchronousIO to true instead.";
 
@@ -62,7 +69,7 @@ public sealed class AsyncOnlyResponseBody : IStartupFilter
 
         public override bool CanSeek => false;
 
-        public override bool CanWrite => inner.CanWrite;
+        public override bool CanWrite => this.inner.CanWrite;
 
         public override long Length => throw new NotSupportedException();
 
@@ -81,12 +88,12 @@ public sealed class AsyncOnlyResponseBody : IStartupFilter
         public override void Flush() => throw new InvalidOperationException( message );
 
         public override Task WriteAsync( byte[] buffer, int offset, int count, CancellationToken cancellationToken )
-            => inner.WriteAsync( buffer, offset, count, cancellationToken );
+            => this.inner.WriteAsync( buffer, offset, count, cancellationToken );
 
         public override ValueTask WriteAsync( ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default )
-            => inner.WriteAsync( buffer, cancellationToken );
+            => this.inner.WriteAsync( buffer, cancellationToken );
 
-        public override Task FlushAsync( CancellationToken cancellationToken ) => inner.FlushAsync( cancellationToken );
+        public override Task FlushAsync( CancellationToken cancellationToken ) => this.inner.FlushAsync( cancellationToken );
 
         public override int Read( byte[] buffer, int offset, int count ) => throw new NotSupportedException();
 

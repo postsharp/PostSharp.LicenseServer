@@ -464,13 +464,25 @@ public sealed partial class LeaseService
     /// The capacity and the current usage of a license. The usage is computed on demand, because the
     /// first pass serves most requests and does not need it.
     /// </summary>
-    private sealed class LicenseState(
-        DateTime time,
-        ILeaseRepository repository,
-        License license,
-        LicenseInfo parsedLicense )
+    private sealed class LicenseState
     {
+        private readonly DateTime time;
+        private readonly ILeaseRepository repository;
+        private readonly License license;
+        private readonly LicenseInfo parsedLicense;
         private int usage = -1;
+
+        public LicenseState(
+            DateTime time,
+            ILeaseRepository repository,
+            License license,
+            LicenseInfo parsedLicense )
+        {
+            this.time = time;
+            this.repository = repository;
+            this.license = license;
+            this.parsedLicense = parsedLicense;
+        }
 
         public int Usage
         {
@@ -478,19 +490,19 @@ public sealed partial class LeaseService
             {
                 if ( this.usage == -1 )
                 {
-                    this.usage = repository.GetActiveSeats( license.LicenseId, time );
+                    this.usage = this.repository.GetActiveSeats( this.license.LicenseId, this.time );
                 }
 
                 return this.usage;
             }
         }
 
-        public int? Maximum => parsedLicense.UserNumber;
+        public int? Maximum => this.parsedLicense.UserNumber;
 
         [SuppressMessage( "ReSharper", "UnusedMember.Local", Justification = "Part of the state's contract." )]
         public bool InExcess => this.Maximum.HasValue && this.Maximum.Value < this.Usage;
 
-        public LicenseInfo ParsedLicense => parsedLicense;
+        public LicenseInfo ParsedLicense => this.parsedLicense;
     }
 }
 

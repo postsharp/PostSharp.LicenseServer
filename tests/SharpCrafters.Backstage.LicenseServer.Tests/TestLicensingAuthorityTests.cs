@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -105,7 +106,7 @@ public sealed class TestLicensingAuthorityTests
 
         for ( int i = 0; i < authorities.Length; i++ )
         {
-            settings[$"LicenseServer:TestLicensingAuthorities:{i}:KeyId"] = authorities[i].KeyId.ToString();
+            settings[$"LicenseServer:TestLicensingAuthorities:{i}:KeyId"] = authorities[i].KeyId.ToString( CultureInfo.InvariantCulture );
             settings[$"LicenseServer:TestLicensingAuthorities:{i}:PublicKey"] = authorities[i].PublicKey;
         }
 
@@ -140,9 +141,14 @@ public sealed class TestLicensingAuthorityTests
         return (ToXml( false ), licenseKey);
     }
 
-    private sealed class StubEnvironment( string environmentName ) : IHostEnvironment
+    private sealed class StubEnvironment : IHostEnvironment
     {
-        public string EnvironmentName { get; set; } = environmentName;
+        public StubEnvironment( string environmentName )
+        {
+            this.EnvironmentName = environmentName;
+        }
+
+        public string EnvironmentName { get; set; }
 
         public string ApplicationName { get; set; } = "Tests";
 

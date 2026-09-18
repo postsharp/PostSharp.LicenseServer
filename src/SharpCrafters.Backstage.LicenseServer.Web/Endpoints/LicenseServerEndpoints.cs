@@ -38,7 +38,6 @@ public static class LicenseServerEndpoints
         HttpContext context,
         LeaseService leaseService,
         ILeaseRepository repository,
-        LeaseSerializer leaseSerializer,
         ILeaseLock leaseLock,
         IOptions<LicenseServerOptions> options,
         TimeProvider timeProvider,
@@ -160,7 +159,7 @@ public static class LicenseServerEndpoints
         }
 
         return Results.Text(
-            leaseSerializer.Serialize(
+            LeaseSerializer.Serialize(
                 grantedLease.LicenseKey,
                 grantedLease.StartTime,
                 grantedLease.EndTime,

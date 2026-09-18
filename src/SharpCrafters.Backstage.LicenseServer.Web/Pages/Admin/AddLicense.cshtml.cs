@@ -10,12 +10,25 @@ namespace SharpCrafters.Backstage.LicenseServer.Pages.Admin;
 /// <summary>
 /// Registers a license key so that the server can serve leases against it.
 /// </summary>
-public sealed class AddLicenseModel(
-    ILeaseRepository repository,
-    LicenseServerDbContext db,
-    ILicenseParser licenseParser,
-    TimeProvider timeProvider ) : PageModel
+public sealed class AddLicenseModel : PageModel
 {
+    private readonly ILeaseRepository repository;
+    private readonly LicenseServerDbContext db;
+    private readonly ILicenseParser licenseParser;
+    private readonly TimeProvider timeProvider;
+
+    public AddLicenseModel(
+        ILeaseRepository repository,
+        LicenseServerDbContext db,
+        ILicenseParser licenseParser,
+        TimeProvider timeProvider )
+    {
+        this.repository = repository;
+        this.db = db;
+        this.licenseParser = licenseParser;
+        this.timeProvider = timeProvider;
+    }
+
     [BindProperty]
     [Required( ErrorMessage = "Paste the license key." )]
     [Display( Name = "License key" )]
@@ -30,7 +43,7 @@ public sealed class AddLicenseModel(
             return this.Page();
         }
 
-        LicenseInfo? parsedLicense = licenseParser.TryParse( this.LicenseKey );
+        LicenseInfo? parsedLicense = this.licenseParser.TryParse( this.LicenseKey );
 
         if ( parsedLicense == null )
         {
@@ -49,23 +62,23 @@ public sealed class AddLicenseModel(
             return this.Page();
         }
 
-        if ( await repository.Licenses.AnyAsync( l => l.LicenseId == parsedLicense.LicenseId, cancellationToken ) )
+        if ( await this.repository.Licenses.AnyAsync( l => l.LicenseId == parsedLicense.LicenseId, cancellationToken ) )
         {
             this.ModelState.AddModelError( nameof(this.LicenseKey), "The given license has been added already." );
 
             return this.Page();
         }
 
-        db.Licenses.Add(
+        this.db.Licenses.Add(
             new License
             {
                 LicenseId = parsedLicense.LicenseId,
-                LicenseKey = licenseParser.CleanLicenseString( this.LicenseKey ),
-                CreatedOn = timeProvider.GetUtcNow().UtcDateTime,
+                LicenseKey = this.licenseParser.CleanLicenseString( this.LicenseKey ),
+                CreatedOn = this.timeProvider.GetUtcNow().UtcDateTime,
                 ProductCode = parsedLicense.Product
             } );
 
-        await db.SaveChangesAsync( cancellationToken );
+        await this.db.SaveChangesAsync( cancellationToken );
 
         return this.RedirectToPage( "/Index" );
     }

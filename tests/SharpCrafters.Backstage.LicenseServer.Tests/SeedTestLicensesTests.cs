@@ -156,13 +156,19 @@ public sealed class SeedTestLicensesTests : IDisposable
         Assert.Null( services.BuildServiceProvider().GetService<TestLicenseAuthority>() );
     }
 
-    private sealed class StubEnvironment( string environmentName, string contentRootPath = "." ) : IHostEnvironment
+    private sealed class StubEnvironment : IHostEnvironment
     {
-        public string EnvironmentName { get; set; } = environmentName;
+        public StubEnvironment( string environmentName, string contentRootPath = "." )
+        {
+            this.EnvironmentName = environmentName;
+            this.ContentRootPath = contentRootPath;
+        }
+
+        public string EnvironmentName { get; set; }
 
         public string ApplicationName { get; set; } = "Tests";
 
-        public string ContentRootPath { get; set; } = contentRootPath;
+        public string ContentRootPath { get; set; }
 
         public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } =
             new Microsoft.Extensions.FileProviders.NullFileProvider();

@@ -13,7 +13,7 @@ namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 /// The authorities whose signature the parser accepts. The default authorities are the production
 /// ones. A test signs with an authority of its own.
 /// </param>
-public sealed class BackstageLicenseParser( ILicensingAuthorityProvider? authorities = null ) : ILicenseParser
+public sealed class BackstageLicenseParser : ILicenseParser
 {
     /// <summary>
     /// The percentage of additional seats allowed during the grace period, when the license key
@@ -23,8 +23,12 @@ public sealed class BackstageLicenseParser( ILicensingAuthorityProvider? authori
     /// </summary>
     private const int defaultGracePercent = 30;
 
-    private readonly ILicensingAuthorityProvider authorities =
-        authorities ?? new ProductionLicensingAuthorityProvider();
+    private readonly ILicensingAuthorityProvider authorities;
+
+    public BackstageLicenseParser( ILicensingAuthorityProvider? authorities = null )
+    {
+        this.authorities = authorities ?? new ProductionLicensingAuthorityProvider();
+    }
 
     public LicenseInfo? TryParse( string licenseKey )
     {

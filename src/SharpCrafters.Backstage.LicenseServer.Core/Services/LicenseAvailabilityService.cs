@@ -22,16 +22,27 @@ namespace SharpCrafters.Backstage.LicenseServer.Services;
 /// of a license that no client uses, and the period would elapse while the server is idle.
 /// </para>
 /// </remarks>
-public sealed class LicenseAvailabilityService(
-    ILeaseRepository repository,
-    ILicenseParser licenseParser,
-    ILicenseServerVersion serverVersion )
+public sealed class LicenseAvailabilityService
 {
+    private readonly ILeaseRepository repository;
+    private readonly ILicenseParser licenseParser;
+    private readonly ILicenseServerVersion serverVersion;
+
+    public LicenseAvailabilityService(
+        ILeaseRepository repository,
+        ILicenseParser licenseParser,
+        ILicenseServerVersion serverVersion )
+    {
+        this.repository = repository;
+        this.licenseParser = licenseParser;
+        this.serverVersion = serverVersion;
+    }
+
     public async Task<LicenseAvailability> GetAvailabilityAsync(
         DateTime now,
         CancellationToken cancellationToken = default )
     {
-        License[] licenses = await repository.Licenses
+        License[] licenses = await this.repository.Licenses
             .AsNoTracking()
             .ToArrayAsync( cancellationToken );
 
@@ -50,11 +61,11 @@ public sealed class LicenseAvailabilityService(
                 continue;
             }
 
-            LicenseInfo? parsedLicense = licenseParser.TryParse( license.LicenseKey );
+            LicenseInfo? parsedLicense = this.licenseParser.TryParse( license.LicenseKey );
 
             if ( parsedLicense == null
                  || !parsedLicense.IsLicenseServerEligible
-                 || parsedLicense.MinPostSharpVersion > serverVersion.LicensingLibraryVersion )
+                 || parsedLicense.MinPostSharpVersion > this.serverVersion.LicensingLibraryVersion )
             {
                 invalid++;
 
@@ -76,7 +87,7 @@ public sealed class LicenseAvailabilityService(
                 continue;
             }
 
-            int usage = repository.GetActiveSeats( license.LicenseId, now );
+            int usage = this.repository.GetActiveSeats( license.LicenseId, now );
 
             if ( usage < parsedLicense.UserNumber.Value )
             {

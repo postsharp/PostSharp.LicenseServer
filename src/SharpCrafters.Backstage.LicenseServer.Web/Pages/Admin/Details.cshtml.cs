@@ -10,12 +10,25 @@ namespace SharpCrafters.Backstage.LicenseServer.Pages.Admin;
 /// <summary>
 /// The leases currently held against one license, and the actions an administrator can take on it.
 /// </summary>
-public sealed class DetailsModel(
-    ILeaseRepository repository,
-    LicenseServerDbContext db,
-    IOptions<LicenseServerOptions> options,
-    TimeProvider timeProvider ) : PageModel
+public sealed class DetailsModel : PageModel
 {
+    private readonly ILeaseRepository repository;
+    private readonly LicenseServerDbContext db;
+    private readonly IOptions<LicenseServerOptions> options;
+    private readonly TimeProvider timeProvider;
+
+    public DetailsModel(
+        ILeaseRepository repository,
+        LicenseServerDbContext db,
+        IOptions<LicenseServerOptions> options,
+        TimeProvider timeProvider )
+    {
+        this.repository = repository;
+        this.db = db;
+        this.options = options;
+        this.timeProvider = timeProvider;
+    }
+
     [BindProperty( SupportsGet = true )]
     public int Id { get; set; }
 
@@ -27,7 +40,7 @@ public sealed class DetailsModel(
     /// Gets the number of machines that one seat covers, so that the page states the rule with the
     /// value configured on this server and not with the default value.
     /// </summary>
-    public int MachinesPerSeat => options.Value.MachinesPerUser;
+    public int MachinesPerSeat => this.options.Value.MachinesPerUser;
 
     /// <summary>
     /// Gets <see cref="MachinesPerSeat"/> with its noun, so that a server configured with one
@@ -40,7 +53,7 @@ public sealed class DetailsModel(
 
     public async Task<IActionResult> OnGetAsync( CancellationToken cancellationToken )
     {
-        License? license = await repository.Licenses
+        License? license = await this.repository.Licenses
             .AsNoTracking()
             .SingleOrDefaultAsync( l => l.LicenseId == this.Id, cancellationToken );
 
@@ -49,15 +62,15 @@ public sealed class DetailsModel(
             return this.NotFound();
         }
 
-        DateTime now = timeProvider.GetUtcNow().UtcDateTime;
+        DateTime now = this.timeProvider.GetUtcNow().UtcDateTime;
 
-        this.Leases = await repository.OpenLeases
+        this.Leases = await this.repository.OpenLeases
             .Where( l => l.LicenseId == this.Id && l.StartTime <= now && l.EndTime >= now )
             .OrderBy( l => l.StartTime )
             .AsNoTracking()
             .ToListAsync( cancellationToken );
 
-        this.Seats = repository.GetActiveSeats( this.Id, now );
+        this.Seats = this.repository.GetActiveSeats( this.Id, now );
         this.IsDisabled = license.Priority < 0;
 
         return this.Page();
@@ -71,7 +84,7 @@ public sealed class DetailsModel(
 
     private async Task<IActionResult> SetPriorityAsync( int priority, CancellationToken cancellationToken )
     {
-        License? license = await db.Licenses.SingleOrDefaultAsync( l => l.LicenseId == this.Id, cancellationToken );
+        License? license = await this.db.Licenses.SingleOrDefaultAsync( l => l.LicenseId == this.Id, cancellationToken );
 
         if ( license == null )
         {
@@ -79,34 +92,34 @@ public sealed class DetailsModel(
         }
 
         license.Priority = priority;
-        await db.SaveChangesAsync( cancellationToken );
+        await this.db.SaveChangesAsync( cancellationToken );
 
         return this.RedirectToPage( "/Index" );
     }
 
     public async Task<IActionResult> OnPostDeleteAsync( CancellationToken cancellationToken )
     {
-        if ( !await db.Licenses.AnyAsync( l => l.LicenseId == this.Id, cancellationToken ) )
+        if ( !await this.db.Licenses.AnyAsync( l => l.LicenseId == this.Id, cancellationToken ) )
         {
             return this.NotFound();
         }
 
-        await using var transaction = await db.Database.BeginTransactionAsync( cancellationToken );
+        await using var transaction = await this.db.Database.BeginTransactionAsync( cancellationToken );
 
         // The leases reference each other through the chain of replacements, so they are deleted
         // before the license, and the most recent ones before the ones they replaced.
-        List<Lease> leases = await db.Leases
+        List<Lease> leases = await this.db.Leases
             .Where( l => l.LicenseId == this.Id )
             .OrderByDescending( l => l.LeaseId )
             .ToListAsync( cancellationToken );
 
         foreach ( Lease lease in leases )
         {
-            db.Leases.Remove( lease );
-            await db.SaveChangesAsync( cancellationToken );
+            this.db.Leases.Remove( lease );
+            await this.db.SaveChangesAsync( cancellationToken );
         }
 
-        await db.Licenses.Where( l => l.LicenseId == this.Id ).ExecuteDeleteAsync( cancellationToken );
+        await this.db.Licenses.Where( l => l.LicenseId == this.Id ).ExecuteDeleteAsync( cancellationToken );
         await transaction.CommitAsync( cancellationToken );
 
         return this.RedirectToPage( "/Index" );

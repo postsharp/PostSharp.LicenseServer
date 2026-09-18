@@ -23,19 +23,26 @@ namespace SharpCrafters.Backstage.LicenseServer.Web.Locking;
 /// serializes the requests of a web garden and of several instances as well.
 /// </para>
 /// </remarks>
-public sealed class SqlServerLeaseLock( LicenseServerDbContext db ) : ILeaseLock
+public sealed class SqlServerLeaseLock : ILeaseLock
 {
+    private readonly LicenseServerDbContext db;
+
     /// <summary>
     /// The name of the locked resource. SQL Server scopes an application lock to the database, so
     /// this name is shared by every process that serves this database, and by nothing else.
     /// </summary>
     public const string ResourceName = "SharpCrafters.Backstage.LicenseServer.Lease";
+    public SqlServerLeaseLock( LicenseServerDbContext db )
+    {
+        this.db = db;
+    }
+
 
     public async ValueTask<IAsyncDisposable?> TryAcquireAsync(
         TimeSpan timeout,
         CancellationToken cancellationToken = default )
     {
-        DatabaseFacade database = db.Database;
+        DatabaseFacade database = this.db.Database;
 
         await database.OpenConnectionAsync( cancellationToken );
 
@@ -116,9 +123,15 @@ public sealed class SqlServerLeaseLock( LicenseServerDbContext db ) : ILeaseLock
         return (int) returnValue.Value!;
     }
 
-    private sealed class Handle( DatabaseFacade database ) : IAsyncDisposable
+    private sealed class Handle : IAsyncDisposable
     {
+        private readonly DatabaseFacade database;
         private int released;
+
+        public Handle( DatabaseFacade database )
+        {
+            this.database = database;
+        }
 
         public async ValueTask DisposeAsync()
         {
@@ -130,7 +143,7 @@ public sealed class SqlServerLeaseLock( LicenseServerDbContext db ) : ILeaseLock
             try
             {
                 await ExecuteAsync(
-                    database,
+                    this.database,
                     "sp_releaseapplock",
                     command =>
                     {
@@ -143,7 +156,7 @@ public sealed class SqlServerLeaseLock( LicenseServerDbContext db ) : ILeaseLock
             {
                 // Closing the connection releases the lock as well, so the lock is never held by a
                 // connection that returns to the pool.
-                await database.CloseConnectionAsync();
+                await this.database.CloseConnectionAsync();
             }
         }
     }

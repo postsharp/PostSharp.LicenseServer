@@ -14,13 +14,28 @@ namespace SharpCrafters.Backstage.LicenseServer.Pages.Admin;
 /// This page exists only in the Development environment. The legacy version of this page was
 /// reachable in production, on a deployment whose administrative pages were open by default.
 /// </remarks>
-public sealed class GenerateDemoDataModel(
-    ILeaseRepository repository,
-    LicenseServerDbContext db,
-    LeaseService leaseService,
-    IHostEnvironment environment,
-    TimeProvider timeProvider ) : PageModel
+public sealed class GenerateDemoDataModel : PageModel
 {
+    private readonly ILeaseRepository repository;
+    private readonly LicenseServerDbContext db;
+    private readonly LeaseService leaseService;
+    private readonly IHostEnvironment environment;
+    private readonly TimeProvider timeProvider;
+
+    public GenerateDemoDataModel(
+        ILeaseRepository repository,
+        LicenseServerDbContext db,
+        LeaseService leaseService,
+        IHostEnvironment environment,
+        TimeProvider timeProvider )
+    {
+        this.repository = repository;
+        this.db = db;
+        this.leaseService = leaseService;
+        this.environment = environment;
+        this.timeProvider = timeProvider;
+    }
+
     private static readonly string[] firstNames =
     [
         "David", "Jimmy", "Carroll", "Keith", "Marsha", "Mike", "Julio", "Salvatore", "Herbert", "Gary",
@@ -39,7 +54,7 @@ public sealed class GenerateDemoDataModel(
     [Microsoft.AspNetCore.Mvc.ModelBinding.BindNever]
     public string? Message { get; private set; }
 
-    public bool IsAvailable => environment.IsDevelopment();
+    public bool IsAvailable => this.environment.IsDevelopment();
 
     public int UserCount { get; set; } = 20;
 
@@ -57,7 +72,7 @@ public sealed class GenerateDemoDataModel(
         this.UserCount = Math.Clamp( userCount, 1, 200 );
         this.Days = Math.Clamp( days, 1, 365 );
 
-        License[] licenses = await repository.Licenses
+        License[] licenses = await this.repository.Licenses
             .Where( l => l.Priority >= 0 )
             .OrderBy( l => l.Priority )
             .ToArrayAsync( cancellationToken );
@@ -87,7 +102,7 @@ public sealed class GenerateDemoDataModel(
                 } )
             .ToArray();
 
-        DateTime now = timeProvider.GetUtcNow().UtcDateTime;
+        DateTime now = this.timeProvider.GetUtcNow().UtcDateTime;
         DateTime start = now.Date.AddDays( -this.Days );
         int granted = 0;
 
@@ -109,7 +124,7 @@ public sealed class GenerateDemoDataModel(
                 string machine = machines[random.Next( machines.Length )];
                 DateTime time = date.AddHours( 8 + (random.NextDouble() * 9) );
 
-                Lease? lease = await leaseService.GetLeaseAsync(
+                Lease? lease = await this.leaseService.GetLeaseAsync(
                     new Version( 2025, 1, 0 ),
                     null,
                     machine,
@@ -129,7 +144,7 @@ public sealed class GenerateDemoDataModel(
             // The generator saves once per simulated day, and not once per lease. Otherwise the
             // change tracker would grow during the whole run, and each save would be slower than the
             // previous one.
-            await db.SaveChangesAsync( cancellationToken );
+            await this.db.SaveChangesAsync( cancellationToken );
         }
 
         this.Message =

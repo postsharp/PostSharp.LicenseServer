@@ -6,18 +6,27 @@ using SharpCrafters.Backstage.LicenseServer.Options;
 namespace SharpCrafters.Backstage.LicenseServer.Data;
 
 /// <inheritdoc cref="ILeaseRepository"/>
-public sealed class LeaseRepository(
-    LicenseServerDbContext db,
-    IOptions<LicenseServerOptions> options,
-    ILicenseParser licenseParser ) : ILeaseRepository
+public sealed class LeaseRepository : ILeaseRepository
 {
-    private readonly LicenseServerOptions settings = options.Value;
+    private readonly LicenseServerDbContext db;
+    private readonly ILicenseParser licenseParser;
+    private readonly LicenseServerOptions settings;
 
-    public IQueryable<Lease> OpenLeases => db.OpenLeases;
+    public LeaseRepository(
+        LicenseServerDbContext db,
+        IOptions<LicenseServerOptions> options,
+        ILicenseParser licenseParser )
+    {
+        this.db = db;
+        this.licenseParser = licenseParser;
+        this.settings = options.Value;
+    }
 
-    public IQueryable<Lease> Leases => db.Leases;
+    public IQueryable<Lease> OpenLeases => this.db.OpenLeases;
 
-    public IQueryable<License> Licenses => db.Licenses;
+    public IQueryable<Lease> Leases => this.db.Leases;
+
+    public IQueryable<License> Licenses => this.db.Licenses;
 
     public Lease? CreateLease(
         License license,
@@ -48,7 +57,7 @@ public sealed class LeaseRepository(
             return null;
         }
 
-        db.Leases.Add( lease );
+        this.db.Leases.Add( lease );
 
         return lease;
     }
@@ -74,7 +83,7 @@ public sealed class LeaseRepository(
             return null;
         }
 
-        db.Leases.Add( newLease );
+        this.db.Leases.Add( newLease );
 
         return newLease;
     }
@@ -99,7 +108,7 @@ public sealed class LeaseRepository(
         // instant, and the rule that a lease must end after the current instant would reject that.
         this.FixLease( overwrite, time, false );
 
-        db.Leases.Add( overwrite );
+        this.db.Leases.Add( overwrite );
     }
 
     /// <summary>
@@ -108,7 +117,7 @@ public sealed class LeaseRepository(
     /// <returns><c>false</c> when no time is left to grant.</returns>
     private bool FixLease( Lease lease, DateTime time, bool fixEndTime = true )
     {
-        LicenseInfo? parsedLicense = licenseParser.TryParse( lease.License.LicenseKey );
+        LicenseInfo? parsedLicense = this.licenseParser.TryParse( lease.License.LicenseKey );
 
         if ( parsedLicense == null )
         {
@@ -161,7 +170,7 @@ public sealed class LeaseRepository(
         // It counts distinct machines and not leases. A user can hold two leases on one machine,
         // which happens when the clock of the server moves backwards. Counting the leases would
         // charge that user for a machine they do not work on.
-        List<int> machinesPerUser = db.OpenLeases
+        List<int> machinesPerUser = this.db.OpenLeases
             .Where( l => l.LicenseId == licenseId && l.StartTime <= dateTime && l.EndTime > dateTime )
             .GroupBy( l => l.UserName )
             .Select( g => g.Select( l => l.Machine ).Distinct().Count() )
@@ -175,7 +184,7 @@ public sealed class LeaseRepository(
         DateTime startTime,
         DateTime endTime )
     {
-        List<Lease> leases = db.OpenLeases
+        List<Lease> leases = this.db.OpenLeases
             .Where( l => l.LicenseId == licenseId && l.StartTime <= endTime && l.EndTime > startTime )
             .AsNoTracking()
             .ToList();
@@ -254,7 +263,7 @@ public sealed class LeaseRepository(
     /// Saves the unit of work.
     /// </summary>
     public Task<int> SaveChangesAsync( CancellationToken cancellationToken = default )
-        => db.SaveChangesAsync( cancellationToken );
+        => this.db.SaveChangesAsync( cancellationToken );
 
-    public int SaveChanges() => db.SaveChanges();
+    public int SaveChanges() => this.db.SaveChanges();
 }

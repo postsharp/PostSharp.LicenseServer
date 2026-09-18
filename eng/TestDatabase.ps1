@@ -83,42 +83,49 @@ $script:dockerCommand = $null
 
 <#
 .SYNOPSIS
-    Resolves how Docker is reached, and returns the command and the arguments that precede every
-    Docker argument.
+    Resolves how Docker is reached, and stores the command and the arguments that precede every Docker
+    argument.
 .DESCRIPTION
-    A Windows machine can run the Docker engine inside a distribution of the Windows Subsystem for
-    Linux rather than under Docker Desktop. The client of the distribution is then the only one that
-    reaches a daemon, so the script calls Docker through wsl. A relative path is used with it, because
-    wsl starts in the translated form of the current directory and would not understand a path that
-    names a Windows drive.
+    The servers run in Linux containers, so the daemon has to be one that runs Linux containers. A
+    Windows machine can answer on the client and still refuse them: Docker Desktop in the Windows
+    container mode reports a server, and pulling a Linux image then fails with "no matching manifest
+    for windows". The engine can also live inside a distribution of the Windows Subsystem for Linux
+    rather than under Docker Desktop, and the client of the distribution is then the only one that
+    reaches it. The daemon is therefore chosen by the operating system it reports, and not by whether
+    a client answers.
+
+    Docker is called with a relative path when it is called through wsl, because wsl starts in the
+    translated form of the current directory and would not understand a path that names a Windows
+    drive.
 #>
 function Initialize-Docker {
     if ( $script:dockerCommand ) {
         return
     }
 
-    if ( Get-Command docker -ErrorAction SilentlyContinue ) {
-        & docker version --format '{{.Server.Version}}' 2>&1 | Out-Null
+    function Test-LinuxDaemon( [string[]] $Command ) {
+        $name = $Command[0]
+        $arguments = @( $Command | Select-Object -Skip 1 ) + @( 'version', '--format', '{{.Server.Os}}' )
 
-        if ( $LASTEXITCODE -eq 0 ) {
-            $script:dockerCommand = @( 'docker' )
+        $operatingSystem = & $name @arguments 2>&1
 
-            return
-        }
+        return $LASTEXITCODE -eq 0 -and "$operatingSystem".Trim() -eq 'linux'
     }
 
-    if ( Get-Command wsl -ErrorAction SilentlyContinue ) {
-        & wsl -e docker version --format '{{.Server.Version}}' 2>&1 | Out-Null
+    if ( (Get-Command docker -ErrorAction SilentlyContinue) -and (Test-LinuxDaemon @( 'docker' )) ) {
+        $script:dockerCommand = @( 'docker' )
 
-        if ( $LASTEXITCODE -eq 0 ) {
-            Write-Host 'Reaching Docker through the Windows Subsystem for Linux.'
-            $script:dockerCommand = @( 'wsl', '-e', 'docker' )
-
-            return
-        }
+        return
     }
 
-    throw 'No Docker daemon was reached. Start Docker, or set the connection string of a server of your own.'
+    if ( (Get-Command wsl -ErrorAction SilentlyContinue) -and (Test-LinuxDaemon @( 'wsl', '-e', 'docker' )) ) {
+        Write-Host 'Reaching Docker through the Windows Subsystem for Linux.'
+        $script:dockerCommand = @( 'wsl', '-e', 'docker' )
+
+        return
+    }
+
+    throw 'No Docker daemon that runs Linux containers was reached. Start one, or set the connection string of a server of your own.'
 }
 
 function Invoke-Docker {

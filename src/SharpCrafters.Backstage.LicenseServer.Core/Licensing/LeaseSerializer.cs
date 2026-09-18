@@ -21,9 +21,9 @@ namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 /// cannot rename one.
 /// </para>
 /// </remarks>
-public sealed class LeaseSerializer
+public static class LeaseSerializer
 {
-    public string Serialize( string licenseKey, DateTime startTime, DateTime endTime, DateTime renewTime )
+    public static string Serialize( string licenseKey, DateTime startTime, DateTime endTime, DateTime renewTime )
         => $"License: {licenseKey}"
            + $"; StartTime: {ToUtcString( startTime )}"
            + $"; EndTime: {ToUtcString( endTime )}"

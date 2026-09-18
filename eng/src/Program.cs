@@ -94,23 +94,36 @@ internal static class DatabaseTests
 /// <param name="engine">The name of the engine, as the parameter of eng/TestDatabase.ps1 spells it.</param>
 /// <param name="displayName">The name of the engine, as a person writes it.</param>
 /// <param name="server">The component that installs the server into the image.</param>
-internal sealed class DatabaseTestRun( string name, string engine, string displayName, ContainerComponent server )
+internal sealed class DatabaseTestRun
 {
+    private readonly string name;
+    private readonly string engine;
+    private readonly string displayName;
+    private readonly ContainerComponent server;
+
+    public DatabaseTestRun( string name, string engine, string displayName, ContainerComponent server )
+    {
+        this.name = name;
+        this.engine = engine;
+        this.displayName = displayName;
+        this.server = server;
+    }
+
     public AdditionalDockerfile Dockerfile( string dotNetSdkVersion )
-        => new( name, [] )
+        => new( this.name, [] )
         {
             Requirements = new ContainerRequirements( ContainerHostKind.Linux )
             {
                 OperatingSystem = ContainerOperatingSystem.Linux,
-                Components = [new DotNetComponent( dotNetSdkVersion, DotNetComponentKind.Sdk ), server]
+                Components = [new DotNetComponent( dotNetSdkVersion, DotNetComponentKind.Sdk ), this.server]
             }
         };
 
     public PowershellAdditionalCiBuildConfiguration Configuration
-        => new( $"{engine}Tests", $"Tests on {displayName}", "./eng/TestDatabase.ps1", $"-Engine {engine}" )
+        => new( $"{this.engine}Tests", $"Tests on {this.displayName}", "./eng/TestDatabase.ps1", $"-Engine {this.engine}" )
         {
             BuildAgentRequirements = LinuxContainerHost,
-            Dockerfile = $"eng/docker/{name}-build.Dockerfile",
+            Dockerfile = $"eng/docker/{this.name}-build.Dockerfile",
             BuildSnapshotDependency = BuildConfiguration.Debug
         };
 

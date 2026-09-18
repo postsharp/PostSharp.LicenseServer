@@ -8,27 +8,38 @@ namespace SharpCrafters.Backstage.LicenseServer.Pages;
 /// <summary>
 /// The home page. It lists every registered license with the part of its capacity that is in use.
 /// </summary>
-public sealed class IndexModel(
-    ILeaseRepository repository,
-    ILicenseParser licenseParser,
-    TimeProvider timeProvider ) : PageModel
+public sealed class IndexModel : PageModel
 {
+    private readonly ILeaseRepository repository;
+    private readonly ILicenseParser licenseParser;
+    private readonly TimeProvider timeProvider;
+
+    public IndexModel(
+        ILeaseRepository repository,
+        ILicenseParser licenseParser,
+        TimeProvider timeProvider )
+    {
+        this.repository = repository;
+        this.licenseParser = licenseParser;
+        this.timeProvider = timeProvider;
+    }
+
     public IReadOnlyList<LicenseSummary> Licenses { get; private set; } = [];
 
     public async Task OnGetAsync( CancellationToken cancellationToken )
     {
-        License[] licenses = await repository.Licenses
+        License[] licenses = await this.repository.Licenses
             .OrderBy( l => l.Priority )
             .ThenByDescending( l => l.LicenseId )
             .AsNoTracking()
             .ToArrayAsync( cancellationToken );
 
-        DateTime now = timeProvider.GetUtcNow().UtcDateTime;
+        DateTime now = this.timeProvider.GetUtcNow().UtcDateTime;
         List<LicenseSummary> summaries = [];
 
         foreach ( License license in licenses )
         {
-            LicenseInfo? parsedLicense = licenseParser.TryParse( license.LicenseKey );
+            LicenseInfo? parsedLicense = this.licenseParser.TryParse( license.LicenseKey );
 
             summaries.Add(
                 parsedLicense == null
@@ -44,7 +55,7 @@ public sealed class IndexModel(
                         LicenseType = parsedLicense.LicenseType,
                         ProductCode = parsedLicense.Product,
                         MaxUsers = parsedLicense.UserNumber,
-                        CurrentUsers = repository.GetActiveSeats( license.LicenseId, now ),
+                        CurrentUsers = this.repository.GetActiveSeats( license.LicenseId, now ),
                         GraceStartTime = license.GraceStartTime,
                         Status = license.Priority >= 0 ? "Active" : "Disabled",
                         MaintenanceEndDate = parsedLicense.SubscriptionEndDate

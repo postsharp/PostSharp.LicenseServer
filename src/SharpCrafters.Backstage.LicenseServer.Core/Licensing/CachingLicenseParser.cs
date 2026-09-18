@@ -11,14 +11,20 @@ namespace SharpCrafters.Backstage.LicenseServer.Licensing;
 /// <c>ParsedLicenseManager</c> returned before it added the entry to the dictionary, so it parsed an
 /// invalid key at every call.
 /// </remarks>
-public sealed class CachingLicenseParser( ILicenseParser inner ) : ILicenseParser
+public sealed class CachingLicenseParser : ILicenseParser
 {
     private readonly ConcurrentDictionary<string, LicenseInfo?> cache = new( StringComparer.Ordinal );
+    private readonly ILicenseParser inner;
+
+    public CachingLicenseParser( ILicenseParser inner )
+    {
+        this.inner = inner;
+    }
 
     public LicenseInfo? TryParse( string licenseKey )
         => string.IsNullOrWhiteSpace( licenseKey )
             ? null
-            : this.cache.GetOrAdd( licenseKey, inner.TryParse );
+            : this.cache.GetOrAdd( licenseKey, this.inner.TryParse );
 
-    public string CleanLicenseString( string licenseKey ) => inner.CleanLicenseString( licenseKey );
+    public string CleanLicenseString( string licenseKey ) => this.inner.CleanLicenseString( licenseKey );
 }

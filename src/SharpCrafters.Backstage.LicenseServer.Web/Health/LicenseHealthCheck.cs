@@ -18,11 +18,22 @@ namespace SharpCrafters.Backstage.LicenseServer.Health;
 /// license. Only the process and the database can make the probe fail.
 /// </para>
 /// </remarks>
-public sealed class LicenseHealthCheck(
-    LicenseAvailabilityService availability,
-    TimeProvider timeProvider,
-    IHostEnvironment environment ) : IHealthCheck
+public sealed class LicenseHealthCheck : IHealthCheck
 {
+    private readonly LicenseAvailabilityService availability;
+    private readonly TimeProvider timeProvider;
+    private readonly IHostEnvironment environment;
+
+    public LicenseHealthCheck(
+        LicenseAvailabilityService availability,
+        TimeProvider timeProvider,
+        IHostEnvironment environment )
+    {
+        this.availability = availability;
+        this.timeProvider = timeProvider;
+        this.environment = environment;
+    }
+
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
         CancellationToken cancellationToken = default )
@@ -31,7 +42,7 @@ public sealed class LicenseHealthCheck(
 
         try
         {
-            result = await availability.GetAvailabilityAsync( timeProvider.GetUtcNow().UtcDateTime, cancellationToken );
+            result = await this.availability.GetAvailabilityAsync( this.timeProvider.GetUtcNow().UtcDateTime, cancellationToken );
         }
         catch ( Exception e ) when ( e is not OperationCanceledException )
         {
@@ -41,7 +52,7 @@ public sealed class LicenseHealthCheck(
             // uncaught exception as the description of the failure, and an anonymous endpoint must
             // not return the message of a database exception.
             return HealthCheckResult.Degraded(
-                HealthDescriptions.ForException( "The license state cannot be read.", e, environment ),
+                HealthDescriptions.ForException( "The license state cannot be read.", e, this.environment ),
                 e );
         }
 

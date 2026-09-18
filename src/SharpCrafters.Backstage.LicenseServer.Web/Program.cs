@@ -44,7 +44,6 @@ builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>( "database" )
     .AddCheck<LicenseHealthCheck>( "licenses" );
 
-builder.Services.AddSingleton<LeaseSerializer>();
 
 builder.Services.AddSingleton<IEmailSender>(
     services => services.GetRequiredService<IOptions<SmtpOptions>>().Value.Enabled

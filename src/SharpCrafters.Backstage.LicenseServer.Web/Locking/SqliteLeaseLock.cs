@@ -23,13 +23,20 @@ namespace SharpCrafters.Backstage.LicenseServer.Web.Locking;
 /// database is locked, and the caller answers with the status 503, as it does on SQL Server.
 /// </para>
 /// </remarks>
-public sealed class SqliteLeaseLock( LicenseServerDbContext db ) : ILeaseLock
+public sealed class SqliteLeaseLock : ILeaseLock
 {
+    private readonly LicenseServerDbContext db;
+
+    public SqliteLeaseLock( LicenseServerDbContext db )
+    {
+        this.db = db;
+    }
+
     public async ValueTask<IAsyncDisposable?> TryAcquireAsync(
         TimeSpan timeout,
         CancellationToken cancellationToken = default )
     {
-        DatabaseFacade database = db.Database;
+        DatabaseFacade database = this.db.Database;
 
         await database.OpenConnectionAsync( cancellationToken );
 
@@ -84,13 +91,25 @@ public sealed class SqliteLeaseLock( LicenseServerDbContext db ) : ILeaseLock
     private const int SqliteBusy = 5;
     private const int SqliteLocked = 6;
 
-    private sealed class Handle(
-        DatabaseFacade database,
-        IDbContextTransaction transaction,
-        SqliteConnection connection,
-        int previousTimeout ) : IAsyncDisposable
+    private sealed class Handle : IAsyncDisposable
     {
+        private readonly DatabaseFacade database;
+        private readonly IDbContextTransaction transaction;
+        private readonly SqliteConnection connection;
+        private readonly int previousTimeout;
         private int released;
+
+        public Handle(
+            DatabaseFacade database,
+            IDbContextTransaction transaction,
+            SqliteConnection connection,
+            int previousTimeout )
+        {
+            this.database = database;
+            this.transaction = transaction;
+            this.connection = connection;
+            this.previousTimeout = previousTimeout;
+        }
 
         public async ValueTask DisposeAsync()
         {
@@ -101,15 +120,15 @@ public sealed class SqliteLeaseLock( LicenseServerDbContext db ) : ILeaseLock
 
             try
             {
-                // The lease was saved inside this transaction, so the commit is what makes it
+                // The lease was saved inside this this.transaction, so the commit is what makes it
                 // visible, and it releases the write lock.
-                await transaction.CommitAsync();
+                await this.transaction.CommitAsync();
             }
             finally
             {
-                await transaction.DisposeAsync();
-                connection.DefaultTimeout = previousTimeout;
-                await database.CloseConnectionAsync();
+                await this.transaction.DisposeAsync();
+                this.connection.DefaultTimeout = this.previousTimeout;
+                await this.database.CloseConnectionAsync();
             }
         }
     }

@@ -176,6 +176,17 @@ the dependency at it, and build that repository first:
 ./Build.ps1 dependencies set local Backstage --path <path to the SharpCrafters.Backstage repository>
 ```
 
+### The code style
+
+`eng/style` holds the shared code style of PostSharp.Engineering: `.editorconfig`,
+`CommonStyle.DotSettings` for the JetBrains tools, and `stylecop.json`. The `.editorconfig` at the
+root of the repository is a symbolic link to `eng/style/.editorconfig`, so a clone needs
+`core.symlinks = true`. Refresh the style with `./Build.ps1 codestyle pull`.
+
+In Rider, open Settings, choose "Manage Layers", select the team-shared layer, click the plus icon,
+choose "Open Settings File", and select `eng/style/CommonStyle.DotSettings`. This step is what makes
+`./Build.ps1 codestyle format` reformat the code the way the team writes it.
+
 ### Running the tests
 
 `./Build.ps1 test` runs the suite on SQLite, which needs no server and keeps the loop short. Run the
